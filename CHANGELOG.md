@@ -9,4 +9,4 @@ It is **not** a continuation of Codex of Power / SVCollection.
 - **High DPI:** Input hitbox correction via `Input scale` (175% → 1.75, 200% → 2.0) + emergency key controls (`[`/`]`, `0`, `ESC`/`F4`).
 - **UX:** UI auto scaling for 4K, manual UI scale override, smoother wheel scrolling, larger language dropdown text.
 - **Stability:** Settings save + localization reload are queued to reduce frame hitches.
-
+- **Proc:** Corpse explosion (on player kill) VFX-only proc with chance/cooldown + optional notification + EditorID override.

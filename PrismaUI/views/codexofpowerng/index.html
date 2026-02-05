@@ -176,6 +176,55 @@
       #toggleKeyResolved {
         margin-top: calc(6px * var(--uiScale));
       }
+      .dropdown {
+        position: relative;
+      }
+      .dropdown > button {
+        width: 100%;
+        justify-content: flex-start;
+        gap: calc(10px * var(--uiScale));
+      }
+      .dropdownMenu {
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: calc(100% + calc(6px * var(--uiScale)));
+        z-index: 50;
+        display: none;
+        background: rgba(12, 12, 16, 0.96);
+        background: var(--bg);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-color: var(--border);
+        border-radius: calc(12px * var(--uiScale));
+        box-shadow: 0 calc(10px * var(--uiScale) * var(--shadowScale))
+          calc(30px * var(--uiScale) * var(--shadowScale)) rgba(0, 0, 0, 0.55);
+        padding: calc(8px * var(--uiScale));
+        max-height: calc(340px * var(--uiScale));
+        overflow: auto;
+      }
+      .dropdownMenu.open {
+        display: block;
+      }
+      .dropdownItem {
+        width: 100%;
+        text-align: left;
+        justify-content: flex-start;
+        border: 1px solid transparent;
+        background: transparent;
+        border-radius: calc(10px * var(--uiScale));
+        padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
+        min-height: calc(44px * var(--uiScale));
+        font-size: calc(14px * var(--uiScale));
+        font-weight: 700;
+      }
+      .dropdownItem.active {
+        border-color: rgba(124, 92, 255, 0.55);
+        background: rgba(124, 92, 255, 0.14);
+      }
+      .dropdownItem:hover {
+        border-color: var(--btnHoverBorder);
+        background: var(--btnHoverBg);
+      }
       .small {
         font-size: calc(12px * var(--uiScale));
         color: var(--muted);
@@ -500,11 +549,18 @@
           <div>
             <div class="small" data-i18n="settings.languageOverride">Language override</div>
             <div style="height: 8px"></div>
-            <select id="setLang">
-              <option value="auto" data-i18n="lang.auto">auto</option>
-              <option value="en" data-i18n="lang.en">en</option>
-              <option value="ko" data-i18n="lang.ko">ko</option>
-            </select>
+            <div class="dropdown" id="langDropdown">
+              <button id="langBtn" type="button">
+                <span id="langBtnLabel">auto</span>
+                <span style="margin-left: auto; opacity: 0.7">▾</span>
+              </button>
+              <div class="dropdownMenu" id="langMenu"></div>
+              <select id="setLang" style="display: none">
+                <option value="auto" data-i18n="lang.auto">auto</option>
+                <option value="en" data-i18n="lang.en">en</option>
+                <option value="ko" data-i18n="lang.ko">ko</option>
+              </select>
+            </div>
           </div>
         </div>
 
@@ -632,6 +688,7 @@
     </div>
 
     <script src="keycodes.js"></script>
+    <script src="lang_ui.js"></script>
     <script>
 	      const rootScrollEl = document.querySelector(".root");
 	      const statusEl = document.getElementById("status");
@@ -641,9 +698,16 @@
 	      const inputScalePillEl = document.getElementById("inputScale");
 
 	      const KC = window.COPNG_KEYCODES || null;
+	      const LANGUI = window.COPNG_LANGUI || null;
 	      const toggleKeyResolvedEl = document.getElementById("toggleKeyResolved");
 	      const btnCaptureToggleKeyEl = document.getElementById("btnCaptureToggleKey");
 	      let captureToggleKey = false;
+
+	      const langSelectEl = document.getElementById("setLang");
+	      const langBtnEl = document.getElementById("langBtn");
+	      const langBtnLabelEl = document.getElementById("langBtnLabel");
+	      const langMenuEl = document.getElementById("langMenu");
+	      let langMenuOpen = false;
 
 	      const uiScaleModeEl = document.getElementById("setUiScaleMode");
 	      const uiScaleRangeEl = document.getElementById("setUiScaleRange");
@@ -700,7 +764,7 @@
 	            "Only shows items safe to consume (not worn; optionally not favorited). List is paginated to avoid stutter. Click a row to select, then press Enter to register.",
 	          "rewards.help": "Refund removes only recorded bonus stats. It does not restore consumed items and does not clear registrations.",
 	          "settings.toggleKeyHelp":
-	            "Toggle key (name or DIK). Examples: <span class=\"mono\">F4</span>, <span class=\"mono\">E</span>, <span class=\"mono\">1</span>, <span class=\"mono\">0x3E</span>",
+	            "Toggle key. Click <span class=\"mono\">Bind…</span> then press a key, or type: <span class=\"mono\">F4</span> / <span class=\"mono\">E</span> / <span class=\"mono\">1</span> / <span class=\"mono\">0x3E</span>",
 	          "settings.resolved": "Resolved",
 	          "settings.invalid": "invalid",
 	          "settings.languageOverride": "Language override",
@@ -803,7 +867,7 @@
 	            "소비해도 안전한 아이템만 표시합니다(착용 중 제외, 즐겨찾기 보호는 설정). 렉 방지를 위해 페이지네이션됩니다. 행을 클릭해 선택한 뒤 Enter로 등록할 수 있습니다.",
 	          "rewards.help": "환불은 기록된 보너스 스탯만 제거합니다. 소비한 아이템은 복구되지 않으며, 등록 기록도 지워지지 않습니다.",
 	          "settings.toggleKeyHelp":
-	            "토글 키(키 이름 또는 DIK). 예: <span class=\"mono\">F4</span>, <span class=\"mono\">E</span>, <span class=\"mono\">1</span>, <span class=\"mono\">0x3E</span>",
+	            "토글 키. <span class=\"mono\">키 지정…</span>을 누르고 원하는 키를 누르거나, 직접 입력: <span class=\"mono\">F4</span> / <span class=\"mono\">E</span> / <span class=\"mono\">1</span> / <span class=\"mono\">0x3E</span>",
 	          "settings.resolved": "해석",
 	          "settings.invalid": "유효하지 않음",
 	          "settings.languageOverride": "언어 강제",
@@ -900,6 +964,10 @@
 	          if (!key) return;
 	          el.setAttribute("placeholder", t(key, el.getAttribute("placeholder") || ""));
 	        });
+
+	        // Dynamic labels (not driven by data-i18n)
+	        syncLangDropdown();
+	        updateToggleKeyResolved();
 	      }
 
 		      const QUICK_ROW_BASE_PX = 78;
@@ -1234,6 +1302,49 @@
 	        updateToggleKeyResolved();
 	      }
 
+	      function closeLangMenu() {
+	        langMenuOpen = false;
+	        if (langMenuEl) langMenuEl.classList.remove("open");
+	      }
+
+	      function syncLangDropdown() {
+	        if (!langSelectEl || !langBtnLabelEl) return;
+	        const v = LANGUI && LANGUI.normalizeLanguageValue ? LANGUI.normalizeLanguageValue(langSelectEl.value) : (langSelectEl.value || "auto");
+	        if (langSelectEl.value !== v) langSelectEl.value = v;
+	        langBtnLabelEl.textContent = t("lang." + v, v);
+	      }
+
+	      function openLangMenu() {
+	        if (!langMenuEl) return;
+	        const items = LANGUI && LANGUI.getLanguageItems ? LANGUI.getLanguageItems(t) : [
+	          { value: "auto", label: t("lang.auto", "auto") },
+	          { value: "en", label: t("lang.en", "en") },
+	          { value: "ko", label: t("lang.ko", "ko") },
+	        ];
+
+	        const current = langSelectEl ? String(langSelectEl.value || "auto") : "auto";
+
+	        langMenuEl.innerHTML = items
+	          .map((it) => {
+	            const active = it.value === current;
+	            const cls = "dropdownItem" + (active ? " active" : "");
+	            return `<button type="button" class="${cls}" data-value="${escapeHtml(it.value)}">${escapeHtml(it.label)}</button>`;
+	          })
+	          .join("");
+
+	        langMenuEl.querySelectorAll("button[data-value]").forEach((btn) => {
+	          btn.addEventListener("click", () => {
+	            const v = btn.getAttribute("data-value") || "auto";
+	            if (langSelectEl) langSelectEl.value = v;
+	            syncLangDropdown();
+	            closeLangMenu();
+	          });
+	        });
+
+	        langMenuOpen = true;
+	        langMenuEl.classList.add("open");
+	      }
+
       function setTab(tabId) {
         document.querySelectorAll(".tabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tabId));
         document.querySelectorAll(".section").forEach((sec) => sec.classList.toggle("active", sec.id === tabId));
@@ -1439,7 +1550,10 @@
       function renderSettings() {
         if (!settings) return;
         setToggleKeyInputFromDik(coalesce(settings.toggleKeyCode, 0) >>> 0);
-        document.getElementById("setLang").value = coalesce(settings.languageOverride, "auto");
+        if (langSelectEl) {
+          langSelectEl.value = coalesce(settings.languageOverride, "auto");
+          syncLangDropdown();
+        }
         document.getElementById("setPauseGame").checked = !!settings.uiPauseGame;
         document.getElementById("setDisableFocusMenu").checked = !!settings.uiDisableFocusMenu;
         document.getElementById("setDestroyOnClose").checked = !!settings.uiDestroyOnClose;
@@ -1718,6 +1832,40 @@
 	          captureToggleKey = true;
 	          showToast("info", t("toast.bindKey", "Press a key to bind (Esc cancels)."));
 	        });
+	      }
+
+	      if (langBtnEl && langMenuEl && langSelectEl) {
+	        syncLangDropdown();
+
+	        langBtnEl.addEventListener("click", (e) => {
+	          if (e && e.preventDefault) e.preventDefault();
+	          if (langMenuOpen) closeLangMenu();
+	          else openLangMenu();
+	        });
+
+	        // Close on outside click before the click normalizer may stop propagation.
+	        window.addEventListener(
+	          "click",
+	          (e) => {
+	            if (!langMenuOpen) return;
+	            const dd = document.getElementById("langDropdown");
+	            if (!dd) return closeLangMenu();
+	            const target = e && e.target ? e.target : null;
+	            if (target && dd.contains(target)) return;
+	            closeLangMenu();
+	          },
+	          true
+	        );
+
+	        if (rootScrollEl) {
+	          rootScrollEl.addEventListener(
+	            "scroll",
+	            () => {
+	              if (langMenuOpen) closeLangMenu();
+	            },
+	            { passive: true }
+	          );
+	        }
 	      }
 
 	      // UI scale prefs (Auto/Manual)
@@ -2144,6 +2292,12 @@
 	          return;
 	        }
 	        showToast("warn", t("toast.bindKeyUnknown", "Unsupported key."));
+	        return;
+	      }
+
+	      if (langMenuOpen && isEscape) {
+	        if (e.preventDefault) e.preventDefault();
+	        closeLangMenu();
 	        return;
 	      }
 

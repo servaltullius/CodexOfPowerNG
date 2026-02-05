@@ -1,0 +1,31 @@
+--- a/cmake/CommonLibSSE.cmake
++++ b/cmake/CommonLibSSE.cmake
+@@ -1,5 +1,4 @@
+ function(commonlibsse_parse_version VERSION)
+-    message("${version_match_count}")
+     string(REGEX MATCHALL "^([0-9]+)(\\.([0-9]+)(\\.([0-9]+)(\\.([0-9]+))?)?)?$" version_match "${VERSION}")
+     unset(COMMONLIBSSE_VERSION_MAJOR PARENT_SCOPE)
+     unset(COMMONLIBSSE_VERSION_MINOR PARENT_SCOPE)
+@@ -106,8 +105,11 @@
+     endif ()
+ 
+     file(WRITE "${commonlibsse_plugin_file}"
+-            "#include \"REL/Relocation.h\"\n"
++            "#include <array>\n"
++            "#include <string_view>\n"
++            "using namespace std::literals::string_view_literals;\n"
+             "#include \"SKSE/SKSE.h\"\n"
++            "#include \"REL/Relocation.h\"\n"
+             "\n"
+             "SKSEPluginInfo(\n"
+             "    .Version = ${commonlibsse_plugin_version},\n"
+@@ -122,7 +124,7 @@
+     target_sources("${TARGET}" PRIVATE "${commonlibsse_plugin_file}")
+     target_compile_definitions("${TARGET}" PRIVATE __CMAKE_COMMONLIBSSE_PLUGIN=1)
+     target_link_libraries("${TARGET}" PUBLIC CommonLibSSE::CommonLibSSE)
+-    target_include_directories("${TARGET}" PUBLIC CommonLibSSE_INCLUDE_DIRS)
++    target_include_directories("${TARGET}" PUBLIC ${CommonLibSSE_INCLUDE_DIRS})
+ endfunction()
+ 
+ function(add_commonlibsse_plugin TARGET)
+

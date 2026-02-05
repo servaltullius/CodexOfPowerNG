@@ -1,0 +1,2092 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Codex of Power NG</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --uiScale: 1;
+        --bg: rgba(12, 12, 16, 0.82);
+        --panel: rgba(255, 255, 255, 0.06);
+        --border: rgba(255, 255, 255, 0.12);
+        --text: rgba(255, 255, 255, 0.92);
+        --muted: rgba(255, 255, 255, 0.62);
+        --accent: #7c5cff;
+        --danger: #ff6b6b;
+
+        /* Perf-tunable styling (helps cursor smoothness on high DPI / 4K). */
+        --shadowScale: 1;
+        --rowOdd: rgba(255, 255, 255, 0.03);
+        --rowHover: rgba(124, 92, 255, 0.1);
+        --btnHoverBorder: rgba(255, 255, 255, 0.22);
+        --btnHoverBg: rgba(255, 255, 255, 0.08);
+      }
+      html.lowfx {
+        --shadowScale: 0.35;
+        --rowOdd: rgba(255, 255, 255, 0.02);
+        --rowHover: rgba(124, 92, 255, 0.06);
+        --btnHoverBorder: rgba(255, 255, 255, 0.18);
+        --btnHoverBg: rgba(255, 255, 255, 0.06);
+
+        /* Slightly more opaque panels reduce expensive blending in some renderers. */
+        --bg: rgba(12, 12, 16, 0.92);
+        --panel: rgba(255, 255, 255, 0.05);
+      }
+      * {
+        box-sizing: border-box;
+      }
+      html,
+      body {
+        height: 100%;
+        margin: 0;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+        background: transparent;
+        color: var(--text);
+        font-size: calc(14px * var(--uiScale));
+      }
+      .root {
+        padding: calc(22px * var(--uiScale));
+        width: min(98vw, 3600px);
+        margin: calc(12px * var(--uiScale)) auto;
+        background: rgba(12, 12, 16, 0.82);
+        background: var(--bg);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-color: var(--border);
+        border-radius: calc(14px * var(--uiScale));
+        box-shadow: 0 calc(14px * var(--uiScale) * var(--shadowScale))
+          calc(60px * var(--uiScale) * var(--shadowScale)) rgba(0, 0, 0, 0.45);
+        max-height: 96vh;
+        overflow: auto;
+      }
+      h1 {
+        margin: 0 0 calc(6px * var(--uiScale)) 0;
+        font-size: calc(22px * var(--uiScale));
+        letter-spacing: 0.2px;
+      }
+      p {
+        margin: 0 0 calc(16px * var(--uiScale)) 0;
+        color: var(--muted);
+        font-size: calc(13px * var(--uiScale));
+        line-height: 1.4;
+      }
+      .row {
+        display: flex;
+        gap: calc(10px * var(--uiScale));
+        flex-wrap: wrap;
+        margin: calc(10px * var(--uiScale)) 0 calc(16px * var(--uiScale)) 0;
+      }
+      button {
+        appearance: none;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-color: var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        background: var(--panel);
+        color: rgba(255, 255, 255, 0.92);
+        color: var(--text);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
+        min-height: calc(44px * var(--uiScale));
+        border-radius: calc(10px * var(--uiScale));
+        cursor: pointer;
+        font-weight: 600;
+        font-size: calc(13px * var(--uiScale));
+      }
+      button.primary {
+        border-color: rgba(124, 92, 255, 0.6);
+        background: rgba(124, 92, 255, 0.22);
+      }
+      button.danger {
+        border-color: rgba(255, 107, 107, 0.6);
+        background: rgba(255, 107, 107, 0.18);
+      }
+      button:hover {
+        border-color: var(--btnHoverBorder);
+        background: var(--btnHoverBg);
+      }
+      .btnLabel {
+        pointer-events: none;
+      }
+      .card {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-color: var(--border);
+        background: rgba(255, 255, 255, 0.06);
+        background: var(--panel);
+        border-radius: calc(12px * var(--uiScale));
+        padding: calc(12px * var(--uiScale));
+      }
+      .card h2 {
+        margin: 0 0 calc(8px * var(--uiScale)) 0;
+        font-size: calc(14px * var(--uiScale));
+      }
+      .mono {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+        font-size: calc(12px * var(--uiScale));
+      }
+      input {
+        width: 100%;
+        padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
+        border-radius: calc(10px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-color: var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: rgba(255, 255, 255, 0.92);
+        color: var(--text);
+        outline: none;
+        font-size: calc(13px * var(--uiScale));
+      }
+      select {
+        width: 100%;
+        padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
+        border-radius: calc(10px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-color: var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: rgba(255, 255, 255, 0.92);
+        color: var(--text);
+        outline: none;
+        font-size: calc(13px * var(--uiScale));
+      }
+      select option {
+        font-size: calc(13px * var(--uiScale));
+      }
+      #tabSettings #setLang,
+      #tabSettings #setLang option {
+        font-size: calc(15px * var(--uiScale));
+      }
+      .small {
+        font-size: calc(12px * var(--uiScale));
+        color: var(--muted);
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
+        border-radius: calc(10px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-color: var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        margin: calc(10px * var(--uiScale)) 0 0 0;
+      }
+      .tabs {
+        display: flex;
+        gap: calc(8px * var(--uiScale));
+        flex-wrap: wrap;
+        margin: calc(12px * var(--uiScale)) 0 calc(16px * var(--uiScale)) 0;
+      }
+      .tabs button {
+        padding: calc(8px * var(--uiScale)) calc(10px * var(--uiScale));
+        border-radius: 999px;
+        font-weight: 700;
+      }
+      .tabs button.active {
+        border-color: rgba(124, 92, 255, 0.7);
+        background: rgba(124, 92, 255, 0.28);
+      }
+      .toolbar {
+        display: flex;
+        gap: calc(10px * var(--uiScale));
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 0 calc(10px * var(--uiScale)) 0;
+      }
+      .toolbar .left {
+        display: flex;
+        gap: calc(10px * var(--uiScale));
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: calc(14px * var(--uiScale));
+      }
+      th,
+      td {
+        text-align: left;
+        padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        vertical-align: top;
+      }
+      th {
+        color: var(--muted);
+        font-size: calc(12.5px * var(--uiScale));
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+      }
+      thead th {
+        background: rgba(12, 12, 16, 0.92);
+      }
+      tbody tr.dataRow.rowOdd {
+        background: var(--rowOdd);
+      }
+      tbody tr.dataRow:hover {
+        background: var(--rowHover);
+      }
+      tr.spacerRow {
+        pointer-events: none;
+      }
+      tr.spacerRow td {
+        padding: 0 !important;
+        border: 0 !important;
+        background: transparent !important;
+      }
+      #tabQuick tbody tr.dataRow {
+        cursor: pointer;
+      }
+      #tabQuick tbody tr.dataRow.selected {
+        background: rgba(124, 92, 255, 0.18);
+      }
+
+      /* Fixed row heights for virtualization (scaled). */
+      #tabQuick tbody tr.dataRow {
+        height: calc(78px * var(--uiScale));
+      }
+      #tabRegistered tbody tr.dataRow {
+        height: calc(54px * var(--uiScale));
+      }
+      #tabQuick td:nth-child(2) {
+        overflow: hidden;
+      }
+      #tabQuick .itemName {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #tabQuick .small.mono {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      #tabRegistered td:nth-child(2) {
+        overflow: hidden;
+      }
+      #tabRegistered .itemName {
+        display: block;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .colCount {
+        width: calc(200px * var(--uiScale));
+        text-align: right;
+      }
+      .colAction {
+        width: calc(220px * var(--uiScale));
+        text-align: right;
+      }
+      .colAction button {
+        width: 100%;
+      }
+      .colFormId {
+        width: calc(260px * var(--uiScale));
+      }
+      .colGroup {
+        width: calc(220px * var(--uiScale));
+      }
+      .itemName {
+        font-size: calc(16px * var(--uiScale));
+        font-weight: 800;
+        letter-spacing: 0.1px;
+      }
+      .pill {
+        display: inline-block;
+        padding: calc(2px * var(--uiScale)) calc(8px * var(--uiScale));
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-color: var(--border);
+        background: rgba(0, 0, 0, 0.25);
+        color: rgba(255, 255, 255, 0.62);
+        color: var(--muted);
+        font-size: calc(12px * var(--uiScale));
+      }
+      table .pill {
+        max-width: 100%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .good {
+        color: rgba(124, 92, 255, 0.95);
+        font-weight: 800;
+      }
+      .toast {
+        position: fixed;
+        right: calc(22px * var(--uiScale));
+        bottom: calc(22px * var(--uiScale));
+        max-width: calc(420px * var(--uiScale));
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        color: var(--text);
+        padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
+        border-radius: calc(12px * var(--uiScale));
+        box-shadow: 0 calc(14px * var(--uiScale) * var(--shadowScale))
+          calc(45px * var(--uiScale) * var(--shadowScale)) rgba(0, 0, 0, 0.4);
+        display: none;
+      }
+      .toast.show {
+        display: block;
+      }
+      .toast .meta {
+        color: var(--muted);
+        font-size: calc(12px * var(--uiScale));
+        margin-bottom: calc(6px * var(--uiScale));
+      }
+      .section {
+        display: none;
+      }
+      .section.active {
+        display: block;
+      }
+      .grid2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: calc(12px * var(--uiScale));
+      }
+      label.inline {
+        display: flex;
+        align-items: center;
+        gap: calc(10px * var(--uiScale));
+        font-size: calc(13px * var(--uiScale));
+      }
+      label.inline input[type="checkbox"] {
+        width: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="root">
+      <h1 data-i18n="app.title">Codex of Power NG</h1>
+      <p data-i18n="app.desc">
+        Quick Register consumes 1 item and permanently records it. Use Settings to configure safety and rewards.
+      </p>
+
+      <div class="toolbar">
+        <div class="left">
+          <span class="pill" id="status">UI: ...</span>
+          <span class="pill" id="counts">Registered: 0</span>
+          <span class="pill" id="lang">Lang: ...</span>
+          <span class="pill mono" id="hotkey">Hotkey: ...</span>
+          <span class="pill mono" id="inputScale">Input: 1.00</span>
+        </div>
+        <div class="left">
+          <button id="btnRefreshState"><span class="btnLabel" data-i18n="btn.refresh">Refresh</span></button>
+          <button class="primary" id="btnClose"><span class="btnLabel" data-i18n="btn.close">Close</span></button>
+        </div>
+      </div>
+
+      <div class="tabs">
+        <button class="active" data-tab="tabQuick"><span class="btnLabel" data-i18n="tab.quick">Quick Register</span></button>
+        <button data-tab="tabRegistered"><span class="btnLabel" data-i18n="tab.registered">Registered</span></button>
+        <button data-tab="tabRewards"><span class="btnLabel" data-i18n="tab.rewards">Rewards</span></button>
+        <button data-tab="tabSettings"><span class="btnLabel" data-i18n="tab.settings">Settings</span></button>
+      </div>
+
+      <div class="card section active" id="tabQuick">
+        <div class="toolbar">
+          <div class="left" style="flex: 1">
+            <input id="quickFilter" placeholder="Search..." data-i18n-placeholder="placeholder.search" />
+          </div>
+          <div class="left">
+            <span class="pill" id="invMeta">Inventory: -</span>
+            <select id="invPageSize" style="width: calc(132px * var(--uiScale))">
+              <option value="100" data-i18n="inv.pagesize.100">100 / page</option>
+              <option value="200" selected data-i18n="inv.pagesize.200">200 / page</option>
+              <option value="300" data-i18n="inv.pagesize.300">300 / page</option>
+              <option value="400" data-i18n="inv.pagesize.400">400 / page</option>
+            </select>
+            <button id="btnInvPrev"><span class="btnLabel" data-i18n="btn.prev">Prev</span></button>
+            <button id="btnInvNext"><span class="btnLabel" data-i18n="btn.next">Next</span></button>
+            <button id="btnRefreshInv"><span class="btnLabel" data-i18n="btn.refresh">Refresh</span></button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th class="colGroup" data-i18n="th.group">Group</th>
+              <th data-i18n="th.item">Item</th>
+              <th class="colCount" data-i18n="th.count">Count</th>
+              <th class="colAction"></th>
+            </tr>
+          </thead>
+          <tbody id="quickBody"></tbody>
+        </table>
+        <div class="small" style="margin-top: 10px" data-i18n="quick.help">
+          Only shows items safe to consume (not worn; optionally not favorited). List is paginated to avoid stutter.
+        </div>
+      </div>
+
+      <div class="card section" id="tabRegistered">
+        <div class="toolbar">
+          <div class="left" style="flex: 1">
+            <input id="regFilter" placeholder="Search..." data-i18n-placeholder="placeholder.search" />
+          </div>
+          <div class="left">
+            <button id="btnRefreshReg"><span class="btnLabel" data-i18n="btn.refreshList">Refresh List</span></button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th class="colGroup" data-i18n="th.group">Group</th>
+              <th data-i18n="th.item">Item</th>
+              <th class="colFormId mono">FormID</th>
+            </tr>
+          </thead>
+          <tbody id="regBody"></tbody>
+        </table>
+      </div>
+
+      <div class="card section" id="tabRewards">
+        <div class="toolbar">
+          <div class="left">
+            <span class="pill" id="rewardMeta">...</span>
+          </div>
+          <div class="left">
+            <button id="btnRefreshRewards"><span class="btnLabel" data-i18n="btn.refresh">Refresh</span></button>
+            <button class="danger" id="btnRefundRewards"><span class="btnLabel" data-i18n="btn.refund">Refund</span></button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th data-i18n="th.reward">Reward</th>
+              <th class="colCount" data-i18n="th.total">Total</th>
+            </tr>
+          </thead>
+          <tbody id="rewardsBody"></tbody>
+        </table>
+        <div class="small" style="margin-top: 10px" data-i18n="rewards.help">
+          Refund removes only recorded bonus stats. It does not restore consumed items and does not clear registrations.
+        </div>
+      </div>
+
+      <div class="card section" id="tabSettings">
+        <div class="grid2">
+          <div>
+            <div class="small" data-i18n-html="settings.toggleKeyHelp">
+              Toggle key code (DIK). Example: <span class="mono">0x3E</span> (F4)
+            </div>
+            <div style="height: 8px"></div>
+            <input id="setToggleKey" class="mono" placeholder="0x3E" />
+          </div>
+          <div>
+            <div class="small" data-i18n="settings.languageOverride">Language override</div>
+            <div style="height: 8px"></div>
+            <select id="setLang">
+              <option value="auto" data-i18n="lang.auto">auto</option>
+              <option value="en" data-i18n="lang.en">en</option>
+              <option value="ko" data-i18n="lang.ko">ko</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="height: 12px"></div>
+        <div class="card">
+          <h2 data-i18n="settings.uiTitle">UI</h2>
+          <label class="inline"><input type="checkbox" id="setPauseGame" /> <span data-i18n="settings.pauseGame">Pause game while menu is open</span></label>
+          <div style="height: 10px"></div>
+          <label class="inline"><input type="checkbox" id="setDisableFocusMenu" /> <span data-i18n="settings.disableFocusMenu">Disable FocusMenu overlay (advanced)</span></label>
+          <div class="small" style="margin-top: 8px">
+            <span data-i18n="settings.disableFocusMenuHelp">
+              If the menu shows but you cannot interact (no cursor), keep this OFF. Turning it ON may prevent cursor/input capture.
+            </span>
+          </div>
+          <div style="height: 10px"></div>
+          <label class="inline"><input type="checkbox" id="setDestroyOnClose" /> <span data-i18n="settings.destroyOnClose">Destroy view on close (performance)</span></label>
+          <div class="small" style="margin-top: 8px" data-i18n="settings.destroyOnCloseHelp">
+            If FPS drops persist after closing the UI, keep this ON. Turning it OFF keeps UI state but may cost performance.
+          </div>
+          <div style="height: 14px"></div>
+          <h2 data-i18n="settings.uiSizeTitle">UI Size</h2>
+          <div class="grid2">
+            <div>
+              <div class="small" data-i18n="settings.uiSizeMode">Mode</div>
+              <div style="height: 8px"></div>
+              <select id="setUiScaleMode">
+                <option value="auto" data-i18n="settings.uiSizeAuto">Auto (Recommended)</option>
+                <option value="manual" data-i18n="settings.uiSizeManual">Manual</option>
+              </select>
+            </div>
+            <div>
+              <div class="small" data-i18n="settings.uiSizeManualScale">Manual scale</div>
+              <div style="height: 8px"></div>
+              <input id="setUiScaleNumber" type="number" min="1" max="3" step="0.05" />
+            </div>
+          </div>
+          <div style="height: 10px"></div>
+          <input id="setUiScaleRange" type="range" min="1" max="3" step="0.05" />
+          <div class="small" style="margin-top: 8px" data-i18n-html="settings.uiSizeTip">
+            Tip: 4K users often prefer <span class="mono">2.0~2.6</span>. This setting affects only this UI.
+          </div>
+
+          <div style="height: 14px"></div>
+          <h2 data-i18n="settings.perfTitle">Performance</h2>
+          <div class="grid2">
+            <div>
+              <div class="small" data-i18n="settings.perfMode">Performance mode</div>
+              <div style="height: 8px"></div>
+              <select id="setPerfMode">
+                <option value="auto" data-i18n="settings.perfAuto">Auto (Recommended)</option>
+                <option value="off" data-i18n="settings.perfOff">Off</option>
+                <option value="on" data-i18n="settings.perfOn">On (Smooth cursor)</option>
+              </select>
+            </div>
+            <div class="small" style="align-self: end" data-i18n="settings.perfHelp">
+              Reduces shadows and hover effects to improve cursor smoothness.
+            </div>
+          </div>
+
+          <div style="height: 14px"></div>
+          <h2 data-i18n="settings.inputTitle">Input</h2>
+          <div class="small" data-i18n="settings.inputScaleHelp">
+            If clicks don't match the cursor (high DPI / Windows scaling), set Input scale to your scaling factor (e.g. 1.75 or 2.00). Press 0 to reset.
+          </div>
+          <div style="height: 10px"></div>
+          <div class="grid2">
+            <div>
+              <div class="small" data-i18n="settings.inputScale">Input scale</div>
+              <div style="height: 8px"></div>
+              <input id="setInputScaleNumber" type="number" min="0.5" max="3" step="0.05" />
+            </div>
+            <div>
+              <div class="small" data-i18n="settings.inputScalePreset">Preset</div>
+              <div style="height: 8px"></div>
+              <select id="setInputScalePreset">
+                <option value="1">1.00 (100%)</option>
+                <option value="1.25">1.25 (125%)</option>
+                <option value="1.5">1.50 (150%)</option>
+                <option value="1.75">1.75 (175%)</option>
+                <option value="2">2.00 (200%)</option>
+              </select>
+            </div>
+          </div>
+          <div style="height: 10px"></div>
+          <input id="setInputScaleRange" type="range" min="0.5" max="3" step="0.05" />
+          <div class="small" style="margin-top: 8px" data-i18n-html="settings.inputScaleTip">
+            Tip: Use <span class="mono">[</span>/<span class="mono">]</span> to adjust when mouse clicking is difficult. Press <span class="mono">0</span> to reset.
+          </div>
+        </div>
+        <div style="height: 12px"></div>
+        <div class="grid2">
+          <div class="card">
+            <h2 data-i18n="settings.safetyTitle">Safety</h2>
+            <label class="inline"><input type="checkbox" id="setProtectFav" /> <span data-i18n="settings.protectFavorites">Protect favorited/hotkey items</span></label>
+            <div style="height: 10px"></div>
+            <label class="inline"><input type="checkbox" id="setNormalize" /> <span data-i18n="settings.normalizeRegistration">Normalize registration (template/variant map)</span></label>
+            <div style="height: 10px"></div>
+            <label class="inline"><input type="checkbox" id="setLootNotify" /> <span data-i18n="settings.lootNotify">Loot notification</span></label>
+          </div>
+          <div class="card">
+            <h2 data-i18n="settings.rewardsTitle">Rewards</h2>
+            <label class="inline"><input type="checkbox" id="setRewardsEnabled" /> <span data-i18n="settings.enableRewards">Enable rewards</span></label>
+            <div style="height: 10px"></div>
+            <div class="small" data-i18n="settings.rewardEvery">Every</div>
+            <input id="setRewardEvery" type="number" min="1" step="1" />
+            <div style="height: 10px"></div>
+            <div class="small" data-i18n="settings.rewardMultiplier">Multiplier</div>
+            <input id="setRewardMult" type="number" min="0" step="0.1" />
+            <div style="height: 10px"></div>
+            <label class="inline"><input type="checkbox" id="setSkillRewards" /> <span data-i18n="settings.allowSkillRewards">Allow skill rewards</span></label>
+          </div>
+        </div>
+
+        <div style="height: 12px"></div>
+        <div class="row">
+          <button id="btnReloadSettings"><span class="btnLabel" data-i18n="btn.reload">Reload</span></button>
+          <button class="primary" id="btnSaveSettings"><span class="btnLabel" data-i18n="btn.save">Save</span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toast" id="toast">
+      <div class="meta" id="toastMeta">info</div>
+      <div id="toastMsg"></div>
+    </div>
+
+    <script>
+	      const rootScrollEl = document.querySelector(".root");
+	      const statusEl = document.getElementById("status");
+	      const countsEl = document.getElementById("counts");
+	      const langEl = document.getElementById("lang");
+	      const hotkeyEl = document.getElementById("hotkey");
+	      const inputScalePillEl = document.getElementById("inputScale");
+
+	      const uiScaleModeEl = document.getElementById("setUiScaleMode");
+	      const uiScaleRangeEl = document.getElementById("setUiScaleRange");
+	      const uiScaleNumberEl = document.getElementById("setUiScaleNumber");
+	      const perfModeEl = document.getElementById("setPerfMode");
+
+	      const inputScaleRangeEl = document.getElementById("setInputScaleRange");
+	      const inputScaleNumberEl = document.getElementById("setInputScaleNumber");
+	      const inputScalePresetEl = document.getElementById("setInputScalePreset");
+
+		      const quickBody = document.getElementById("quickBody");
+	      const invMetaEl = document.getElementById("invMeta");
+	      const invPageSizeEl = document.getElementById("invPageSize");
+		      const btnInvPrev = document.getElementById("btnInvPrev");
+		      const btnInvNext = document.getElementById("btnInvNext");
+	      const regBody = document.getElementById("regBody");
+	      const rewardsBody = document.getElementById("rewardsBody");
+	      const rewardMeta = document.getElementById("rewardMeta");
+
+	      const toastEl = document.getElementById("toast");
+      const toastMetaEl = document.getElementById("toastMeta");
+      const toastMsgEl = document.getElementById("toastMsg");
+	      let toastTimer = null;
+
+	      const I18N = {
+	        en: {
+	          "app.title": "Codex of Power NG",
+	          "app.desc": "Quick Register consumes 1 item and permanently records it. Use Settings to configure safety and rewards.",
+	          "btn.refresh": "Refresh",
+	          "btn.refreshList": "Refresh List",
+	          "btn.close": "Close",
+	          "btn.prev": "Prev",
+	          "btn.next": "Next",
+	          "btn.register": "Register",
+	          "btn.refund": "Refund",
+	          "btn.reload": "Reload",
+	          "btn.save": "Save",
+	          "tab.quick": "Quick Register",
+	          "tab.registered": "Registered",
+	          "tab.rewards": "Rewards",
+	          "tab.settings": "Settings",
+	          "placeholder.search": "Search...",
+	          "th.group": "Group",
+	          "th.item": "Item",
+	          "th.count": "Count",
+	          "th.reward": "Reward",
+	          "th.total": "Total",
+	          "rewards.rolls": "Rolls",
+	          "rewards.every": "Every",
+	          "rewards.mult": "Mult",
+	          "rewards.none": "(No rewards yet)",
+	          "quick.help":
+	            "Only shows items safe to consume (not worn; optionally not favorited). List is paginated to avoid stutter. Click a row to select, then press Enter to register.",
+	          "rewards.help": "Refund removes only recorded bonus stats. It does not restore consumed items and does not clear registrations.",
+	          "settings.toggleKeyHelp": "Toggle key code (DIK). Example: <span class=\"mono\">0x3E</span> (F4)",
+	          "settings.languageOverride": "Language override",
+	          "lang.auto": "auto (game)",
+	          "lang.en": "en (English)",
+	          "lang.ko": "ko (Korean)",
+	          "settings.uiTitle": "UI",
+	          "settings.pauseGame": "Pause game while menu is open",
+	          "settings.disableFocusMenu": "Disable FocusMenu overlay (advanced)",
+	          "settings.disableFocusMenuHelp":
+	            "If the menu shows but you cannot interact (no cursor), keep this OFF. Turning it ON may prevent cursor/input capture.",
+	          "settings.destroyOnClose": "Destroy view on close (performance)",
+	          "settings.destroyOnCloseHelp":
+	            "If FPS drops persist after closing the UI, keep this ON. Turning it OFF keeps UI state but may cost performance.",
+	          "settings.uiSizeTitle": "UI Size",
+	          "settings.uiSizeMode": "Mode",
+	          "settings.uiSizeAuto": "Auto (Recommended)",
+	          "settings.uiSizeManual": "Manual",
+	          "settings.uiSizeManualScale": "Manual scale",
+	          "settings.uiSizeTip": "Tip: 4K users often prefer <span class=\"mono\">2.0~2.6</span>. This setting affects only this UI.",
+	          "settings.perfTitle": "Performance",
+	          "settings.perfMode": "Performance mode",
+	          "settings.perfAuto": "Auto (Recommended)",
+	          "settings.perfOff": "Off",
+	          "settings.perfOn": "On (Smooth cursor)",
+	          "settings.perfHelp": "Reduces shadows and hover effects to improve cursor smoothness.",
+	          "settings.inputTitle": "Input",
+	          "settings.inputScaleHelp":
+	            "If clicks don't match the cursor (high DPI / Windows scaling), set Input scale to your scaling factor (e.g. 1.75 or 2.00). Press 0 to reset.",
+	          "settings.inputScale": "Input scale",
+	          "settings.inputScalePreset": "Preset",
+	          "settings.inputScaleTip":
+	            "Tip: Use <span class=\"mono\">[</span>/<span class=\"mono\">]</span> to adjust when mouse clicking is difficult. Press <span class=\"mono\">0</span> to reset.",
+	          "settings.safetyTitle": "Safety",
+	          "settings.protectFavorites": "Protect favorited/hotkey items",
+	          "settings.normalizeRegistration": "Normalize registration (template/variant map)",
+	          "settings.lootNotify": "Loot notification",
+	          "settings.rewardsTitle": "Rewards",
+	          "settings.enableRewards": "Enable rewards",
+	          "settings.rewardEvery": "Every",
+	          "settings.rewardMultiplier": "Multiplier",
+	          "settings.allowSkillRewards": "Allow skill rewards",
+	          "inv.pagesize.100": "100 / page",
+	          "inv.pagesize.200": "200 / page",
+	          "inv.pagesize.300": "300 / page",
+	          "inv.pagesize.400": "400 / page",
+	          "toast.info": "info",
+	          "toast.error": "error",
+	          "toast.warn": "warning",
+	          "confirm.refund": "Refund rewards? This cannot be undone.",
+	          "status.ui": "UI",
+	          "status.loading": "loading",
+	          "status.ready": "ready",
+	          "status.hidden": "hidden",
+	          "status.shown": "shown",
+	          "status.focus": "focus",
+	          "status.noFocus": "no-focus",
+	          "status.registered": "Registered",
+	          "status.lang": "Lang",
+	          "status.hotkey": "Hotkey",
+	          "inv.inventory": "Inventory",
+	          "inv.page": "page",
+	          "inv.showing": "showing",
+	          "inv.total": "total",
+	          "inv.none": "(No items)",
+	          "reg.none": "(No registered items)",
+	          "inv.unknown": "unknown",
+	        },
+	        ko: {
+	          "app.title": "코덱스 오브 파워 NG",
+	          "app.desc": "빠른 등록은 아이템 1개를 소비하고 영구적으로 기록합니다. 설정에서 안전장치/보상을 조정하세요.",
+	          "btn.refresh": "새로고침",
+	          "btn.refreshList": "목록 새로고침",
+	          "btn.close": "닫기",
+	          "btn.prev": "이전",
+	          "btn.next": "다음",
+	          "btn.register": "등록",
+	          "btn.refund": "환불",
+	          "btn.reload": "다시 불러오기",
+	          "btn.save": "저장",
+	          "tab.quick": "빠른 등록",
+	          "tab.registered": "등록됨",
+	          "tab.rewards": "보상",
+	          "tab.settings": "설정",
+	          "placeholder.search": "검색...",
+	          "th.group": "분류",
+	          "th.item": "아이템",
+	          "th.count": "개수",
+	          "th.reward": "보상",
+	          "th.total": "합계",
+	          "rewards.rolls": "횟수",
+	          "rewards.every": "N개마다",
+	          "rewards.mult": "배수",
+	          "rewards.none": "(아직 받은 보상이 없습니다)",
+	          "quick.help":
+	            "소비해도 안전한 아이템만 표시합니다(착용 중 제외, 즐겨찾기 보호는 설정). 렉 방지를 위해 페이지네이션됩니다. 행을 클릭해 선택한 뒤 Enter로 등록할 수 있습니다.",
+	          "rewards.help": "환불은 기록된 보너스 스탯만 제거합니다. 소비한 아이템은 복구되지 않으며, 등록 기록도 지워지지 않습니다.",
+	          "settings.toggleKeyHelp": "토글 키 코드(DIK). 예: <span class=\"mono\">0x3E</span> (F4)",
+	          "settings.languageOverride": "언어 강제",
+	          "lang.auto": "자동(게임)",
+	          "lang.en": "영어(en)",
+	          "lang.ko": "한국어(ko)",
+	          "settings.uiTitle": "UI",
+	          "settings.pauseGame": "메뉴가 열려있는 동안 게임 일시정지",
+	          "settings.disableFocusMenu": "FocusMenu 오버레이 비활성화(고급)",
+	          "settings.disableFocusMenuHelp":
+	            "메뉴는 보이는데 조작이 안 된다면(커서 없음) 이 옵션을 끄세요. 켜면 커서/입력 캡처가 안 될 수 있습니다.",
+	          "settings.destroyOnClose": "닫을 때 뷰 제거(성능)",
+	          "settings.destroyOnCloseHelp":
+	            "UI를 닫아도 프레임드랍이 남으면 이 옵션을 켜세요. 끄면 UI 상태를 유지하지만 성능에 영향이 있을 수 있습니다.",
+	          "settings.uiSizeTitle": "UI 크기",
+	          "settings.uiSizeMode": "모드",
+	          "settings.uiSizeAuto": "자동(권장)",
+	          "settings.uiSizeManual": "수동",
+	          "settings.uiSizeManualScale": "수동 배율",
+	          "settings.uiSizeTip": "팁: 4K 사용자는 보통 <span class=\"mono\">2.0~2.6</span>를 선호합니다. 이 설정은 이 UI에만 적용됩니다.",
+	          "settings.perfTitle": "성능",
+	          "settings.perfMode": "성능 모드",
+	          "settings.perfAuto": "자동(권장)",
+	          "settings.perfOff": "끄기",
+	          "settings.perfOn": "켜기(부드러운 커서)",
+	          "settings.perfHelp": "그림자/호버 효과를 줄여 커서 움직임을 부드럽게 합니다.",
+	          "settings.inputTitle": "입력",
+	          "settings.inputScaleHelp":
+	            "커서와 클릭 위치가 어긋나면(고DPI/윈도우 배율) 입력 배율을 윈도우 배율(예: 1.75 또는 2.00)로 설정하세요. 0을 누르면 초기화됩니다.",
+	          "settings.inputScale": "입력 배율",
+	          "settings.inputScalePreset": "프리셋",
+	          "settings.inputScaleTip":
+	            "팁: 마우스 클릭이 어렵다면 <span class=\"mono\">[</span>/<span class=\"mono\">]</span>로 배율을 조정할 수 있습니다. <span class=\"mono\">0</span>을 누르면 초기화됩니다.",
+	          "settings.safetyTitle": "안전",
+	          "settings.protectFavorites": "즐겨찾기/단축키 아이템 보호",
+	          "settings.normalizeRegistration": "등록 정규화(템플릿/변형 맵)",
+	          "settings.lootNotify": "루팅 알림",
+	          "settings.rewardsTitle": "보상",
+	          "settings.enableRewards": "보상 활성화",
+	          "settings.rewardEvery": "N개마다",
+	          "settings.rewardMultiplier": "배수",
+	          "settings.allowSkillRewards": "스킬 보상 허용",
+	          "inv.pagesize.100": "100 / 페이지",
+	          "inv.pagesize.200": "200 / 페이지",
+	          "inv.pagesize.300": "300 / 페이지",
+	          "inv.pagesize.400": "400 / 페이지",
+	          "toast.info": "알림",
+	          "toast.error": "오류",
+	          "toast.warn": "경고",
+	          "confirm.refund": "보상을 환불할까요? 되돌릴 수 없습니다.",
+	          "status.ui": "UI",
+	          "status.loading": "로딩",
+	          "status.ready": "준비됨",
+	          "status.hidden": "숨김",
+	          "status.shown": "표시",
+	          "status.focus": "포커스",
+	          "status.noFocus": "포커스 없음",
+	          "status.registered": "등록됨",
+	          "status.lang": "언어",
+	          "status.hotkey": "단축키",
+	          "inv.inventory": "인벤토리",
+	          "inv.page": "페이지",
+	          "inv.showing": "표시",
+	          "inv.total": "전체",
+	          "inv.none": "(아이템이 없습니다)",
+	          "reg.none": "(등록된 아이템이 없습니다)",
+	          "inv.unknown": "알 수 없음",
+	        },
+	      };
+
+	      let uiLang = "en";
+	      function t(key, fallback) {
+	        const table = (uiLang && I18N[uiLang]) || I18N.en;
+	        if (table && Object.prototype.hasOwnProperty.call(table, key)) return table[key];
+	        return fallback !== undefined ? fallback : key;
+	      }
+
+	      function applyI18n() {
+	        document.querySelectorAll("[data-i18n-html]").forEach((el) => {
+	          const key = el.getAttribute("data-i18n-html");
+	          if (!key) return;
+	          el.innerHTML = t(key, el.innerHTML);
+	        });
+	        document.querySelectorAll("[data-i18n]").forEach((el) => {
+	          const key = el.getAttribute("data-i18n");
+	          if (!key) return;
+	          el.textContent = t(key, el.textContent);
+	        });
+	        document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+	          const key = el.getAttribute("data-i18n-placeholder");
+	          if (!key) return;
+	          el.setAttribute("placeholder", t(key, el.getAttribute("placeholder") || ""));
+	        });
+	      }
+
+		      const QUICK_ROW_BASE_PX = 78;
+		      const REG_ROW_BASE_PX = 54;
+		      const VIRTUAL_OVERSCAN = 7;
+
+		      let state = {};
+		      let inventoryPage = { page: 0, pageSize: 200, total: 0, hasMore: false, items: [] };
+		      let quickSelectedId = 0;
+		      let quickVisibleIds = [];
+		      const quickVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
+		      let registered = [];
+		      const regVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
+		      let rewards = { totals: [] };
+		      let settings = null;
+
+	      const UI_SCALE_MODE_KEY = "copng.ui.scaleMode";
+	      const UI_SCALE_MANUAL_KEY = "copng.ui.manualScale";
+	      let uiScaleMode = "auto"; // "auto" | "manual"
+	      let uiScaleManual = 1.0;
+
+	      // Performance mode (cursor smoothness)
+	      const PERF_MODE_KEY = "copng.ui.perfMode";
+	      let perfMode = "auto"; // "auto" | "off" | "on"
+
+	      // Input coordinate correction (high DPI / Windows scaling)
+	      const INPUT_SCALE_KEY = "copng.ui.inputScale";
+	      let inputScale = 1.0;
+	      let inputScaleHasLocal = false;
+
+	      function loadInputScalePref() {
+	        try {
+	          const storedRaw = String(localStorage.getItem(INPUT_SCALE_KEY) || "");
+	          const stored = parseFloat(storedRaw);
+	          if (isFinite(stored) && stored > 0) {
+	            inputScale = clamp(stored, 0.5, 3.0);
+	            inputScaleHasLocal = true;
+	          }
+	        } catch {}
+	      }
+
+	      function saveInputScalePref() {
+	        try {
+	          localStorage.setItem(INPUT_SCALE_KEY, String(inputScale));
+	        } catch {}
+	      }
+
+	      function syncInputScaleControls() {
+	        if (inputScaleRangeEl) inputScaleRangeEl.value = String(clamp(inputScale, 0.5, 3.0));
+	        if (inputScaleNumberEl) inputScaleNumberEl.value = String(Math.round(clamp(inputScale, 0.5, 3.0) * 100) / 100);
+	        if (inputScalePresetEl) {
+	          const presets = [1.0, 1.25, 1.5, 1.75, 2.0];
+	          let nearest = presets[0];
+	          let best = Math.abs(inputScale - nearest);
+	          for (const p of presets) {
+	            const d = Math.abs(inputScale - p);
+	            if (d < best) {
+	              best = d;
+	              nearest = p;
+	            }
+	          }
+	          inputScalePresetEl.value = String(nearest);
+	        }
+	        if (inputScalePillEl) inputScalePillEl.textContent = `Input: ${inputScale.toFixed(2)}`;
+	      }
+
+	      function setInputScale(next, { persist = true, toast = false } = {}) {
+	        const v = parseFloat(String(next));
+	        if (!isFinite(v) || v <= 0) return;
+	        inputScale = clamp(v, 0.5, 3.0);
+	        inputScaleHasLocal = true;
+	        if (persist) saveInputScalePref();
+	        syncInputScaleControls();
+	        if (uiScaleMode === "auto") scheduleAutoUiScale();
+	        applyPerfModeFromPrefs();
+	        if (toast) showToast("info", `Input scale: ${inputScale.toFixed(2)}`);
+	      }
+
+	      function loadPerfModePref() {
+	        try {
+	          const stored = String(localStorage.getItem(PERF_MODE_KEY) || "auto");
+	          perfMode = stored === "on" || stored === "off" ? stored : "auto";
+	        } catch {
+	          perfMode = "auto";
+	        }
+	      }
+
+	      function savePerfModePref() {
+	        try {
+	          localStorage.setItem(PERF_MODE_KEY, perfMode);
+	        } catch {}
+	      }
+
+	      function getEffectiveDpr() {
+	        const w = Number(window.innerWidth || 0);
+	        const h = Number(window.innerHeight || 0);
+	        const dpr = Number(window.devicePixelRatio || 1);
+	        const sw = Number((window.screen && window.screen.width) || 0);
+	        const sh = Number((window.screen && window.screen.height) || 0);
+
+	        const dprRaw = isFinite(dpr) && dpr > 0 ? dpr : 1;
+	        const dprHint = isFinite(inputScale) && inputScale > 0 ? inputScale : 1;
+
+	        const screenScaleW = sw > 0 && w > 0 ? sw / w : 1;
+	        const screenScaleH = sh > 0 && h > 0 ? sh / h : 1;
+	        const screenScale = Math.max(screenScaleW, screenScaleH);
+
+	        let effectiveDpr = dprRaw;
+	        if (effectiveDpr < 1.01) {
+	          if (isFinite(screenScale) && screenScale > 1.01) effectiveDpr = Math.max(effectiveDpr, screenScale);
+	          if (dprHint > 1.01) effectiveDpr = Math.max(effectiveDpr, dprHint);
+	        }
+	        return clamp(effectiveDpr, 1.0, 3.0);
+	      }
+
+	      function shouldEnableLowFx() {
+	        if (perfMode === "on") return true;
+	        if (perfMode === "off") return false;
+
+	        const scale = getCurrentUiScale();
+	        const effectiveDpr = getEffectiveDpr();
+	        return scale >= 2.0 || effectiveDpr >= 1.6;
+	      }
+
+	      function applyPerfModeFromPrefs() {
+	        document.documentElement.classList.toggle("lowfx", shouldEnableLowFx());
+	      }
+
+	      loadInputScalePref();
+	      loadPerfModePref();
+
+      function safeCall(name, payloadObj) {
+        const fn = window[name];
+        if (typeof fn !== "function") {
+          console.warn("[copng] missing native function: " + name);
+          return;
+        }
+        fn(JSON.stringify(payloadObj || {}));
+      }
+
+      function toHex32(v) {
+        const n = Number(v >>> 0);
+        let hex = n.toString(16).toUpperCase();
+        while (hex.length < 8) hex = "0" + hex;
+        return "0x" + hex;
+      }
+
+      function coalesce(v, fallback) {
+        return v === undefined || v === null ? fallback : v;
+      }
+
+      function clamp(v, lo, hi) {
+        return Math.max(lo, Math.min(hi, v));
+      }
+
+	      function getOffsetTopInRoot(rootEl, el) {
+	        if (!rootEl || !el || !rootEl.getBoundingClientRect || !el.getBoundingClientRect) return 0;
+	        const rr = rootEl.getBoundingClientRect();
+	        const re = el.getBoundingClientRect();
+	        return Number(re.top || 0) - Number(rr.top || 0) + Number(rootEl.scrollTop || 0);
+	      }
+
+	      let virtualRaf = 0;
+	      let virtualForceNext = false;
+	      function scheduleVirtualRender({ force = false } = {}) {
+	        if (force) virtualForceNext = true;
+	        if (virtualRaf) return;
+	        virtualRaf = requestAnimationFrame(() => {
+	          virtualRaf = 0;
+	          const f = virtualForceNext;
+	          virtualForceNext = false;
+	          renderQuickVirtual({ force: f });
+	          renderRegisteredVirtual({ force: f });
+	        });
+	      }
+
+      // Auto UI scaling (resolution aware)
+      let uiScaleTimer = null;
+      function getCurrentUiScale() {
+        const raw = String(getComputedStyle(document.documentElement).getPropertyValue("--uiScale") || "").trim();
+        const v = parseFloat(raw);
+        return isFinite(v) && v > 0 ? v : 1;
+      }
+
+      function computeAutoUiScale() {
+        const w = Number(window.innerWidth || 0);
+        const h = Number(window.innerHeight || 0);
+        const sw = Number((window.screen && window.screen.width) || 0);
+        const sh = Number((window.screen && window.screen.height) || 0);
+        const effectiveDpr = getEffectiveDpr();
+        const viewportPx = Math.min(w, h) * effectiveDpr;
+        const screenPx = Math.min(sw, sh);
+        const minDim = Math.max(viewportPx, screenPx);
+        if (!isFinite(minDim) || minDim <= 0) return 1;
+
+        // Base on 1080p vertical; 4K typically lands around ~2.0x.
+        const ratio = minDim / 1080;
+        const scale = Math.max(0.0, ratio);
+        return clamp(scale, 1.0, 3.0);
+      }
+
+      function loadUiScalePrefs() {
+        try {
+          const mode = String(localStorage.getItem(UI_SCALE_MODE_KEY) || "auto");
+          uiScaleMode = mode === "manual" ? "manual" : "auto";
+
+          const stored = parseFloat(String(localStorage.getItem(UI_SCALE_MANUAL_KEY) || ""));
+          uiScaleManual = isFinite(stored) && stored > 0 ? clamp(stored, 1.0, 3.0) : 1.9;
+        } catch {
+          uiScaleMode = "auto";
+          uiScaleManual = 1.9;
+        }
+      }
+
+      function saveUiScalePrefs() {
+        try {
+          localStorage.setItem(UI_SCALE_MODE_KEY, uiScaleMode);
+          localStorage.setItem(UI_SCALE_MANUAL_KEY, String(uiScaleManual));
+        } catch {}
+      }
+
+      function syncUiScaleControls() {
+        if (!uiScaleModeEl || !uiScaleRangeEl || !uiScaleNumberEl) return;
+
+        uiScaleModeEl.value = uiScaleMode;
+
+        const manualEnabled = uiScaleMode === "manual";
+        uiScaleRangeEl.disabled = !manualEnabled;
+        uiScaleNumberEl.disabled = !manualEnabled;
+
+        const shown = manualEnabled ? uiScaleManual : getCurrentUiScale();
+        uiScaleRangeEl.value = String(clamp(shown, 1.0, 3.0));
+        uiScaleNumberEl.value = String(Math.round(clamp(shown, 1.0, 3.0) * 100) / 100);
+      }
+
+      function applyManualUiScale() {
+        document.documentElement.style.setProperty("--uiScale", String(clamp(uiScaleManual, 1.0, 3.0)));
+	        scheduleVirtualRender({ force: true });
+      }
+
+      function applyUiScaleFromPrefs() {
+        if (uiScaleMode === "manual") {
+          applyManualUiScale();
+          syncUiScaleControls();
+          applyPerfModeFromPrefs();
+          safeCall("copng_log", { level: "info", message: `UI scale -> ${getCurrentUiScale().toFixed(3)} (manual)` });
+          return;
+        }
+
+        applyAutoUiScale();
+        syncUiScaleControls();
+        applyPerfModeFromPrefs();
+      }
+
+      function applyAutoUiScale() {
+        if (uiScaleMode !== "auto") return;
+
+        const w = Number(window.innerWidth || 0);
+        const h = Number(window.innerHeight || 0);
+        const dpr = Number(window.devicePixelRatio || 1);
+        const sw = Number((window.screen && window.screen.width) || 0);
+        const sh = Number((window.screen && window.screen.height) || 0);
+        const dprRaw = isFinite(dpr) && dpr > 0 ? dpr : 1;
+        const dprHint = isFinite(inputScale) && inputScale > 0 ? inputScale : 1;
+        const screenScaleW = sw > 0 && w > 0 ? sw / w : 1;
+        const screenScaleH = sh > 0 && h > 0 ? sh / h : 1;
+        const screenScale = Math.max(screenScaleW, screenScaleH);
+        const effectiveDpr = getEffectiveDpr();
+        const scale = computeAutoUiScale();
+        document.documentElement.style.setProperty("--uiScale", String(scale));
+        safeCall("copng_log", {
+          level: "info",
+          message: `UI scale -> ${scale.toFixed(3)} (viewport ${w}x${h}, screen ${sw}x${sh}, dpr ${dprRaw} (effective ${effectiveDpr}, screenScale ${screenScale.toFixed(
+            2
+          )}, inputScale ${dprHint}))`,
+        });
+
+        applyPerfModeFromPrefs();
+	        scheduleVirtualRender({ force: true });
+      }
+
+      function scheduleAutoUiScale() {
+        if (uiScaleMode !== "auto") return;
+        if (uiScaleTimer) clearTimeout(uiScaleTimer);
+        uiScaleTimer = setTimeout(applyAutoUiScale, 150);
+      }
+
+      function showToast(level, message) {
+        if (toastTimer) clearTimeout(toastTimer);
+        const lvl = String(level || "info").toLowerCase();
+        toastMetaEl.textContent = t("toast." + lvl, lvl);
+        toastMsgEl.textContent = message || "";
+        toastEl.classList.add("show");
+        toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2500);
+      }
+
+      function setTab(tabId) {
+        document.querySelectorAll(".tabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tabId));
+        document.querySelectorAll(".section").forEach((sec) => sec.classList.toggle("active", sec.id === tabId));
+	        scheduleVirtualRender({ force: true });
+      }
+
+      function renderStatus() {
+        const ui = state.ui || {};
+        statusEl.textContent = `${t("status.ui", "UI")}: ${ui.ready ? t("status.ready", "ready") : t("status.loading", "loading")} | ${
+          ui.hidden ? t("status.hidden", "hidden") : t("status.shown", "shown")
+        } | ${ui.focused ? t("status.focus", "focus") : t("status.noFocus", "no-focus")}`;
+        countsEl.textContent = `${t("status.registered", "Registered")}: ${coalesce(state.registeredCount, 0)}`;
+        langEl.textContent = `${t("status.lang", "Lang")}: ${coalesce(state.language, "?")}`;
+        hotkeyEl.textContent = `${t("status.hotkey", "Hotkey")}: ${toHex32(coalesce(state.toggleKeyCode, 0))}`;
+	        if (inputScalePillEl) inputScalePillEl.textContent = `Input: ${inputScale.toFixed(2)}`;
+      }
+
+	      function renderQuickVirtual({ force = false } = {}) {
+	        if (!rootScrollEl || !quickBody) return;
+	        const active = document.querySelector(".section.active");
+	        if (!active || active.id !== "tabQuick") return;
+
+	        const rows = quickVirtual.rows || [];
+	        const total = rows.length;
+	        if (total === 0) {
+	          quickBody.innerHTML = `<tr><td colspan="4" class="small">${escapeHtml(t("inv.none", "(No items)"))}</td></tr>`;
+	          quickVirtual.lastStart = 0;
+	          quickVirtual.lastEnd = 0;
+	          return;
+	        }
+
+	        if (force || !isFinite(quickVirtual.tbodyTopPx) || !isFinite(quickVirtual.rowHeightPx) || quickVirtual.rowHeightPx <= 0) {
+	          const uiScale = getCurrentUiScale();
+	          quickVirtual.rowHeightPx = QUICK_ROW_BASE_PX * uiScale;
+	          quickVirtual.tbodyTopPx = getOffsetTopInRoot(rootScrollEl, quickBody);
+	        }
+
+	        const rowHeight = quickVirtual.rowHeightPx;
+	        const tbodyTop = quickVirtual.tbodyTopPx;
+	        const viewTop = Number(rootScrollEl.scrollTop || 0);
+	        const startRaw = Math.floor((viewTop - tbodyTop) / rowHeight);
+	        const approxVisible = Math.ceil(Number(rootScrollEl.clientHeight || 900) / rowHeight) + 2;
+	        const start = clamp(startRaw - VIRTUAL_OVERSCAN, 0, Math.max(0, total - 1));
+	        const end = clamp(start + approxVisible + VIRTUAL_OVERSCAN * 2, 0, total);
+
+	        if (!force && start === quickVirtual.lastStart && end === quickVirtual.lastEnd) return;
+
+	        quickVirtual.lastStart = start;
+	        quickVirtual.lastEnd = end;
+
+	        const topPad = start * rowHeight;
+	        const bottomPad = (total - end) * rowHeight;
+
+	        let html = "";
+	        if (topPad > 0) html += `<tr class="spacerRow"><td colspan="4" style="height:${Math.round(topPad)}px"></td></tr>`;
+
+	        for (let i = start; i < end; i++) {
+	          const it = rows[i] || {};
+	          const id = Number(it.formId) >>> 0;
+	          const classes = [
+	            "dataRow",
+	            i % 2 === 0 ? "rowOdd" : "",
+	            id && id === quickSelectedId ? "selected" : "",
+	          ]
+	            .filter(Boolean)
+	            .join(" ");
+	          html += `
+	          <tr data-row-id="${id}" class="${classes}">
+            <td><span class="pill">${escapeHtml(it.groupName || String(it.group))}</span></td>
+            <td>
+	              <div class="itemName">${escapeHtml(it.name || "(unnamed)")}</div>
+              <div class="small mono">${toHex32(id)} → ${toHex32(it.regKey)}</div>
+            </td>
+	            <td class="mono colCount"><span class="good">${coalesce(it.safeCount, 0)}</span>/${coalesce(it.totalCount, 0)}</td>
+	            <td class="colAction"><button class="primary" data-action="reg" data-id="${id}"><span class="btnLabel">${t(
+	              "btn.register",
+	              "Register"
+	            )}</span></button></td>
+	          </tr>`;
+	        }
+
+	        if (bottomPad > 0) html += `<tr class="spacerRow"><td colspan="4" style="height:${Math.round(bottomPad)}px"></td></tr>`;
+	        quickBody.innerHTML = html;
+	      }
+
+	      function renderRegisteredVirtual({ force = false } = {}) {
+	        if (!rootScrollEl || !regBody) return;
+	        const active = document.querySelector(".section.active");
+	        if (!active || active.id !== "tabRegistered") return;
+
+	        const rows = regVirtual.rows || [];
+	        const total = rows.length;
+	        if (total === 0) {
+	          regBody.innerHTML = `<tr><td colspan="3" class="small">${escapeHtml(t("reg.none", "(No registered items)"))}</td></tr>`;
+	          regVirtual.lastStart = 0;
+	          regVirtual.lastEnd = 0;
+	          return;
+	        }
+
+	        if (force || !isFinite(regVirtual.tbodyTopPx) || !isFinite(regVirtual.rowHeightPx) || regVirtual.rowHeightPx <= 0) {
+	          const uiScale = getCurrentUiScale();
+	          regVirtual.rowHeightPx = REG_ROW_BASE_PX * uiScale;
+	          regVirtual.tbodyTopPx = getOffsetTopInRoot(rootScrollEl, regBody);
+	        }
+
+	        const rowHeight = regVirtual.rowHeightPx;
+	        const tbodyTop = regVirtual.tbodyTopPx;
+	        const viewTop = Number(rootScrollEl.scrollTop || 0);
+	        const startRaw = Math.floor((viewTop - tbodyTop) / rowHeight);
+	        const approxVisible = Math.ceil(Number(rootScrollEl.clientHeight || 900) / rowHeight) + 2;
+	        const start = clamp(startRaw - VIRTUAL_OVERSCAN, 0, Math.max(0, total - 1));
+	        const end = clamp(start + approxVisible + VIRTUAL_OVERSCAN * 2, 0, total);
+
+	        if (!force && start === regVirtual.lastStart && end === regVirtual.lastEnd) return;
+
+	        regVirtual.lastStart = start;
+	        regVirtual.lastEnd = end;
+
+	        const topPad = start * rowHeight;
+	        const bottomPad = (total - end) * rowHeight;
+
+	        let html = "";
+	        if (topPad > 0) html += `<tr class="spacerRow"><td colspan="3" style="height:${Math.round(topPad)}px"></td></tr>`;
+
+	        for (let i = start; i < end; i++) {
+	          const it = rows[i] || {};
+	          const classes = ["dataRow", i % 2 === 0 ? "rowOdd" : ""].filter(Boolean).join(" ");
+	          html += `
+          <tr class="${classes}">
+	            <td class="colGroup"><span class="pill">${escapeHtml(it.groupName || String(it.group))}</span></td>
+	            <td><span class="itemName">${escapeHtml(it.name || "(unnamed)")}</span></td>
+		            <td class="colFormId mono">${toHex32(it.formId)}</td>
+	          </tr>`;
+	        }
+
+	        if (bottomPad > 0) html += `<tr class="spacerRow"><td colspan="3" style="height:${Math.round(bottomPad)}px"></td></tr>`;
+	        regBody.innerHTML = html;
+	      }
+
+	      function renderQuick() {
+	        const q = (document.getElementById("quickFilter").value || "").toLowerCase();
+	        const items = (inventoryPage && inventoryPage.items) || [];
+	        const rows = items.filter((it) => !q || (it.name || "").toLowerCase().indexOf(q) !== -1);
+	        quickVirtual.rows = rows;
+	        quickVisibleIds = rows.map((it) => (Number(it.formId) >>> 0));
+	        if (quickSelectedId && quickVisibleIds.indexOf(quickSelectedId) === -1) {
+	          quickSelectedId = 0;
+	        }
+	        scheduleVirtualRender({ force: true });
+
+	        const page = coalesce(inventoryPage.page, 0);
+	        const pageSize = coalesce(inventoryPage.pageSize, 0);
+	        const total = coalesce(inventoryPage.total, 0);
+	        const totalPages = total > 0 && pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 0;
+	        if (invMetaEl) {
+	          const pagesText = totalPages > 0 ? `${page + 1}/${totalPages}` : `${page + 1}/${t("inv.unknown", "unknown")}`;
+	          const totalText = total > 0 ? String(total) : t("inv.unknown", "unknown");
+	          invMetaEl.textContent = `${t("inv.inventory", "Inventory")}: ${t("inv.page", "page")} ${pagesText} (${t(
+	            "inv.showing",
+	            "showing"
+	          )} ${rows.length}/${items.length}, ${t("inv.total", "total")} ${totalText})`;
+	        }
+	        if (invPageSizeEl) {
+	          const shownSize = String(pageSize > 0 ? pageSize : 200);
+	          if (invPageSizeEl.value !== shownSize) {
+	            invPageSizeEl.value = shownSize;
+	          }
+	        }
+	        if (btnInvPrev) btnInvPrev.disabled = page <= 0;
+	        if (btnInvNext) {
+	          btnInvNext.disabled = totalPages > 0 ? page + 1 >= totalPages : !inventoryPage.hasMore;
+	        }
+	      }
+
+      function renderRegistered() {
+        const q = (document.getElementById("regFilter").value || "").toLowerCase();
+        const rows = registered.filter((it) => !q || (it.name || "").toLowerCase().indexOf(q) !== -1);
+        regVirtual.rows = rows;
+        scheduleVirtualRender({ force: true });
+      }
+
+      function renderRewards() {
+        const meta = `${t("rewards.rolls", "Rolls")}: ${coalesce(rewards.rolls, 0)} | ${t("rewards.every", "Every")}: ${coalesce(
+          rewards.rewardEvery,
+          "?"
+        )} | ${t("rewards.mult", "Mult")}: ${coalesce(rewards.rewardMultiplier, "?")}`;
+        rewardMeta.textContent = meta;
+        const rows = (rewards.totals || []).slice().sort((a, b) => (a.label || "").localeCompare(b.label || ""));
+        rewardsBody.innerHTML =
+          rows.length === 0
+            ? `<tr><td colspan="2" class="small">${escapeHtml(t("rewards.none", "(No rewards yet)"))}</td></tr>`
+            : rows
+                .map(
+                  (it, idx) => `
+          <tr class="dataRow ${idx % 2 === 0 ? "rowOdd" : ""}">
+            <td>${escapeHtml(it.label || "Unknown")}</td>
+	            <td class="mono colCount">${escapeHtml(it.display || String(coalesce(it.total, 0)))}</td>
+          </tr>`
+                )
+                .join("");
+      }
+
+      function renderSettings() {
+        if (!settings) return;
+        document.getElementById("setToggleKey").value = toHex32(coalesce(settings.toggleKeyCode, 0));
+        document.getElementById("setLang").value = coalesce(settings.languageOverride, "auto");
+        document.getElementById("setPauseGame").checked = !!settings.uiPauseGame;
+        document.getElementById("setDisableFocusMenu").checked = !!settings.uiDisableFocusMenu;
+        document.getElementById("setDestroyOnClose").checked = !!settings.uiDestroyOnClose;
+        document.getElementById("setNormalize").checked = !!settings.normalizeRegistration;
+        document.getElementById("setProtectFav").checked = !!settings.protectFavorites;
+        document.getElementById("setLootNotify").checked = !!settings.enableLootNotify;
+        document.getElementById("setRewardsEnabled").checked = !!settings.enableRewards;
+        document.getElementById("setRewardEvery").value = coalesce(settings.rewardEvery, 10);
+        document.getElementById("setRewardMult").value = coalesce(settings.rewardMultiplier, 1.0);
+        document.getElementById("setSkillRewards").checked = !!settings.allowSkillRewards;
+
+	        // Input scale: prefer localStorage override, otherwise use settings value.
+	        const desiredInputScale = parseFloat(String(coalesce(settings.uiInputScale, 1.0)));
+	        if (!inputScaleHasLocal) {
+	          setInputScale(isFinite(desiredInputScale) && desiredInputScale > 0 ? desiredInputScale : 1.0, { persist: false });
+	          // If auto UI scaling is enabled, re-apply using the (potentially updated) inputScale hint.
+	          applyUiScaleFromPrefs();
+	        } else {
+	          syncInputScaleControls();
+	        }
+
+	        if (perfModeEl) perfModeEl.value = perfMode;
+	        applyPerfModeFromPrefs();
+      }
+
+      function escapeHtml(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/\"/g, "&quot;")
+          .replace(/'/g, "&#39;");
+      }
+
+      // Native callbacks (C++ -> JS)
+      window.copng_setState = (jsonStr) => {
+        try {
+          state = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+        } catch {
+          state = {};
+        }
+        uiLang = typeof state.language === "string" ? state.language : uiLang;
+        document.documentElement.lang = uiLang === "ko" ? "ko" : "en";
+        applyI18n();
+        renderStatus();
+        renderQuick();
+        renderRegistered();
+        renderRewards();
+      };
+
+	      window.copng_setInventory = (jsonStr) => {
+	        let payload = null;
+	        try {
+	          payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+	        } catch {
+	          payload = [];
+	        }
+	        if (Array.isArray(payload)) {
+	          inventoryPage = { page: 0, pageSize: payload.length, total: payload.length, hasMore: false, items: payload };
+	        } else if (payload && typeof payload === "object") {
+	          inventoryPage = {
+	            page: coalesce(payload.page, 0) >>> 0,
+	            pageSize: coalesce(payload.pageSize, 200) >>> 0,
+	            total: coalesce(payload.total, 0) >>> 0,
+	            hasMore: !!payload.hasMore,
+	            items: Array.isArray(payload.items) ? payload.items : [],
+	          };
+	        } else {
+	          inventoryPage = { page: 0, pageSize: 200, total: 0, hasMore: false, items: [] };
+	        }
+	        renderQuick();
+	      };
+
+      window.copng_setRegistered = (jsonStr) => {
+        try {
+          registered = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+        } catch {
+          registered = [];
+        }
+        renderRegistered();
+      };
+
+      window.copng_setRewards = (jsonStr) => {
+        try {
+          rewards = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+        } catch {
+          rewards = { totals: [] };
+        }
+        renderRewards();
+      };
+
+      window.copng_setSettings = (jsonStr) => {
+        try {
+          settings = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+        } catch {
+          settings = null;
+        }
+        renderSettings();
+
+        // If the user explicitly overrides the language, apply UI i18n immediately
+        // (state.language may update slightly later after native localization reload).
+        const o = settings && typeof settings.languageOverride === "string" ? settings.languageOverride : "";
+        if (o === "en" || o === "ko") {
+          uiLang = o;
+          document.documentElement.lang = uiLang === "ko" ? "ko" : "en";
+          applyI18n();
+        }
+      };
+
+      window.copng_toast = (jsonStr) => {
+        try {
+          const obj = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+          showToast(obj.level || "info", obj.message || "");
+        } catch {
+          showToast("info", String(jsonStr || ""));
+        }
+      };
+
+      // UI wiring
+      document.querySelectorAll(".tabs button").forEach((btn) => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
+
+      document.getElementById("btnRefreshState").addEventListener("click", () => {
+        safeCall("copng_requestState", {});
+        safeCall("copng_getSettings", {});
+      });
+
+      document.getElementById("btnClose").addEventListener("click", () => safeCall("copng_requestToggle", {}));
+
+	      function requestInventoryPage(page) {
+	        const pageSize = coalesce(inventoryPage.pageSize, 200) >>> 0;
+	        safeCall("copng_requestInventory", { page: page >>> 0, pageSize: pageSize > 0 ? pageSize : 200 });
+	      }
+
+	      document.getElementById("btnRefreshInv").addEventListener("click", () => requestInventoryPage(0));
+	      if (invPageSizeEl) {
+	        invPageSizeEl.addEventListener("change", () => {
+	          const v = parseInt(invPageSizeEl.value, 10);
+	          inventoryPage.pageSize = isFinite(v) && v > 0 ? v : coalesce(inventoryPage.pageSize, 200);
+	          requestInventoryPage(0);
+	        });
+	      }
+	      if (btnInvPrev) btnInvPrev.addEventListener("click", () => requestInventoryPage(Math.max(0, (inventoryPage.page || 0) - 1)));
+	      if (btnInvNext) btnInvNext.addEventListener("click", () => requestInventoryPage((inventoryPage.page || 0) + 1));
+      document.getElementById("btnRefreshReg").addEventListener("click", () => safeCall("copng_requestRegistered", {}));
+      document.getElementById("btnRefreshRewards").addEventListener("click", () => safeCall("copng_requestRewards", {}));
+
+      document.getElementById("btnRefundRewards").addEventListener("click", () => {
+        if (!confirm(t("confirm.refund", "Refund rewards? This cannot be undone."))) return;
+        safeCall("copng_refundRewards", {});
+      });
+
+	      let quickRenderTimer = null;
+	      let regRenderTimer = null;
+	      function scheduleRenderQuick() {
+	        if (quickRenderTimer) clearTimeout(quickRenderTimer);
+	        quickRenderTimer = setTimeout(() => {
+	          quickRenderTimer = null;
+	          renderQuick();
+	        }, 70);
+	      }
+	      function scheduleRenderRegistered() {
+	        if (regRenderTimer) clearTimeout(regRenderTimer);
+	        regRenderTimer = setTimeout(() => {
+	          regRenderTimer = null;
+	          renderRegistered();
+	        }, 70);
+	      }
+
+      document.getElementById("quickFilter").addEventListener("input", scheduleRenderQuick);
+      document.getElementById("regFilter").addEventListener("input", scheduleRenderRegistered);
+
+	      if (rootScrollEl) {
+	        rootScrollEl.addEventListener("scroll", () => scheduleVirtualRender(), { passive: true });
+	        window.addEventListener("resize", () => scheduleVirtualRender({ force: true }));
+	      }
+
+	      function setQuickSelected(nextId) {
+	        const id = Number(nextId) >>> 0;
+	        if (!id) return;
+	        if (quickSelectedId === id) return;
+	        const prev = quickSelectedId;
+	        quickSelectedId = id;
+	        if (prev) {
+	          const prevRow = quickBody.querySelector(`tr[data-row-id="${prev}"]`);
+	          if (prevRow) prevRow.classList.remove("selected");
+	        }
+	        const row = quickBody.querySelector(`tr[data-row-id="${id}"]`);
+	        if (row) row.classList.add("selected");
+	      }
+
+	      function scrollQuickIndexIntoView(idx) {
+	        if (!rootScrollEl || !quickBody) return;
+	        if (isFinite(idx)) idx = Number(idx);
+	        if (!isFinite(quickVirtual.tbodyTopPx) || !isFinite(quickVirtual.rowHeightPx) || quickVirtual.rowHeightPx <= 0) {
+	          const s = getCurrentUiScale();
+	          quickVirtual.rowHeightPx = QUICK_ROW_BASE_PX * s;
+	          quickVirtual.tbodyTopPx = getOffsetTopInRoot(rootScrollEl, quickBody);
+	        }
+
+	        const uiScale = getCurrentUiScale();
+	        const rowHeight = quickVirtual.rowHeightPx;
+	        const tbodyTop = quickVirtual.tbodyTopPx;
+	        const rowTop = tbodyTop + idx * rowHeight;
+	        const rowBottom = rowTop + rowHeight;
+	        const viewTop = Number(rootScrollEl.scrollTop || 0);
+	        const viewBottom = viewTop + Number(rootScrollEl.clientHeight || 900);
+
+	        if (rowTop < viewTop) rootScrollEl.scrollTop = Math.max(0, rowTop - 4 * uiScale);
+	        else if (rowBottom > viewBottom) rootScrollEl.scrollTop = Math.max(0, rowBottom - Number(rootScrollEl.clientHeight || 900) + 4 * uiScale);
+	      }
+
+      quickBody.addEventListener("click", (e) => {
+        // Ultralight/PrismaUI may dispatch clicks with a Text node target; parentElement isn't always available.
+        // Walk via parentNode and only read tagName when it's an Element node.
+        let node = e.target;
+        while (node && node !== quickBody) {
+          if (node.nodeType === 1) {
+            const el = node;
+            if (el.tagName === "BUTTON" && el.getAttribute("data-action") === "reg") {
+              const id = Number(el.getAttribute("data-id"));
+              if (isFinite(id) && id > 0) {
+                setQuickSelected(id);
+                safeCall("copng_log", { level: "info", message: `UI register click: ${toHex32(id >>> 0)}` });
+                safeCall("copng_registerItem", { formId: id >>> 0 });
+              }
+              return;
+            }
+            if (el.tagName === "TR" && el.getAttribute("data-row-id")) {
+              const id = Number(el.getAttribute("data-row-id"));
+              if (isFinite(id) && id > 0) {
+                setQuickSelected(id);
+              }
+              return;
+            }
+          }
+          node = node.parentNode;
+        }
+      });
+      // (renderSettings/escapeHtml/native callbacks/wiring moved earlier)
+
+      document.getElementById("btnReloadSettings").addEventListener("click", () => safeCall("copng_getSettings", {}));
+      document.getElementById("btnSaveSettings").addEventListener("click", () => {
+        const keyRaw = (document.getElementById("setToggleKey").value || "").trim();
+        const isHex = keyRaw.indexOf("0x") === 0 || keyRaw.indexOf("0X") === 0;
+        const key = isHex ? parseInt(keyRaw, 16) : parseInt(keyRaw, 10);
+        const payload = {
+          toggleKeyCode: isFinite(key) ? key >>> 0 : 0x3e,
+          languageOverride: document.getElementById("setLang").value,
+          uiPauseGame: document.getElementById("setPauseGame").checked,
+          uiDisableFocusMenu: document.getElementById("setDisableFocusMenu").checked,
+          uiDestroyOnClose: document.getElementById("setDestroyOnClose").checked,
+          uiInputScale: clamp(inputScale, 0.5, 3.0),
+          normalizeRegistration: document.getElementById("setNormalize").checked,
+          protectFavorites: document.getElementById("setProtectFav").checked,
+          enableLootNotify: document.getElementById("setLootNotify").checked,
+          enableRewards: document.getElementById("setRewardsEnabled").checked,
+          rewardEvery: parseInt(document.getElementById("setRewardEvery").value, 10) || 10,
+          rewardMultiplier: parseFloat(document.getElementById("setRewardMult").value) || 1.0,
+          allowSkillRewards: document.getElementById("setSkillRewards").checked,
+        };
+        safeCall("copng_saveSettings", payload);
+      });
+
+	      // UI scale prefs (Auto/Manual)
+	      loadUiScalePrefs();
+	      syncUiScaleControls();
+	      applyUiScaleFromPrefs();
+	      syncInputScaleControls();
+	      window.addEventListener("resize", scheduleAutoUiScale);
+
+	      // Performance mode prefs (Auto/Off/On)
+	      if (perfModeEl) {
+	        perfModeEl.value = perfMode;
+	        perfModeEl.addEventListener("change", () => {
+	          const v = String(perfModeEl.value || "");
+	          perfMode = v === "on" || v === "off" ? v : "auto";
+	          savePerfModePref();
+	          applyPerfModeFromPrefs();
+	        });
+	      }
+
+	      if (uiScaleModeEl) {
+	        uiScaleModeEl.addEventListener("change", () => {
+	          uiScaleMode = uiScaleModeEl.value === "manual" ? "manual" : "auto";
+	          if (uiScaleMode === "manual") {
+	            uiScaleManual = clamp(getCurrentUiScale(), 1.0, 3.0);
+	          }
+	          saveUiScalePrefs();
+	          applyUiScaleFromPrefs();
+	        });
+	      }
+
+	      const onManualScaleChange = (raw) => {
+	        uiScaleMode = "manual";
+	        const v = parseFloat(String(raw || ""));
+	        uiScaleManual = isFinite(v) && v > 0 ? clamp(v, 1.0, 3.0) : uiScaleManual;
+	        applyManualUiScale();
+	        saveUiScalePrefs();
+	        syncUiScaleControls();
+	      };
+
+	      if (uiScaleRangeEl) uiScaleRangeEl.addEventListener("input", () => onManualScaleChange(uiScaleRangeEl.value));
+	      if (uiScaleNumberEl) uiScaleNumberEl.addEventListener("input", () => onManualScaleChange(uiScaleNumberEl.value));
+
+	      // Input scale (click/hitbox correction)
+	      const onInputScaleChange = (raw, { toast = false } = {}) => {
+	        setInputScale(raw, { persist: true, toast: toast });
+	      };
+	      if (inputScaleRangeEl) inputScaleRangeEl.addEventListener("input", () => onInputScaleChange(inputScaleRangeEl.value));
+	      if (inputScaleNumberEl) inputScaleNumberEl.addEventListener("input", () => onInputScaleChange(inputScaleNumberEl.value));
+	      if (inputScalePresetEl) inputScalePresetEl.addEventListener("change", () => onInputScaleChange(inputScalePresetEl.value, { toast: true }));
+
+	      // Smooth wheel scrolling: Ultralight can report very small deltaY, making scrolling feel "stiff".
+	      (function installSmoothWheelScroll() {
+	        const rootEl = document.querySelector(".root");
+	        if (!rootEl) return;
+
+	        let scrollTarget = null;
+	        let animating = false;
+	        let lastWheelTs = 0;
+
+	        function wheelNow(e) {
+	          const ts = typeof e.timeStamp === "number" && isFinite(e.timeStamp) ? e.timeStamp : 0;
+	          if (ts > 0) return ts;
+	          if (typeof performance !== "undefined" && performance.now) return performance.now();
+	          return Date.now();
+	        }
+
+	        function normalizeWheelDelta(e, container) {
+	          let dy = Number(e.deltaY || 0);
+	          if (!isFinite(dy) || dy === 0) return 0;
+
+	          const mode = Number(e.deltaMode || 0);
+	          if (mode === 1) dy *= 16; // lines -> px
+	          else if (mode === 2) dy *= Number(container.clientHeight || 800); // pages -> px
+
+	          const uiScale = clamp(getCurrentUiScale(), 1.0, 3.0);
+	          const abs = Math.abs(dy);
+
+	          const now = wheelNow(e);
+	          const dt = lastWheelTs > 0 ? now - lastWheelTs : 999;
+	          lastWheelTs = now;
+
+	          // Tiny deltas + low frequency usually mean a notched wheel under Ultralight; snap to a nicer step.
+	          if (abs > 0 && abs < 12 && dt > 24) {
+	            dy = Math.sign(dy) * 180 * uiScale;
+	          } else if (abs < 40) {
+	            dy = dy * 3.0 * uiScale;
+	          } else {
+	            dy = dy * uiScale;
+	          }
+
+	          const maxStep = Number(container.clientHeight || 800) * 0.9;
+	          return clamp(dy, -maxStep, maxStep);
+	        }
+
+	        function step() {
+	          if (!animating || scrollTarget === null) return;
+	          const cur = rootEl.scrollTop;
+	          const diff = scrollTarget - cur;
+	          if (Math.abs(diff) <= 0.5) {
+	            rootEl.scrollTop = scrollTarget;
+	            scrollTarget = null;
+	            animating = false;
+	            return;
+	          }
+	          rootEl.scrollTop = cur + diff * 0.25;
+	          requestAnimationFrame(step);
+	        }
+
+	        rootEl.addEventListener(
+	          "wheel",
+	          (e) => {
+	            if (!e || e.isTrusted === false) return;
+	            const maxScroll = Math.max(0, rootEl.scrollHeight - rootEl.clientHeight);
+	            if (maxScroll <= 0) return;
+
+	            const deltaPx = normalizeWheelDelta(e, rootEl);
+	            if (!isFinite(deltaPx) || deltaPx === 0) return;
+
+	            if (e.preventDefault) e.preventDefault();
+	            if (e.stopPropagation) e.stopPropagation();
+
+	            const base = scrollTarget === null ? rootEl.scrollTop : scrollTarget;
+	            scrollTarget = clamp(base + deltaPx, 0, maxScroll);
+
+	            if (!animating) {
+	              animating = true;
+	              requestAnimationFrame(step);
+	            }
+	          },
+	          { passive: false }
+	        );
+	      })();
+
+      // Initial pull
+      safeCall("copng_requestState", {});
+      safeCall("copng_getSettings", {});
+
+	      // High DPI input correction: if the native mouse coordinates are scaled (e.g., only part of the UI is clickable),
+	      // adjust client coordinates and re-dispatch mouse events to the corrected element.
+	      // Also normalizes clicks when Ultralight reports a Text node as target (some events may not bubble correctly).
+	      function getEventTargetElement(e) {
+	        if (!e) return null;
+	        const t = e.target;
+	        if (t instanceof Element) return t;
+	        if (t && t.parentNode instanceof Element) return t.parentNode;
+	        const path = typeof e.composedPath === "function" ? e.composedPath() : null;
+	        if (Array.isArray(path)) {
+	          for (const p of path) {
+	            if (p instanceof Element) return p;
+	          }
+	        }
+	        return null;
+	      }
+
+	      const INTERACTIVE_SEL = "button, input, select, textarea, a, [role='button'], [data-action], tr[data-row-id]";
+
+	      function pickInteractiveElement(el) {
+	        if (!el || !(el instanceof Element)) return null;
+	        if (el.matches && el.matches(INTERACTIVE_SEL)) return el;
+	        if (el.closest) return el.closest(INTERACTIVE_SEL);
+	        return null;
+	      }
+
+	      function shouldCorrectMouseEvent(e) {
+	        if (!e || e.isTrusted === false) return false;
+	        if (e.button !== undefined && e.button !== 0) return false; // left click only
+	        const needsNormalizeTarget = !(e.target instanceof Element);
+	        const needsScale = isFinite(inputScale) && Math.abs(inputScale - 1.0) >= 0.01;
+	        return needsNormalizeTarget || needsScale;
+	      }
+
+	      function scoreTarget(el, rootEl) {
+	        if (!el || !(el instanceof Element)) return -1000000;
+	        let score = 0;
+	        const tag = (el.tagName || "").toUpperCase();
+	        if (tag === "HTML" || tag === "BODY") score -= 5;
+	        const inRoot = !!(rootEl && rootEl.contains(el));
+	        score += inRoot ? 100 : -100;
+
+	        if (el.matches && el.matches(INTERACTIVE_SEL)) score += 60;
+	        if (el.closest && el.closest(INTERACTIVE_SEL)) score += 25;
+	        if (el.closest && el.closest("tr[data-row-id]")) score += 5;
+	        return score;
+	      }
+
+	      function makeMouseEventLike(e, type, pt) {
+	        return new MouseEvent(type, {
+	          bubbles: true,
+	          cancelable: true,
+	          composed: true,
+	          view: window,
+	          detail: e.detail || 0,
+	          screenX: e.screenX || 0,
+	          screenY: e.screenY || 0,
+	          clientX: pt.x,
+	          clientY: pt.y,
+	          button: e.button || 0,
+	          buttons: e.buttons || 1,
+	          ctrlKey: !!e.ctrlKey,
+	          shiftKey: !!e.shiftKey,
+	          altKey: !!e.altKey,
+	          metaKey: !!e.metaKey,
+	        });
+	      }
+
+	      // Fallback: in some Ultralight builds, clicking directly on text can fail to dispatch a usable "click"
+	      // to the element listeners. Use mouseup->synthetic click, and suppress the subsequent native click.
+	      let lastMouseupFixed = { t: 0, x: -9999, y: -9999 };
+	      function nowMs() {
+	        try {
+	          return Date.now();
+	        } catch {
+	          return 0;
+	        }
+	      }
+
+	      document.addEventListener(
+	        "mouseup",
+	        (e) => {
+	          if (!e || e.isTrusted === false) return;
+	          if (e.button !== undefined && e.button !== 0) return;
+	          // Only apply this fallback when Ultralight reports a non-Element target (typically a Text node).
+	          if (e.target instanceof Element) return;
+
+	          const w = Number(window.innerWidth || 0);
+	          const h = Number(window.innerHeight || 0);
+	          if (!isFinite(w) || !isFinite(h) || w <= 0 || h <= 0) return;
+
+	          const rootEl = document.querySelector(".root");
+	          const needsScale = isFinite(inputScale) && Math.abs(inputScale - 1.0) >= 0.01;
+
+	          const cx = Number(e.clientX || 0);
+	          const cy = Number(e.clientY || 0);
+
+	          const clampPt = (pt) => ({
+	            x: clamp(Math.round(pt.x), 0, Math.max(0, w - 1)),
+	            y: clamp(Math.round(pt.y), 0, Math.max(0, h - 1)),
+	          });
+
+	          const candidates = [];
+	          candidates.push({ label: "identity", pt: clampPt({ x: cx, y: cy }) });
+	          if (needsScale) {
+	            candidates.push({ label: "origin-mul", pt: clampPt({ x: cx * inputScale, y: cy * inputScale }) });
+	            candidates.push({ label: "origin-div", pt: clampPt({ x: cx / inputScale, y: cy / inputScale }) });
+	            if (rootEl && rootEl.getBoundingClientRect) {
+	              const r = rootEl.getBoundingClientRect();
+	              const rx = Number(r.left || 0);
+	              const ry = Number(r.top || 0);
+	              candidates.push({
+	                label: "root-mul",
+	                pt: clampPt({ x: rx + (cx - rx) * inputScale, y: ry + (cy - ry) * inputScale }),
+	              });
+	              candidates.push({
+	                label: "root-div",
+	                pt: clampPt({ x: rx + (cx - rx) / inputScale, y: ry + (cy - ry) / inputScale }),
+	              });
+	            }
+	          }
+
+	          let bestTarget = null;
+	          let bestPt = null;
+	          let bestScore = -1000000;
+	          for (const c of candidates) {
+	            const t = document.elementFromPoint(c.pt.x, c.pt.y);
+	            const picked = pickInteractiveElement(t);
+	            if (!picked) continue;
+	            const s = scoreTarget(picked, rootEl);
+	            if (s > bestScore) {
+	              bestScore = s;
+	              bestTarget = picked;
+	              bestPt = c.pt;
+	            }
+	          }
+
+	          if (!bestTarget || !(bestTarget instanceof Element) || !bestPt) return;
+	          if (rootEl && !rootEl.contains(bestTarget)) return;
+
+	          lastMouseupFixed = { t: nowMs(), x: Math.round(cx), y: Math.round(cy) };
+	          bestTarget.dispatchEvent(makeMouseEventLike(e, "click", bestPt));
+	        },
+	        true
+	      );
+
+	      document.addEventListener(
+	        "click",
+	        (e) => {
+	          if (!shouldCorrectMouseEvent(e)) return;
+
+	          const fixedAge = nowMs() - (lastMouseupFixed.t || 0);
+	          if (fixedAge >= 0 && fixedAge < 250) {
+	            const cx0 = Math.round(Number(e.clientX || 0));
+	            const cy0 = Math.round(Number(e.clientY || 0));
+	            if (Math.abs(cx0 - lastMouseupFixed.x) <= 1 && Math.abs(cy0 - lastMouseupFixed.y) <= 1) {
+	              if (e.preventDefault) e.preventDefault();
+	              if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+	              else if (e.stopPropagation) e.stopPropagation();
+	              return;
+	            }
+	          }
+
+	          const w = Number(window.innerWidth || 0);
+	          const h = Number(window.innerHeight || 0);
+	          if (!isFinite(w) || !isFinite(h) || w <= 0 || h <= 0) return;
+
+	          const rootEl = document.querySelector(".root");
+	          const needsNormalizeTarget = !(e.target instanceof Element);
+	          const needsScale = isFinite(inputScale) && Math.abs(inputScale - 1.0) >= 0.01;
+
+	          const origRaw = getEventTargetElement(e);
+	          const origTarget = pickInteractiveElement(origRaw);
+	          const origScore = scoreTarget(origTarget, rootEl);
+
+	          const cx = Number(e.clientX || 0);
+	          const cy = Number(e.clientY || 0);
+
+	          const clampPt = (pt) => ({
+	            x: clamp(Math.round(pt.x), 0, Math.max(0, w - 1)),
+	            y: clamp(Math.round(pt.y), 0, Math.max(0, h - 1)),
+	          });
+
+	          const candidates = [];
+	          // Always include identity candidate (needed for Text node targets even when inputScale==1).
+	          candidates.push({ label: "identity", pt: clampPt({ x: cx, y: cy }) });
+
+	          if (needsScale) {
+	            // Origin-relative scale
+	            candidates.push({ label: "origin-mul", pt: clampPt({ x: cx * inputScale, y: cy * inputScale }) });
+	            candidates.push({ label: "origin-div", pt: clampPt({ x: cx / inputScale, y: cy / inputScale }) });
+
+	            // Root-relative scale (handles translations when the UI is centered/padded)
+	            if (rootEl && rootEl.getBoundingClientRect) {
+	              const r = rootEl.getBoundingClientRect();
+	              const rx = Number(r.left || 0);
+	              const ry = Number(r.top || 0);
+	              candidates.push({
+	                label: "root-mul",
+	                pt: clampPt({ x: rx + (cx - rx) * inputScale, y: ry + (cy - ry) * inputScale }),
+	              });
+	              candidates.push({
+	                label: "root-div",
+	                pt: clampPt({ x: rx + (cx - rx) / inputScale, y: ry + (cy - ry) / inputScale }),
+	              });
+	            }
+	          }
+
+	          let bestTarget = null;
+	          let bestPt = null;
+	          let bestScore = -1000000;
+	          for (const c of candidates) {
+	            const t = document.elementFromPoint(c.pt.x, c.pt.y);
+	            const picked = pickInteractiveElement(t);
+	            if (!picked) continue;
+	            const s = scoreTarget(picked, rootEl);
+	            if (s > bestScore) {
+	              bestScore = s;
+	              bestTarget = picked;
+	              bestPt = c.pt;
+	            }
+	          }
+
+	          if (!bestTarget || !(bestTarget instanceof Element)) {
+	            if (needsNormalizeTarget && origTarget instanceof Element) {
+	              bestTarget = origTarget;
+	              bestPt = clampPt({ x: cx, y: cy });
+	            } else {
+	              return;
+	            }
+	          }
+
+	          // Only touch events that are inside our UI.
+	          if (rootEl && !rootEl.contains(bestTarget) && !(origTarget instanceof Element && rootEl.contains(origTarget))) return;
+
+	          if (!needsNormalizeTarget) {
+	            if (bestTarget === origTarget) return;
+	            if (bestScore <= origScore) return;
+	          }
+
+	          if (e.preventDefault) e.preventDefault();
+	          if (e.stopImmediatePropagation) e.stopImmediatePropagation();
+	          else if (e.stopPropagation) e.stopPropagation();
+
+	          bestTarget.dispatchEvent(makeMouseEventLike(e, "click", bestPt));
+	        },
+	        true
+	      );
+
+      // Emergency close: when the view has focus, the game's input sink may not receive F4.
+      // Handle common close keys in JS so the user can always regain control.
+      window.addEventListener("keydown", (e) => {
+        const key = e.key || "";
+        const code = e.code || "";
+        const keyCode = e.keyCode || e.which || 0;
+
+        const isEscape = key === "Escape" || code === "Escape" || keyCode === 27;
+        const isF4 = key === "F4" || code === "F4" || keyCode === 115;
+        const isEnter = key === "Enter" || code === "Enter" || keyCode === 13;
+        const isUp = key === "ArrowUp" || code === "ArrowUp" || keyCode === 38;
+        const isDown = key === "ArrowDown" || code === "ArrowDown" || keyCode === 40;
+        const isBracketLeft = key === "[" || code === "BracketLeft";
+        const isBracketRight = key === "]" || code === "BracketRight";
+        const isZero = key === "0" || code === "Digit0";
+        const isCtrlS = (e.ctrlKey || e.metaKey) && (key.toLowerCase() === "s" || code === "KeyS" || keyCode === 83);
+
+        if (isEscape || isF4) {
+          if (e.preventDefault) e.preventDefault();
+          safeCall("copng_requestToggle", {});
+          return;
+        }
+
+        const tag = (e.target && e.target.tagName) || "";
+        const isTyping = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target && e.target.isContentEditable);
+        const activeSection = document.querySelector(".section.active");
+        const isQuickTab = activeSection && activeSection.id === "tabQuick";
+
+        if (!isTyping && isCtrlS) {
+          if (e.preventDefault) e.preventDefault();
+          const btn = document.getElementById("btnSaveSettings");
+          if (btn && btn.click) btn.click();
+          return;
+        }
+
+        if (!isTyping && (isBracketLeft || isBracketRight)) {
+          if (e.preventDefault) e.preventDefault();
+          const delta = isBracketRight ? 0.05 : -0.05;
+          setInputScale(inputScale + delta, { persist: true, toast: true });
+          return;
+        }
+
+        if (!isTyping && isZero) {
+          if (e.preventDefault) e.preventDefault();
+          setInputScale(1.0, { persist: true, toast: true });
+          return;
+        }
+
+        if (isTyping) return;
+
+        // Tab shortcuts: 1..4
+        if (key === "1" || code === "Digit1") return setTab("tabQuick");
+        if (key === "2" || code === "Digit2") return setTab("tabRegistered");
+        if (key === "3" || code === "Digit3") return setTab("tabRewards");
+        if (key === "4" || code === "Digit4") return setTab("tabSettings");
+
+        if (!isQuickTab) return;
+
+        if ((isUp || isDown) && quickVisibleIds && quickVisibleIds.length) {
+          if (e.preventDefault) e.preventDefault();
+          const ids = quickVisibleIds;
+          const idx = ids.indexOf(quickSelectedId);
+          const base = idx >= 0 ? idx : 0;
+          const nextIdx = isUp ? (base <= 0 ? ids.length - 1 : base - 1) : (base + 1 >= ids.length ? 0 : base + 1);
+          setQuickSelected(ids[nextIdx]);
+          scrollQuickIndexIntoView(nextIdx);
+          scheduleVirtualRender();
+          return;
+        }
+
+        if (isEnter && quickSelectedId) {
+          if (e.preventDefault) e.preventDefault();
+          safeCall("copng_log", { level: "info", message: `UI register enter: ${toHex32(quickSelectedId >>> 0)}` });
+          safeCall("copng_registerItem", { formId: quickSelectedId >>> 0 });
+          return;
+        }
+      });
+
+      safeCall("copng_log", { level: "info", message: "UI loaded" });
+    </script>
+  </body>
+</html>

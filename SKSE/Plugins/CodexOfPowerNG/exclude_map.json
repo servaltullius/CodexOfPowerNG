@@ -1,0 +1,1871 @@
+{
+  "version": 1,
+  "count": 373,
+  "forms": [
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00000800",
+      "note": "Auriel's Bow"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000284D",
+      "note": "Auriel's Shield"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00002B29",
+      "note": "Arvak's Skull DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00003D7D",
+      "note": "Weystone Focus DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00005703",
+      "note": "Ancient Vampire Leg DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00005704",
+      "note": "Ancient Vampire Head DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00005705",
+      "note": "Ancient Vampire Hands DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00005706",
+      "note": "Ancient Vampire Arm DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00005707",
+      "note": "Ancient Vampire Ribcage DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00005759",
+      "note": "Aetherial Shield"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000575A",
+      "note": "Aetherial Crown"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000575B",
+      "note": "Aetherium Crest DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000575C",
+      "note": "Aetherium Shard DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000575E",
+      "note": "Aetherial Staff"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x000066F3",
+      "note": "Reaper Gem Fragment DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x000066F5",
+      "note": "Reaper Gem Fragment DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x000066F6",
+      "note": "Reaper Gem Fragment DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x000067CF",
+      "note": "Harkon's Sword"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x000068AE",
+      "note": "Amulet of Bats"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00006BAD",
+      "note": "Dwemer Exploding Fire Bolt Schematic DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00007A2B",
+      "note": "Draw Knife DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00008426",
+      "note": "Bloodstone Chalice DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x000088EB",
+      "note": "Bloodstone Chalice DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x000098A0",
+      "note": "Bloodcursed Elven Arrow"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x000098A1",
+      "note": "Sunhallowed Elven Arrow"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000A89E",
+      "note": "Initiate's Ewer DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000CFB6",
+      "note": "Zephyr"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000D3ED",
+      "note": "Finely Ground Bone Meal DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000D3EE",
+      "note": "Purified Void Salts DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000D3EF",
+      "note": "Soul Gem Shards DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000E7FD",
+      "note": "Ring of The Beast"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000E7FE",
+      "note": "Ring of the Erudite"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000EA6A",
+      "note": "Soul Essence Gem (Full) DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000F1C4",
+      "note": "Dwemer Ice Bolt Schematic DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000F1C5",
+      "note": "Dwemer Exploding Shock Bolt Schematic DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000F1C7",
+      "note": "Enhanced Crossbow Schematic DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000F1C8",
+      "note": "Dwarven Crossbow Schematic DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000F1C9",
+      "note": "Enhanced Dwarven Crossbow Schematic DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0000F4D5",
+      "note": "Amulet of The Gargoyle"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0001171D",
+      "note": "Crescent Moon Crest DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0001171E",
+      "note": "Full Moon Crest DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0001171F",
+      "note": "Half Moon Crest DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x000118F9",
+      "note": "Elder Scroll (Blood) DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00011A13",
+      "note": "Elder Scroll (Sun) DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00011BAD",
+      "note": "Dawnguard Rune Hammer"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00011BAF",
+      "note": "Dawnguard Rune Shield"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00012F97",
+      "note": "Amethyst Paragon"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00012FC3",
+      "note": "Diamond Paragon"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0001433C",
+      "note": "Aetherium Shard DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0001433D",
+      "note": "Aetherium Shard DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0001433E",
+      "note": "Aetherium Shard DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00014C03",
+      "note": "Taron Dreth's Robes"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x0001668C",
+      "note": "Dawnguard Rune Axe"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00018B91",
+      "note": "Locket of Saint Jiub"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x000191B7",
+      "note": "Canticle Bark DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00019ABB",
+      "note": "Sapphire Paragon"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00019ABC",
+      "note": "Emerald Paragon"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x00019ABD",
+      "note": "Ruby Paragon"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x000FC036",
+      "note": "Circlet of Waterbreathing"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x020118F9",
+      "note": "Elder Scroll (Blood) DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x02011A13",
+      "note": "Elder Scroll (Sun) DG"
+    },
+    {
+      "file": "Dawnguard.esm",
+      "id": "0x020126DC",
+      "note": "Elder Scroll (Dragon) DG"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x000173BB",
+      "note": "Control Cube DB"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x000179C9",
+      "note": "Hoarfrost"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00018DDD",
+      "note": "Bloodscythe"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00018ED5",
+      "note": "Glass Bow of the Stag Prince"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x000195A9",
+      "note": "Heart Stone DB"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001A578",
+      "note": "Champion's Cudgel"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001AAD6",
+      "note": "Soaked Taproot DB"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001AEA4",
+      "note": "Bloodskal Blade"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001B65C",
+      "note": "Ash Spawn Sample DB"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001C655",
+      "note": "Ahzidal's Boots of Waterwalking"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001CAC0",
+      "note": "Amethyst Claw (Left Half)"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001CAC1",
+      "note": "Amethyst Claw (Right Half)"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001CAF2",
+      "note": "Stalhrim Source Map DB"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001CDF4",
+      "note": "Ash Extractor DB"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001DB97",
+      "note": "Ahzidal's Armor of Retribution"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001DB98",
+      "note": "Ahzidal's Helm of Vision"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001DB99",
+      "note": "Ahzidal's Gauntlets of Warding"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001DB9A",
+      "note": "Ahzidal's Ring of Necromancy"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0001DB9B",
+      "note": "Ahzidal's Ring of Arcana"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00020DCF",
+      "note": "Skull"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0002145A",
+      "note": "Kagrumez Resonance Gem DB"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0002401A",
+      "note": "Deathbrand Boots"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0002401B",
+      "note": "Deathbrand Armor"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0002401C",
+      "note": "Deathbrand Gauntlets"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0002401D",
+      "note": "Deathbrand Helm"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00024037",
+      "note": "Zahkriisos"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x000240FE",
+      "note": "Ahzidal"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x000240FF",
+      "note": "Dukaan"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x000247F9",
+      "note": "Karstaag's Skull DB"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00026490",
+      "note": "Horksbane"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00026B0B",
+      "note": "Stormfang"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x000275B6",
+      "note": "Ring of Bloodlust"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x000275B7",
+      "note": "Ring of Instinct"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x000275B8",
+      "note": "Ring of the Moon"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x000275B9",
+      "note": "Ring of the Hunt"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0002AD31",
+      "note": "Blackguard's Hood"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0002AD32",
+      "note": "Blackguard's Gloves"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0002AD33",
+      "note": "Blackguard's Armor"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0002AD34",
+      "note": "Blackguard's Boots"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0002B0F9",
+      "note": "Miraak's Gloves"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0002BAAE",
+      "note": "Deathbrand Treasure Map DB"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0002C01A",
+      "note": "Dwarven Black Bow of Fate"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00036689",
+      "note": "Soulrender"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00038ADD",
+      "note": "Visage of Mzund"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00039D1E",
+      "note": "Miraak's Robes"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00039D4A",
+      "note": "Skaal Amulet"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00039E4E",
+      "note": "Exquisite Sapphire"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00039FAD",
+      "note": "Miraak's Staff"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x00039FB4",
+      "note": "Miraak's Sword"
+    },
+    {
+      "file": "Dragonborn.esm",
+      "id": "0x0003D2AF",
+      "note": "Miraak's Boots"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00017059",
+      "note": "Firiniel's End"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0001994F",
+      "note": "Left Eye of the Falmer"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00019952",
+      "note": "Honningbrew Decanter"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00019954",
+      "note": "Bust of the Gray Fox"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00019958",
+      "note": "Queen Bee Statue"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0001A31C",
+      "note": "Essence Extractor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0001C1FE",
+      "note": "Dragon Priest Dagger"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0001C492",
+      "note": "Nettlebane"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0001C494",
+      "note": "Eldergleam Sap"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0001C4E6",
+      "note": "The Rueful Axe"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0001CB34",
+      "note": "Wedding Ring"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0001CB36",
+      "note": "Sanguine Rose"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0001CB81",
+      "note": "Eldergleam Sapling"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0001F6D4",
+      "note": "Aretino Family Heirloom"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00021EA3",
+      "note": "Statue of Dibella"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00022265",
+      "note": "The Woodsman's Friend"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000233D0",
+      "note": "Saarthal Amulet"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000233E3",
+      "note": "Mace of Molag Bal"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000240D2",
+      "note": "Mehrunes' Razor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000240D3",
+      "note": "Hilt of Mehrunes' Razor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000240D4",
+      "note": "Pommel Stone of Mehrunes' Razor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000240D5",
+      "note": "Shards of Mehrunes' Razor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000240D6",
+      "note": "Scabbard of Mehrunes' Razor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00024CFF",
+      "note": "Silver-Blood Family Ring"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002584C",
+      "note": "Enchanted Ring"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00026C31",
+      "note": "Tolfdir's Alembic"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00028AD7",
+      "note": "Broken Azura's Star"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000295F3",
+      "note": "Helm of Yngol"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002996F",
+      "note": "Glenmoril Witch Head"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002AC60",
+      "note": "Ring of Hircine"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002AC61",
+      "note": "Savior's Hide"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002AC62",
+      "note": "Sinding's Skin"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002AC6F",
+      "note": "Wabbajack"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002ACD2",
+      "note": "Volendrung"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002BAAB",
+      "note": "Pest Poison"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002C259",
+      "note": "Cracked White Phial"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002C25C",
+      "note": "Unmelting Snow"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002C25E",
+      "note": "Mammoth Tusk Powder"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002C37B",
+      "note": "Ring of Namira"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002D513",
+      "note": "Elder Scroll (Dragon/base)"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002D74F",
+      "note": "Gauldur Amulet Fragment"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002D753",
+      "note": "Gauldur Amulet Fragment"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002D75A",
+      "note": "Gauldur Amulet Fragment"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0002D773",
+      "note": "The Gauldur Amulet"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0003292F",
+      "note": "Horn of Jurgen Windcaller"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00033764",
+      "note": "Calcelmo's Stone Rubbing"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00035066",
+      "note": "Skull of Corruption"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0003532C",
+      "note": "Attunement Sphere"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00035369",
+      "note": "Staff of Magnus"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00037CE9",
+      "note": "Mercer's Plans"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00039647",
+      "note": "Golden Claw"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0003A3D2",
+      "note": "Blank Lexicon"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0003A3DD",
+      "note": "Runed Lexicon"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0003A3E4",
+      "note": "Lexicon"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0003E6BB",
+      "note": "Opaque Vessel"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0003E6BC",
+      "note": "Opaque Vessel"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0003EC95",
+      "note": "Firebrand Wine Case"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00040002",
+      "note": "Steel Battleaxe of Fiery Souls"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00041F95",
+      "note": "Mark of Dibella"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000426C8",
+      "note": "Shiv"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0004286C",
+      "note": "Pelagius' Hip Bone"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00043E27",
+      "note": "Orichalcum Ingot"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00043E28",
+      "note": "Wylandriah's Spoon"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00044E12",
+      "note": "Curious Silver Mold"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00044E63",
+      "note": "Golden Urn"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00044E65",
+      "note": "Ornate Drinking Horn"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00044E67",
+      "note": "Jeweled Flagon"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00044E6A",
+      "note": "Jeweled Candlestick"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00044E6C",
+      "note": "Jeweled Goblet"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00044E6E",
+      "note": "Jeweled Pitcher"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00044E8B",
+      "note": "Golden Ship Model"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000457AB",
+      "note": "Sealed Scroll"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00045F96",
+      "note": "Spellbreaker"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0004A38F",
+      "note": "Ebony Blade"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0004B56C",
+      "note": "Ruby Dragon Claw"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0004E4E6",
+      "note": "Meridia's Beacon"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0004E4EE",
+      "note": "Dawnbreaker"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00052794",
+      "note": "Ebony Mail"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0005333B",
+      "note": "Black-Briar Mead Keg"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0005598C",
+      "note": "Dwemer Puzzle Cube"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00059654",
+      "note": "Olava's Token"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0005AF48",
+      "note": "Ebony Claw"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0005B2DF",
+      "note": "Quicksilver Ore"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0005CBFE",
+      "note": "General Tullius' Armor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00060CC2",
+      "note": "East Empire Shipping Map"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00061C8B",
+      "note": "Morokei"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00061CA5",
+      "note": "Nahkriin"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00061CAB",
+      "note": "Volsung"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00061CB9",
+      "note": "Krosis"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00061CC0",
+      "note": "Rahgot"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00061CC1",
+      "note": "Hevnoraak"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00061CC2",
+      "note": "Otar"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00061CC9",
+      "note": "Vokun"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00061CCA",
+      "note": "Wooden Mask"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00061CD6",
+      "note": "Konahrik"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00062303",
+      "note": "Ulfric's Clothes"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006230B",
+      "note": "Ulfric's Bracers"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00062311",
+      "note": "Ulfric's Boots"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00064283",
+      "note": "Fragment of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00064285",
+      "note": "Fragment of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00064287",
+      "note": "Fragment of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00064289",
+      "note": "Fragment of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006428B",
+      "note": "Fragment of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006428E",
+      "note": "Fragment of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00064290",
+      "note": "Fragment of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00064292",
+      "note": "Fragment of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00064294",
+      "note": "Fragment of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00064296",
+      "note": "Fragment of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00064298",
+      "note": "Fragment of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006492A",
+      "note": "Cicero's Boots"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006492C",
+      "note": "Cicero's Clothes"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006492D",
+      "note": "Cicero's Gloves"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006492E",
+      "note": "Cicero's Hat"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000663D7",
+      "note": "Sapphire Dragon Claw"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00068B83",
+      "note": "Nightweaver's Band"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006A106",
+      "note": "Warped Soul Gem"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006A107",
+      "note": "Warped Soul Gem"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006A108",
+      "note": "Warped Soul Gem"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006A109",
+      "note": "Warped Soul Gem"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006A10A",
+      "note": "Warped Soul Gem"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006A13C",
+      "note": "Dwemer Artifact: Keening"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006AF63",
+      "note": "Trollsbane"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006B218",
+      "note": "Muiri's Ring"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006C9EF",
+      "note": "Statue of Dibella"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006E806",
+      "note": "Fragment of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006EA8B",
+      "note": "Windshear"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0006F266",
+      "note": "Model Ship"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00075868",
+      "note": "Habd's Remains"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00079B1D",
+      "note": "Blade of Sacrifice"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0007C260",
+      "note": "Glass Claw"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0007C92E",
+      "note": "Boots"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0008CDFA",
+      "note": "Iron Claw"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0008D770",
+      "note": "Opaque Vessel"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0008F997",
+      "note": "Lisbet's Dibella Statue"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0008FFDE",
+      "note": "Okin"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0008FFDF",
+      "note": "Eduj"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00094A2B",
+      "note": "Ghostblade"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000956B5",
+      "note": "Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000964C9",
+      "note": "Blade of Woe"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00096D9B",
+      "note": "Movarth's Boots"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0009DFBB",
+      "note": "Unusual Gem (Stone of Barenziah)"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0009DFF5",
+      "note": "Crown of Barenziah"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0009E01F",
+      "note": "Potema's Skull"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0009F7A6",
+      "note": "Focusing Crystal"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000A34F8",
+      "note": "Torc of Labyrinthian"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000A4DCD",
+      "note": "Predator's Grace"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000A4DCE",
+      "note": "Bloodthorn"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000AADB6",
+      "note": "Saerek's Skull Key"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000AADB7",
+      "note": "Torsten's Skull Key"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000AB375",
+      "note": "Diamond Claw"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000AB703",
+      "note": "Red Eagle's Bane"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000AB705",
+      "note": "Bow of the Hunt"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000AB7BB",
+      "note": "Ivory Dragon Claw"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000AE085",
+      "note": "The Longhammer"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000AE086",
+      "note": "Poacher's Axe"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000B144D",
+      "note": "Mythic Dawn Robes"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000B634C",
+      "note": "Coral Dragon Claw"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000B994E",
+      "note": "Valdr's Lucky Dagger"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000BBCD5",
+      "note": "Map of Dragon Burials"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000C0186",
+      "note": "Froki's Bow"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000C04BB",
+      "note": "Quill of Gemination"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000C1989",
+      "note": "Bolar's Oathblade"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000C4F2E",
+      "note": "Nurelion's Mixture"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000C5809",
+      "note": "The Bond of Matrimony"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000C72E8",
+      "note": "Charmed Necklace"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000C891D",
+      "note": "Necromancer Amulet"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000CC392",
+      "note": "Angi's Bow"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000CF89F",
+      "note": "Shrouded Shoes"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000CF8A0",
+      "note": "Shrouded Robes"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000CF8A1",
+      "note": "Shrouded Hood"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000CF8A9",
+      "note": "Shrouded Hand Wraps"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D0756",
+      "note": "Dragon Heartscales"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D2328",
+      "note": "Strange Amulet"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D2842",
+      "note": "Shrouded Cowl/Shrouded Cowl Maskless"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D2843",
+      "note": "Shrouded Gloves"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D2844",
+      "note": "Shrouded Armor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D2845",
+      "note": "Shrouded Boots"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D2846",
+      "note": "Masque of Clavicus Vile"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D2AFE",
+      "note": "Aegisbane"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D363B",
+      "note": "Sigil Stone"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D3AC2",
+      "note": "Thieves Guild Boots"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D3AC3",
+      "note": "Thieves Guild Armor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D3AC4",
+      "note": "Thieves Guild Gloves"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D3AC5",
+      "note": "Thieves Guild Hood"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D4FF7",
+      "note": "Yisra's Necklace"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D5047",
+      "note": "Ilas-Tei's Ring"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000D8E43",
+      "note": "Satchel of Moon Sugar"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DA732",
+      "note": "Treoy's Ornamental Ring"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DA733",
+      "note": "Katarina's Ornamental Ring"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DA734",
+      "note": "Pithi's Ornamental Ring"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DA735",
+      "note": "Balwen's Ornamental Ring"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DA74D",
+      "note": "Barenziah's Crown"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DA750",
+      "note": "Jagged Crown"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DAB04",
+      "note": "Klimmek's Supplies"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DABA7",
+      "note": "Pantea's Flute"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DABA9",
+      "note": "Rjorn's Drum"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DABAB",
+      "note": "Finn's Lute"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DB351",
+      "note": "Fragments of Wuuthrad"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DC52E",
+      "note": "StormCloak Documents"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DC530",
+      "note": "Imperial Documents"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DEED8",
+      "note": "Karliah's Bow"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000DF202",
+      "note": "Dragonstone"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E1643",
+      "note": "Ironhand Gauntlets"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E1F14",
+      "note": "Ancient Shrouded Boots"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E1F15",
+      "note": "Ancient Shrouded Armor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E1F16",
+      "note": "Ancient Shrouded Gloves"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E1F17",
+      "note": "Ancient Shrouded Cowl"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E3146",
+      "note": "Werewolf Totem"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E3147",
+      "note": "Werewolf Totem"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E3148",
+      "note": "Werewolf Totem"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E35D6",
+      "note": "Guild Master's Boots"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E35D7",
+      "note": "Guild Master's Armor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E35D8",
+      "note": "Guild Master's Gloves"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E35D9",
+      "note": "Guild Master's Hood"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E41D8",
+      "note": "Shield of Ysgramor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E49F7",
+      "note": "Sylgja's Satchel"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E49F8",
+      "note": "Verner's Satchel"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E77BB",
+      "note": "Torygg's War Horn"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000E84C1",
+      "note": "Gilded Wristguards"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000EAFD0",
+      "note": "Armor of the Old Gods"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000EAFD1",
+      "note": "Helmet of the Old Gods"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000EAFD2",
+      "note": "Gauntlets of the Old Gods"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000EAFD3",
+      "note": "Boots of the Old Gods"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000EAFD7",
+      "note": "Mehrunes' Razor Scabbard"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000EAFDB",
+      "note": "Mehrunes' Razor Gem"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000EAFDC",
+      "note": "Mehrunes' Razor Hilt"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000EAFDD",
+      "note": "Mehrunes' Razor Blade"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000ECD53",
+      "note": "Rundi's Dagger"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000ECD54",
+      "note": "Borvir's Dagger"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000ED417",
+      "note": "Emerald Dragon Claw"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000EE5C0",
+      "note": "Torturer's Hood"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F1491",
+      "note": "Silver Hand Stratagem"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F1B33",
+      "note": "Savos Aren's Amulet"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F257D",
+      "note": "Michaela's Flagon"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F494E",
+      "note": "Ancient Helmet of the Unburned"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F5981",
+      "note": "Tumblerbane Gloves"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F5A1C",
+      "note": "Vittoria's Wedding Band"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F6527",
+      "note": "Nightingale Blade"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F652C",
+      "note": "Nightingale Bow"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F6767",
+      "note": "Ancient Traveler's Skull"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F6911",
+      "note": "Amulet of Articulation"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F71D0",
+      "note": "Dragonbane"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F71DD",
+      "note": "Drainheart Sword"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F82FA",
+      "note": "Drainblood Battleaxe"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F82FC",
+      "note": "Drainspell Bow"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F8318",
+      "note": "Chillrend"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000F9904",
+      "note": "Diadem of the Savant"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x000FC5BF",
+      "note": "Targe of the Blooded"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x001019D4",
+      "note": "Notched Pickaxe"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00105109",
+      "note": "The Dancer's Flute"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x001058AA",
+      "note": "Balbus's Fork"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00105A4E",
+      "note": "Ysgramor's Soup Spoon"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00107E2D",
+      "note": "Kyne's Token"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00108543",
+      "note": "Linwe's Boots"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00108544",
+      "note": "Linwe's Armor"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00108545",
+      "note": "Linwe's Gloves"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x00108546",
+      "note": "Linwe's Hood"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0010A06A",
+      "note": "Gloves of the Pugilist"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0010CC6A",
+      "note": "Statue of Dibella"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0010E44B",
+      "note": "Warped Soul Gem"
+    },
+    {
+      "file": "Skyrim.esm",
+      "id": "0x0010F570",
+      "note": "Archmage's Robes"
+    }
+  ]
+}

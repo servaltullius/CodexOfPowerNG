@@ -1,0 +1,14 @@
+diff --git a/include/RE/B/BSTPointerAndFlags.h b/include/RE/B/BSTPointerAndFlags.h
+index 9c33487..3da8b2b 100644
+--- a/include/RE/B/BSTPointerAndFlags.h
++++ b/include/RE/B/BSTPointerAndFlags.h
+@@ -44,7 +44,7 @@ namespace RE
+ 				clear_flags();
+ 				a_rhs.clear_flags();
+ 				_storage.address = a_rhs._storage.address;
+-				a_rhs.storage.address = 0;
++				a_rhs._storage.address = 0;
+ 			}
+ 			return *this;
+ 		}
+

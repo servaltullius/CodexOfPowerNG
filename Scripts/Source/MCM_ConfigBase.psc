@@ -1,0 +1,2 @@
+Scriptname MCM_ConfigBase extends Quest
+

@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "count": 0,
+  "note": "User exclude overrides for Codex of Power. Put your custom edits in a separate MO2 mod or in Overwrite so mod updates do not overwrite them. Format: forms[] entries with {file, id, note}.",
+  "forms": []
+}

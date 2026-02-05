@@ -1,0 +1,124 @@
+{
+  "ui": {
+    "back": "Back",
+    "cancel": "Cancel",
+    "close": "Close",
+    "prevPage": "Previous page",
+    "nextPage": "Next page",
+    "page": "Page",
+    "unnamed": "(unnamed)",
+    "category": "Category",
+    "filterAll": "Filter: All",
+    "filterUnregistered": "Filter: Unregistered",
+    "filterUnregisteredOwned": "Filter: Unregistered + Owned"
+  },
+  "group": {
+    "weapons": "Weapons",
+    "armors": "Armors",
+    "consumables": "Consumables",
+    "ingredients": "Ingredients",
+    "books": "Books",
+    "misc": "Misc"
+  },
+  "menu": {
+    "dashboard": {
+      "overallPrefix": "Codex of Power - Overall: ",
+      "registeredPrefix": "Codex of Power - Registered: ",
+      "quickRegister": "Quick Register (unregistered in inventory)",
+      "rewards": "Rewards / Stats",
+      "allItems": "All items"
+    },
+    "quickRegister": {
+      "titlePrefix": "Codex of Power - Available: ",
+      "dashboard": "Dashboard / Codex",
+      "codex": "Codex (registered items)"
+    },
+    "list": {
+      "allTitle": "All items",
+      "registered": "registered: "
+    },
+    "rewards": {
+      "titlePrefix": "Collection rewards - rolls: ",
+      "titleRegistered": "registered: ",
+    "reset": "Reset bonuses (recommended before uninstall)",
+    "none": "(No rewards yet)",
+    "confirmTitle": "Reset Codex of Power bonuses - Warning",
+    "confirmDo": "Reset now (recommended before uninstall)",
+    "confirmLine1": "Removes ONLY Codex of Power bonus stats (does not restore items).",
+      "confirmLine2": "Use before uninstall; registration records remain.",
+      "confirmLine3": "This is for mod maintenance/uninstall."
+    }
+  },
+  "bonus": {
+    "spellMagDestruction": "Destruction spell power",
+    "spellMagRestoration": "Restoration spell power",
+    "spellDurAlteration": "Alteration spell duration",
+    "spellDurConjuration": "Conjuration spell duration",
+    "spellDurIllusion": "Illusion spell duration"
+  },
+  "msg": {
+    "requiresJContainers": "Codex of Power: JContainers is required.",
+    "requiresUIExtensions": "Codex of Power: UIExtensions is required.",
+    "lootUnregisteredPrefix": "Unregistered: ",
+    "lootUnregisteredSuffix": " (press hotkey to register)",
+    "rewardPrefix": "Collection reward: ",
+    "rewardResetPrefix": "Codex of Power: Rewards reset (",
+    "countSuffix": " items)",
+    "registerCantDestroy": "Codex of Power: Cannot register (cannot destroy item)",
+    "registerProtected": "Codex of Power: Cannot register (equipped/favorited)",
+    "registerQuestItem": "Codex of Power: Cannot register (quest item)",
+    "registerUnnamed": "Codex of Power: Cannot register (unnamed item)",
+    "registerSaveFail": "Codex of Power: Register failed (save failed)",
+    "registerOkPrefix": "Registered: ",
+    "categoryRewardPrefix": "Category completion reward: ",
+    "totalPrefix": "total ",
+    "totalSuffix": " items"
+  },
+  "av": {
+    "health": "Health",
+    "magicka": "Magicka",
+    "stamina": "Stamina",
+    "healRate": "Health regen",
+    "magickaRate": "Magicka regen",
+    "staminaRate": "Stamina regen",
+    "attackDamageMult": "Attack damage (physical)",
+    "critChance": "Critical chance",
+    "meleeDamage": "Melee damage",
+    "unarmedDamage": "Unarmed damage",
+    "reflectDamage": "Reflect damage",
+    "magicResist": "Magic resist",
+    "fireResist": "Fire resist",
+    "frostResist": "Frost resist",
+    "electricResist": "Shock resist",
+    "poisonResist": "Poison resist",
+    "diseaseResist": "Disease resist",
+    "damageResist": "Armor rating",
+    "carryWeight": "Carry weight",
+    "speedMult": "Move speed",
+    "smithingMod": "Smithing effectiveness",
+    "alchemyMod": "Alchemy effectiveness",
+    "enchantingMod": "Enchanting effectiveness",
+    "speechcraftMod": "Barter effectiveness",
+    "sneakMod": "Sneak effectiveness",
+    "lockpickingMod": "Lockpicking effectiveness",
+    "pickpocketMod": "Pickpocket effectiveness",
+    "alterationMod": "Alteration cost reduction",
+    "conjurationMod": "Conjuration cost reduction",
+    "destructionMod": "Destruction cost reduction",
+    "illusionMod": "Illusion cost reduction",
+    "restorationMod": "Restoration cost reduction",
+    "absorbChance": "Spell absorption chance",
+    "shoutRecoveryMult": "Shout cooldown"
+  },
+  "skill": {
+    "oneHanded": "Skill (One-Handed)",
+    "twoHanded": "Skill (Two-Handed)",
+    "marksman": "Skill (Archery)",
+    "heavyArmor": "Skill (Heavy Armor)",
+    "lightArmor": "Skill (Light Armor)",
+    "block": "Skill (Block)",
+    "alchemy": "Skill (Alchemy)",
+    "lockpicking": "Skill (Lockpicking)",
+    "pickpocket": "Skill (Pickpocket)"
+  }
+}

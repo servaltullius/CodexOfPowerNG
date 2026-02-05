@@ -1,0 +1,11 @@
+/build/
+/dist/
+/vcpkg_installed/
+/out/
+*.log
+CMakeUserPresets.json
+.vs/
+.vscode/
+.idea/
+.idea.backup*/
+releases/*.zip

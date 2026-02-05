@@ -1,0 +1,86 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 25,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "windows-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/CodexOfPowerNG"
+      }
+    },
+    {
+      "name": "wsl-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_TOOLCHAIN_FILE": "${sourceDir}/cmake/toolchains/wsl-clangcl-vcpkg.cmake",
+        "VCPKG_INSTALL_OPTIONS": "--allow-unsupported",
+        "VCPKG_APPLOCAL_DEPS": "OFF",
+        "VCPKG_TARGET_TRIPLET": "x64-windows-static-md-wsl",
+        "CMAKE_INSTALL_PREFIX": "${sourceDir}/dist/CodexOfPowerNG"
+      }
+    },
+    {
+      "name": "windows-debug",
+      "displayName": "Windows Debug",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "windows-release",
+      "displayName": "Windows Release",
+      "inherits": "windows-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+    ,
+    {
+      "name": "wsl-debug",
+      "displayName": "WSL Cross (Debug)",
+      "inherits": "wsl-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "wsl-release",
+      "displayName": "WSL Cross (Release)",
+      "inherits": "wsl-base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "windows-debug",
+      "configurePreset": "windows-debug"
+    },
+    {
+      "name": "windows-release",
+      "configurePreset": "windows-release"
+    }
+    ,
+    {
+      "name": "wsl-debug",
+      "configurePreset": "wsl-debug"
+    },
+    {
+      "name": "wsl-release",
+      "configurePreset": "wsl-release"
+    }
+  ]
+}

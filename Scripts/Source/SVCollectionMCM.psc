@@ -1,0 +1,2 @@
+Scriptname SVCollectionMCM extends MCM_ConfigBase
+

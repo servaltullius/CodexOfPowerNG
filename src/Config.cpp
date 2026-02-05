@@ -27,6 +27,26 @@ namespace CodexOfPowerNG
 				settings.languageOverride = "auto";
 			}
 
+			if (settings.corpseExplosionVfxMode != "auto" && settings.corpseExplosionVfxMode != "art" &&
+			    settings.corpseExplosionVfxMode != "shader" && settings.corpseExplosionVfxMode != "none") {
+				settings.corpseExplosionVfxMode = "auto";
+			}
+
+			// Corpse explosion proc settings
+			if (!std::isfinite(settings.corpseExplosionChancePct) || settings.corpseExplosionChancePct < 0.0) {
+				settings.corpseExplosionChancePct = 0.0;
+			}
+			settings.corpseExplosionChancePct = std::clamp(settings.corpseExplosionChancePct, 0.0, 100.0);
+			if (settings.corpseExplosionCooldownMs < 0) {
+				settings.corpseExplosionCooldownMs = 0;
+			}
+			if (settings.corpseExplosionCooldownMs > 60000) {
+				settings.corpseExplosionCooldownMs = 60000;
+			}
+			if (settings.corpseExplosionVfxEditorID.size() > 128) {
+				settings.corpseExplosionVfxEditorID.resize(128);
+			}
+
 			// Reward settings
 			if (settings.rewardEvery <= 0) {
 				settings.rewardEvery = 10;
@@ -140,6 +160,28 @@ namespace CodexOfPowerNG
 					}
 				}
 
+				if (auto it = j.find("corpseExplosion"); it != j.end() && it->is_object()) {
+					const auto& p = *it;
+					if (auto k = p.find("enabled"); k != p.end() && k->is_boolean()) {
+						settings.corpseExplosionEnabled = k->get<bool>();
+					}
+					if (auto k = p.find("chancePct"); k != p.end() && (k->is_number_float() || k->is_number_integer())) {
+						settings.corpseExplosionChancePct = k->get<double>();
+					}
+					if (auto k = p.find("cooldownMs"); k != p.end() && k->is_number_integer()) {
+						settings.corpseExplosionCooldownMs = k->get<std::int32_t>();
+					}
+					if (auto k = p.find("vfxMode"); k != p.end() && k->is_string()) {
+						settings.corpseExplosionVfxMode = k->get<std::string>();
+					}
+					if (auto k = p.find("vfxEditorID"); k != p.end() && k->is_string()) {
+						settings.corpseExplosionVfxEditorID = k->get<std::string>();
+					}
+					if (auto k = p.find("notify"); k != p.end() && k->is_boolean()) {
+						settings.corpseExplosionNotify = k->get<bool>();
+					}
+				}
+
 			} catch (const std::exception& e) {
 				SKSE::log::warn("Failed to parse settings.json: {}", e.what());
 				return Defaults();
@@ -172,6 +214,14 @@ namespace CodexOfPowerNG
 				{ "every", settings.rewardEvery },
 				{ "multiplier", settings.rewardMultiplier },
 				{ "allowSkillRewards", settings.allowSkillRewards },
+			};
+			j["corpseExplosion"] = {
+				{ "enabled", settings.corpseExplosionEnabled },
+				{ "chancePct", settings.corpseExplosionChancePct },
+				{ "cooldownMs", settings.corpseExplosionCooldownMs },
+				{ "vfxMode", settings.corpseExplosionVfxMode },
+				{ "vfxEditorID", settings.corpseExplosionVfxEditorID },
+				{ "notify", settings.corpseExplosionNotify },
 			};
 
 			std::ofstream out(path, std::ios::binary | std::ios::trunc);

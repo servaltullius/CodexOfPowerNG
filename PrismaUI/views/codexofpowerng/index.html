@@ -651,35 +651,89 @@
           </div>
         </div>
         <div style="height: 12px"></div>
-        <div class="grid2">
-          <div class="card">
-            <h2 data-i18n="settings.safetyTitle">Safety</h2>
-            <label class="inline"><input type="checkbox" id="setProtectFav" /> <span data-i18n="settings.protectFavorites">Protect favorited/hotkey items</span></label>
-            <div style="height: 10px"></div>
-            <label class="inline"><input type="checkbox" id="setNormalize" /> <span data-i18n="settings.normalizeRegistration">Normalize registration (template/variant map)</span></label>
-            <div style="height: 10px"></div>
-            <label class="inline"><input type="checkbox" id="setLootNotify" /> <span data-i18n="settings.lootNotify">Loot notification</span></label>
-          </div>
-          <div class="card">
-            <h2 data-i18n="settings.rewardsTitle">Rewards</h2>
-            <label class="inline"><input type="checkbox" id="setRewardsEnabled" /> <span data-i18n="settings.enableRewards">Enable rewards</span></label>
-            <div style="height: 10px"></div>
-            <div class="small" data-i18n="settings.rewardEvery">Every</div>
-            <input id="setRewardEvery" type="number" min="1" step="1" />
-            <div style="height: 10px"></div>
-            <div class="small" data-i18n="settings.rewardMultiplier">Multiplier</div>
-            <input id="setRewardMult" type="number" min="0" step="0.1" />
-            <div style="height: 10px"></div>
-            <label class="inline"><input type="checkbox" id="setSkillRewards" /> <span data-i18n="settings.allowSkillRewards">Allow skill rewards</span></label>
-          </div>
-        </div>
+	        <div class="grid2">
+	          <div class="card">
+	            <h2 data-i18n="settings.safetyTitle">Safety</h2>
+	            <label class="inline"><input type="checkbox" id="setProtectFav" /> <span data-i18n="settings.protectFavorites">Protect favorited/hotkey items</span></label>
+	            <div style="height: 10px"></div>
+	            <label class="inline"><input type="checkbox" id="setNormalize" /> <span data-i18n="settings.normalizeRegistration">Normalize registration (template/variant map)</span></label>
+	            <div style="height: 10px"></div>
+	            <label class="inline"><input type="checkbox" id="setLootNotify" /> <span data-i18n="settings.lootNotify">Loot notification</span></label>
+	          </div>
+	          <div class="card">
+	            <h2 data-i18n="settings.rewardsTitle">Rewards</h2>
+	            <label class="inline"><input type="checkbox" id="setRewardsEnabled" /> <span data-i18n="settings.enableRewards">Enable rewards</span></label>
+	            <div style="height: 10px"></div>
+	            <div class="small" data-i18n="settings.rewardEvery">Every</div>
+	            <input id="setRewardEvery" type="number" min="1" step="1" />
+	            <div style="height: 10px"></div>
+	            <div class="small" data-i18n="settings.rewardMultiplier">Multiplier</div>
+	            <input id="setRewardMult" type="number" min="0" step="0.1" />
+	            <div style="height: 10px"></div>
+	            <label class="inline"><input type="checkbox" id="setSkillRewards" /> <span data-i18n="settings.allowSkillRewards">Allow skill rewards</span></label>
+	          </div>
+	        </div>
 
-        <div style="height: 12px"></div>
-        <div class="row">
-          <button id="btnReloadSettings"><span class="btnLabel" data-i18n="btn.reload">Reload</span></button>
-          <button class="primary" id="btnSaveSettings"><span class="btnLabel" data-i18n="btn.save">Save</span></button>
-        </div>
-      </div>
+	        <div style="height: 12px"></div>
+	        <div class="card">
+	          <h2 data-i18n="settings.procTitle">Procs</h2>
+	          <label class="inline"
+	            ><input type="checkbox" id="setCorpseExplEnabled" />
+	            <span data-i18n="settings.corpseExplEnabled">Corpse explosion (on kill)</span></label
+	          >
+	          <div class="small" style="margin-top: 8px" data-i18n="settings.corpseExplHelp">
+	            Visual-only feedback when you kill an enemy. No damage / no real explosion.
+	          </div>
+	          <div style="height: 10px"></div>
+	          <div class="grid2">
+	            <div>
+	              <div class="small" data-i18n="settings.corpseExplChance">Chance (%)</div>
+	              <input id="setCorpseExplChance" type="number" min="0" max="100" step="0.5" />
+	            </div>
+	            <div>
+	              <div class="small" data-i18n="settings.corpseExplCooldown">Cooldown (ms)</div>
+	              <input id="setCorpseExplCooldown" type="number" min="0" step="100" />
+	            </div>
+	          </div>
+	          <div style="height: 10px"></div>
+	          <div class="grid2">
+	            <div>
+	              <div class="small" data-i18n="settings.corpseExplVfxMode">VFX mode</div>
+	              <div style="height: 8px"></div>
+	              <div class="dropdown" id="corpseModeDropdown">
+	                <button id="corpseModeBtn" type="button">
+	                  <span id="corpseModeBtnLabel">auto</span>
+	                  <span style="margin-left: auto; opacity: 0.7">▾</span>
+	                </button>
+	                <div class="dropdownMenu" id="corpseModeMenu"></div>
+	                <select id="setCorpseExplMode" style="display: none">
+	                  <option value="auto" data-i18n="settings.vfxAuto">Auto (Recommended)</option>
+	                  <option value="art" data-i18n="settings.vfxArt">ArtObject (hit art)</option>
+	                  <option value="shader" data-i18n="settings.vfxShader">EffectShader (overlay)</option>
+	                  <option value="none" data-i18n="settings.vfxNone">None</option>
+	                </select>
+	              </div>
+	            </div>
+	            <div>
+	              <label class="inline" style="margin-top: 22px"
+	                ><input type="checkbox" id="setCorpseExplNotify" />
+	                <span data-i18n="settings.corpseExplNotify">Notify when it procs</span></label
+	              >
+	            </div>
+	          </div>
+	          <div style="height: 10px"></div>
+	          <div class="small" data-i18n="settings.corpseExplEditorHelp">
+	            Advanced: VFX EditorID override (ARTO/EFSH). Leave empty for auto.
+	          </div>
+	          <input id="setCorpseExplEditorID" class="mono" placeholder="(auto)" />
+	        </div>
+
+	        <div style="height: 12px"></div>
+	        <div class="row">
+	          <button id="btnReloadSettings"><span class="btnLabel" data-i18n="btn.reload">Reload</span></button>
+	          <button class="primary" id="btnSaveSettings"><span class="btnLabel" data-i18n="btn.save">Save</span></button>
+	        </div>
+	      </div>
     </div>
 
     <div class="toast" id="toast">
@@ -708,6 +762,12 @@
 	      const langBtnLabelEl = document.getElementById("langBtnLabel");
 	      const langMenuEl = document.getElementById("langMenu");
 	      let langMenuOpen = false;
+
+	      const corpseModeSelectEl = document.getElementById("setCorpseExplMode");
+	      const corpseModeBtnEl = document.getElementById("corpseModeBtn");
+	      const corpseModeBtnLabelEl = document.getElementById("corpseModeBtnLabel");
+	      const corpseModeMenuEl = document.getElementById("corpseModeMenu");
+	      let corpseModeMenuOpen = false;
 
 	      const uiScaleModeEl = document.getElementById("setUiScaleMode");
 	      const uiScaleRangeEl = document.getElementById("setUiScaleRange");
@@ -806,11 +866,23 @@
 	          "settings.enableRewards": "Enable rewards",
 	          "settings.rewardEvery": "Every",
 	          "settings.rewardMultiplier": "Multiplier",
-	          "settings.allowSkillRewards": "Allow skill rewards",
-	          "inv.pagesize.100": "100 / page",
-	          "inv.pagesize.200": "200 / page",
-	          "inv.pagesize.300": "300 / page",
-	          "inv.pagesize.400": "400 / page",
+		          "settings.allowSkillRewards": "Allow skill rewards",
+		          "settings.procTitle": "Procs",
+		          "settings.corpseExplEnabled": "Corpse explosion (on kill)",
+		          "settings.corpseExplHelp": "Visual-only feedback when you kill an enemy. No damage / no real explosion.",
+		          "settings.corpseExplChance": "Chance (%)",
+		          "settings.corpseExplCooldown": "Cooldown (ms)",
+		          "settings.corpseExplVfxMode": "VFX mode",
+		          "settings.corpseExplNotify": "Notify when it procs",
+		          "settings.corpseExplEditorHelp": "Advanced: VFX EditorID override (ARTO/EFSH). Leave empty for auto.",
+		          "settings.vfxAuto": "Auto (Recommended)",
+		          "settings.vfxArt": "ArtObject (hit art)",
+		          "settings.vfxShader": "EffectShader (overlay)",
+		          "settings.vfxNone": "None",
+		          "inv.pagesize.100": "100 / page",
+		          "inv.pagesize.200": "200 / page",
+		          "inv.pagesize.300": "300 / page",
+		          "inv.pagesize.400": "400 / page",
 	          "toast.info": "info",
 	          "toast.error": "error",
 	          "toast.warn": "warning",
@@ -909,11 +981,23 @@
 	          "settings.enableRewards": "보상 활성화",
 	          "settings.rewardEvery": "N개마다",
 	          "settings.rewardMultiplier": "배수",
-	          "settings.allowSkillRewards": "스킬 보상 허용",
-	          "inv.pagesize.100": "100 / 페이지",
-	          "inv.pagesize.200": "200 / 페이지",
-	          "inv.pagesize.300": "300 / 페이지",
-	          "inv.pagesize.400": "400 / 페이지",
+		          "settings.allowSkillRewards": "스킬 보상 허용",
+		          "settings.procTitle": "프로크",
+		          "settings.corpseExplEnabled": "시체 폭발(킬 시)",
+		          "settings.corpseExplHelp": "적을 처치했을 때 발동하는 시각 효과입니다. 데미지/실제 폭발은 없습니다.",
+		          "settings.corpseExplChance": "확률(%)",
+		          "settings.corpseExplCooldown": "쿨다운(ms)",
+		          "settings.corpseExplVfxMode": "VFX 모드",
+		          "settings.corpseExplNotify": "발동 시 알림",
+		          "settings.corpseExplEditorHelp": "고급: VFX EditorID(ARTO/EFSH) 오버라이드. 비워두면 자동.",
+		          "settings.vfxAuto": "자동(권장)",
+		          "settings.vfxArt": "ArtObject(히트 아트)",
+		          "settings.vfxShader": "EffectShader(오버레이)",
+		          "settings.vfxNone": "없음",
+		          "inv.pagesize.100": "100 / 페이지",
+		          "inv.pagesize.200": "200 / 페이지",
+		          "inv.pagesize.300": "300 / 페이지",
+		          "inv.pagesize.400": "400 / 페이지",
 	          "toast.info": "알림",
 	          "toast.error": "오류",
 	          "toast.warn": "경고",
@@ -967,6 +1051,7 @@
 
 	        // Dynamic labels (not driven by data-i18n)
 	        syncLangDropdown();
+	        syncCorpseModeDropdown();
 	        updateToggleKeyResolved();
 	      }
 
@@ -1345,6 +1430,62 @@
 	        langMenuEl.classList.add("open");
 	      }
 
+	      function closeCorpseModeMenu() {
+	        corpseModeMenuOpen = false;
+	        if (corpseModeMenuEl) corpseModeMenuEl.classList.remove("open");
+	      }
+
+	      function getSelectOptionLabel(selectEl, value) {
+	        if (!selectEl) return value;
+	        const v = String(value || "");
+	        const opts = selectEl.options || [];
+	        for (let i = 0; i < opts.length; i++) {
+	          const opt = opts[i];
+	          if (opt && String(opt.value) === v) {
+	            return (opt.textContent || v).trim() || v;
+	          }
+	        }
+	        return v;
+	      }
+
+	      function syncCorpseModeDropdown() {
+	        if (!corpseModeSelectEl || !corpseModeBtnLabelEl) return;
+	        const v = String(corpseModeSelectEl.value || "auto");
+	        corpseModeBtnLabelEl.textContent = getSelectOptionLabel(corpseModeSelectEl, v);
+	      }
+
+	      function openCorpseModeMenu() {
+	        if (!corpseModeMenuEl || !corpseModeSelectEl) return;
+	        const current = String(corpseModeSelectEl.value || "auto");
+	        const opts = Array.from(corpseModeSelectEl.options || []);
+	        corpseModeMenuEl.innerHTML = opts
+	          .map((opt) => {
+	            const v = String(opt.value || "");
+	            const label = (opt.textContent || v).trim() || v;
+	            const active = v === current;
+	            const cls = "dropdownItem" + (active ? " active" : "");
+	            return `<button type="button" class="${cls}" data-value="${escapeHtml(v)}">${escapeHtml(label)}</button>`;
+	          })
+	          .join("");
+
+	        corpseModeMenuEl.querySelectorAll("button[data-value]").forEach((btn) => {
+	          btn.addEventListener("click", () => {
+	            const v = btn.getAttribute("data-value") || "auto";
+	            corpseModeSelectEl.value = v;
+	            try {
+	              corpseModeSelectEl.dispatchEvent(new Event("change", { bubbles: true }));
+	            } catch {
+	              // noop
+	            }
+	            syncCorpseModeDropdown();
+	            closeCorpseModeMenu();
+	          });
+	        });
+
+	        corpseModeMenuOpen = true;
+	        corpseModeMenuEl.classList.add("open");
+	      }
+
       function setTab(tabId) {
         document.querySelectorAll(".tabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tabId));
         document.querySelectorAll(".section").forEach((sec) => sec.classList.toggle("active", sec.id === tabId));
@@ -1547,26 +1688,33 @@
                 .join("");
       }
 
-      function renderSettings() {
-        if (!settings) return;
-        setToggleKeyInputFromDik(coalesce(settings.toggleKeyCode, 0) >>> 0);
-        if (langSelectEl) {
-          langSelectEl.value = coalesce(settings.languageOverride, "auto");
-          syncLangDropdown();
-        }
-        document.getElementById("setPauseGame").checked = !!settings.uiPauseGame;
-        document.getElementById("setDisableFocusMenu").checked = !!settings.uiDisableFocusMenu;
-        document.getElementById("setDestroyOnClose").checked = !!settings.uiDestroyOnClose;
-        document.getElementById("setNormalize").checked = !!settings.normalizeRegistration;
-        document.getElementById("setProtectFav").checked = !!settings.protectFavorites;
-        document.getElementById("setLootNotify").checked = !!settings.enableLootNotify;
-        document.getElementById("setRewardsEnabled").checked = !!settings.enableRewards;
-        document.getElementById("setRewardEvery").value = coalesce(settings.rewardEvery, 10);
-        document.getElementById("setRewardMult").value = coalesce(settings.rewardMultiplier, 1.0);
-        document.getElementById("setSkillRewards").checked = !!settings.allowSkillRewards;
+	      function renderSettings() {
+	        if (!settings) return;
+	        setToggleKeyInputFromDik(coalesce(settings.toggleKeyCode, 0) >>> 0);
+	        if (langSelectEl) {
+	          langSelectEl.value = coalesce(settings.languageOverride, "auto");
+	          syncLangDropdown();
+	        }
+	        document.getElementById("setPauseGame").checked = !!settings.uiPauseGame;
+	        document.getElementById("setDisableFocusMenu").checked = !!settings.uiDisableFocusMenu;
+	        document.getElementById("setDestroyOnClose").checked = !!settings.uiDestroyOnClose;
+	        document.getElementById("setNormalize").checked = !!settings.normalizeRegistration;
+	        document.getElementById("setProtectFav").checked = !!settings.protectFavorites;
+	        document.getElementById("setLootNotify").checked = !!settings.enableLootNotify;
+	        document.getElementById("setRewardsEnabled").checked = !!settings.enableRewards;
+	        document.getElementById("setRewardEvery").value = coalesce(settings.rewardEvery, 10);
+	        document.getElementById("setRewardMult").value = coalesce(settings.rewardMultiplier, 1.0);
+	        document.getElementById("setSkillRewards").checked = !!settings.allowSkillRewards;
+	        document.getElementById("setCorpseExplEnabled").checked = !!settings.corpseExplosionEnabled;
+	        document.getElementById("setCorpseExplChance").value = coalesce(settings.corpseExplosionChancePct, 10.0);
+	        document.getElementById("setCorpseExplCooldown").value = coalesce(settings.corpseExplosionCooldownMs, 2000);
+	        document.getElementById("setCorpseExplMode").value = coalesce(settings.corpseExplosionVfxMode, "auto");
+	        syncCorpseModeDropdown();
+	        document.getElementById("setCorpseExplEditorID").value = coalesce(settings.corpseExplosionVfxEditorID, "");
+	        document.getElementById("setCorpseExplNotify").checked = !!settings.corpseExplosionNotify;
 
-	        // Input scale: prefer localStorage override, otherwise use settings value.
-	        const desiredInputScale = parseFloat(String(coalesce(settings.uiInputScale, 1.0)));
+		        // Input scale: prefer localStorage override, otherwise use settings value.
+		        const desiredInputScale = parseFloat(String(coalesce(settings.uiInputScale, 1.0)));
 	        if (!inputScaleHasLocal) {
 	          setInputScale(isFinite(desiredInputScale) && desiredInputScale > 0 ? desiredInputScale : 1.0, { persist: false });
 	          // If auto UI scaling is enabled, re-apply using the (potentially updated) inputScale hint.
@@ -1795,31 +1943,37 @@
       // (renderSettings/escapeHtml/native callbacks/wiring moved earlier)
 
       document.getElementById("btnReloadSettings").addEventListener("click", () => safeCall("copng_getSettings", {}));
-      document.getElementById("btnSaveSettings").addEventListener("click", () => {
-        const keyRaw = (document.getElementById("setToggleKey").value || "").trim();
-        let key = KC && KC.parseKeybindInput ? KC.parseKeybindInput(keyRaw) : null;
-        if (key == null) {
+	      document.getElementById("btnSaveSettings").addEventListener("click", () => {
+	        const keyRaw = (document.getElementById("setToggleKey").value || "").trim();
+	        let key = KC && KC.parseKeybindInput ? KC.parseKeybindInput(keyRaw) : null;
+	        if (key == null) {
           key = getToggleKeyDik();
           setToggleKeyInputFromDik(key);
           showToast("warn", `${t("toast.bindKeyUnknown", "Unsupported key.")}`);
         }
-        const payload = {
-          toggleKeyCode: (key >>> 0) & 0xff,
-          languageOverride: document.getElementById("setLang").value,
-          uiPauseGame: document.getElementById("setPauseGame").checked,
-          uiDisableFocusMenu: document.getElementById("setDisableFocusMenu").checked,
-          uiDestroyOnClose: document.getElementById("setDestroyOnClose").checked,
-          uiInputScale: clamp(inputScale, 0.5, 3.0),
-          normalizeRegistration: document.getElementById("setNormalize").checked,
-          protectFavorites: document.getElementById("setProtectFav").checked,
-          enableLootNotify: document.getElementById("setLootNotify").checked,
-          enableRewards: document.getElementById("setRewardsEnabled").checked,
-          rewardEvery: parseInt(document.getElementById("setRewardEvery").value, 10) || 10,
-          rewardMultiplier: parseFloat(document.getElementById("setRewardMult").value) || 1.0,
-          allowSkillRewards: document.getElementById("setSkillRewards").checked,
-        };
-        safeCall("copng_saveSettings", payload);
-      });
+	        const payload = {
+	          toggleKeyCode: (key >>> 0) & 0xff,
+	          languageOverride: document.getElementById("setLang").value,
+	          uiPauseGame: document.getElementById("setPauseGame").checked,
+	          uiDisableFocusMenu: document.getElementById("setDisableFocusMenu").checked,
+	          uiDestroyOnClose: document.getElementById("setDestroyOnClose").checked,
+	          uiInputScale: clamp(inputScale, 0.5, 3.0),
+	          normalizeRegistration: document.getElementById("setNormalize").checked,
+	          protectFavorites: document.getElementById("setProtectFav").checked,
+	          enableLootNotify: document.getElementById("setLootNotify").checked,
+	          enableRewards: document.getElementById("setRewardsEnabled").checked,
+	          rewardEvery: parseInt(document.getElementById("setRewardEvery").value, 10) || 10,
+	          rewardMultiplier: parseFloat(document.getElementById("setRewardMult").value) || 1.0,
+	          allowSkillRewards: document.getElementById("setSkillRewards").checked,
+	          corpseExplosionEnabled: document.getElementById("setCorpseExplEnabled").checked,
+	          corpseExplosionChancePct: clamp(parseFloat(document.getElementById("setCorpseExplChance").value) || 0, 0, 100),
+	          corpseExplosionCooldownMs: clamp(parseInt(document.getElementById("setCorpseExplCooldown").value, 10) || 0, 0, 60000),
+	          corpseExplosionVfxMode: document.getElementById("setCorpseExplMode").value,
+	          corpseExplosionVfxEditorID: (document.getElementById("setCorpseExplEditorID").value || "").trim(),
+	          corpseExplosionNotify: document.getElementById("setCorpseExplNotify").checked,
+	        };
+	        safeCall("copng_saveSettings", payload);
+	      });
 
 	      const toggleKeyInputEl = document.getElementById("setToggleKey");
 	      if (toggleKeyInputEl) {
@@ -1862,6 +2016,40 @@
 	            "scroll",
 	            () => {
 	              if (langMenuOpen) closeLangMenu();
+	            },
+	            { passive: true }
+	          );
+	        }
+	      }
+
+	      if (corpseModeBtnEl && corpseModeMenuEl && corpseModeSelectEl) {
+	        syncCorpseModeDropdown();
+	        corpseModeSelectEl.addEventListener("change", () => syncCorpseModeDropdown());
+
+	        corpseModeBtnEl.addEventListener("click", (e) => {
+	          if (e && e.preventDefault) e.preventDefault();
+	          if (corpseModeMenuOpen) closeCorpseModeMenu();
+	          else openCorpseModeMenu();
+	        });
+
+	        window.addEventListener(
+	          "click",
+	          (e) => {
+	            if (!corpseModeMenuOpen) return;
+	            const dd = document.getElementById("corpseModeDropdown");
+	            if (!dd) return closeCorpseModeMenu();
+	            const target = e && e.target ? e.target : null;
+	            if (target && dd.contains(target)) return;
+	            closeCorpseModeMenu();
+	          },
+	          true
+	        );
+
+	        if (rootScrollEl) {
+	          rootScrollEl.addEventListener(
+	            "scroll",
+	            () => {
+	              if (corpseModeMenuOpen) closeCorpseModeMenu();
 	            },
 	            { passive: true }
 	          );
@@ -2295,9 +2483,10 @@
 	        return;
 	      }
 
-	      if (langMenuOpen && isEscape) {
+	      if ((langMenuOpen || corpseModeMenuOpen) && isEscape) {
 	        if (e.preventDefault) e.preventDefault();
-	        closeLangMenu();
+	        if (langMenuOpen) closeLangMenu();
+	        if (corpseModeMenuOpen) closeCorpseModeMenu();
 	        return;
 	      }
 

@@ -70,7 +70,6 @@
     "registerUnnamed": "Codex of Power: Cannot register (unnamed item)",
     "registerSaveFail": "Codex of Power: Register failed (save failed)",
     "registerOkPrefix": "Registered: ",
-    "corpseExploded": "Corpse explosion!",
     "categoryRewardPrefix": "Category completion reward: ",
     "totalPrefix": "total ",
     "totalSuffix": " items"

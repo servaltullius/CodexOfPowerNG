@@ -158,12 +158,6 @@ namespace CodexOfPowerNG::PrismaUIManager
 				{ "rewardEvery", s.rewardEvery },
 				{ "rewardMultiplier", s.rewardMultiplier },
 				{ "allowSkillRewards", s.allowSkillRewards },
-				{ "corpseExplosionEnabled", s.corpseExplosionEnabled },
-				{ "corpseExplosionChancePct", s.corpseExplosionChancePct },
-				{ "corpseExplosionCooldownMs", s.corpseExplosionCooldownMs },
-				{ "corpseExplosionVfxMode", s.corpseExplosionVfxMode },
-				{ "corpseExplosionVfxEditorID", s.corpseExplosionVfxEditorID },
-				{ "corpseExplosionNotify", s.corpseExplosionNotify },
 			};
 		}
 
@@ -186,13 +180,7 @@ namespace CodexOfPowerNG::PrismaUIManager
 			       a.enableRewards == b.enableRewards &&
 			       a.rewardEvery == b.rewardEvery &&
 			       NearlyEqual(a.rewardMultiplier, b.rewardMultiplier) &&
-			       a.allowSkillRewards == b.allowSkillRewards &&
-			       a.corpseExplosionEnabled == b.corpseExplosionEnabled &&
-			       NearlyEqual(a.corpseExplosionChancePct, b.corpseExplosionChancePct) &&
-			       a.corpseExplosionCooldownMs == b.corpseExplosionCooldownMs &&
-			       a.corpseExplosionVfxMode == b.corpseExplosionVfxMode &&
-			       a.corpseExplosionVfxEditorID == b.corpseExplosionVfxEditorID &&
-			       a.corpseExplosionNotify == b.corpseExplosionNotify;
+			       a.allowSkillRewards == b.allowSkillRewards;
 		}
 
 		void QueueSaveSettingsToDisk(SettingsSaveJob job) noexcept
@@ -292,24 +280,6 @@ namespace CodexOfPowerNG::PrismaUIManager
 				}
 				if (auto it = j.find("allowSkillRewards"); it != j.end() && it->is_boolean()) {
 					base.allowSkillRewards = it->get<bool>();
-				}
-				if (auto it = j.find("corpseExplosionEnabled"); it != j.end() && it->is_boolean()) {
-					base.corpseExplosionEnabled = it->get<bool>();
-				}
-				if (auto it = j.find("corpseExplosionChancePct"); it != j.end() && (it->is_number_float() || it->is_number_integer())) {
-					base.corpseExplosionChancePct = it->get<double>();
-				}
-				if (auto it = j.find("corpseExplosionCooldownMs"); it != j.end() && it->is_number_integer()) {
-					base.corpseExplosionCooldownMs = it->get<std::int32_t>();
-				}
-				if (auto it = j.find("corpseExplosionVfxMode"); it != j.end() && it->is_string()) {
-					base.corpseExplosionVfxMode = it->get<std::string>();
-				}
-				if (auto it = j.find("corpseExplosionVfxEditorID"); it != j.end() && it->is_string()) {
-					base.corpseExplosionVfxEditorID = it->get<std::string>();
-				}
-				if (auto it = j.find("corpseExplosionNotify"); it != j.end() && it->is_boolean()) {
-					base.corpseExplosionNotify = it->get<bool>();
 				}
 			} catch (...) {
 			}

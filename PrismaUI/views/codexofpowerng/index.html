@@ -158,6 +158,24 @@
       #tabSettings #setLang option {
         font-size: calc(15px * var(--uiScale));
       }
+      .keybindRow {
+        display: flex;
+        gap: calc(10px * var(--uiScale));
+        align-items: stretch;
+      }
+      .keybindRow input {
+        flex: 1 1 auto;
+        width: auto;
+      }
+      .keybindRow button {
+        flex: 0 0 auto;
+        min-width: calc(110px * var(--uiScale));
+        padding-left: calc(10px * var(--uiScale));
+        padding-right: calc(10px * var(--uiScale));
+      }
+      #toggleKeyResolved {
+        margin-top: calc(6px * var(--uiScale));
+      }
       .small {
         font-size: calc(12px * var(--uiScale));
         color: var(--muted);
@@ -473,7 +491,11 @@
               Toggle key code (DIK). Example: <span class="mono">0x3E</span> (F4)
             </div>
             <div style="height: 8px"></div>
-            <input id="setToggleKey" class="mono" placeholder="0x3E" />
+            <div class="keybindRow">
+              <input id="setToggleKey" class="mono" placeholder="F4" />
+              <button id="btnCaptureToggleKey" class="mono" type="button"><span class="btnLabel" data-i18n="btn.bindKey">Bind…</span></button>
+            </div>
+            <div class="small" id="toggleKeyResolved">...</div>
           </div>
           <div>
             <div class="small" data-i18n="settings.languageOverride">Language override</div>
@@ -609,6 +631,7 @@
       <div id="toastMsg"></div>
     </div>
 
+    <script src="keycodes.js"></script>
     <script>
 	      const rootScrollEl = document.querySelector(".root");
 	      const statusEl = document.getElementById("status");
@@ -616,6 +639,11 @@
 	      const langEl = document.getElementById("lang");
 	      const hotkeyEl = document.getElementById("hotkey");
 	      const inputScalePillEl = document.getElementById("inputScale");
+
+	      const KC = window.COPNG_KEYCODES || null;
+	      const toggleKeyResolvedEl = document.getElementById("toggleKeyResolved");
+	      const btnCaptureToggleKeyEl = document.getElementById("btnCaptureToggleKey");
+	      let captureToggleKey = false;
 
 	      const uiScaleModeEl = document.getElementById("setUiScaleMode");
 	      const uiScaleRangeEl = document.getElementById("setUiScaleRange");
@@ -653,6 +681,7 @@
 	          "btn.refund": "Refund",
 	          "btn.reload": "Reload",
 	          "btn.save": "Save",
+	          "btn.bindKey": "Bind…",
 	          "tab.quick": "Quick Register",
 	          "tab.registered": "Registered",
 	          "tab.rewards": "Rewards",
@@ -670,7 +699,10 @@
 	          "quick.help":
 	            "Only shows items safe to consume (not worn; optionally not favorited). List is paginated to avoid stutter. Click a row to select, then press Enter to register.",
 	          "rewards.help": "Refund removes only recorded bonus stats. It does not restore consumed items and does not clear registrations.",
-	          "settings.toggleKeyHelp": "Toggle key code (DIK). Example: <span class=\"mono\">0x3E</span> (F4)",
+	          "settings.toggleKeyHelp":
+	            "Toggle key (name or DIK). Examples: <span class=\"mono\">F4</span>, <span class=\"mono\">E</span>, <span class=\"mono\">1</span>, <span class=\"mono\">0x3E</span>",
+	          "settings.resolved": "Resolved",
+	          "settings.invalid": "invalid",
 	          "settings.languageOverride": "Language override",
 	          "lang.auto": "auto (game)",
 	          "lang.en": "en (English)",
@@ -718,6 +750,9 @@
 	          "toast.info": "info",
 	          "toast.error": "error",
 	          "toast.warn": "warning",
+	          "toast.bindKey": "Press a key to bind (Esc cancels).",
+	          "toast.bindKeyUnknown": "Unsupported key. Type a DIK code (e.g. 0x3E).",
+	          "toast.bindKeySet": "Hotkey set",
 	          "confirm.refund": "Refund rewards? This cannot be undone.",
 	          "status.ui": "UI",
 	          "status.loading": "loading",
@@ -749,6 +784,7 @@
 	          "btn.refund": "환불",
 	          "btn.reload": "다시 불러오기",
 	          "btn.save": "저장",
+	          "btn.bindKey": "키 지정…",
 	          "tab.quick": "빠른 등록",
 	          "tab.registered": "등록됨",
 	          "tab.rewards": "보상",
@@ -766,7 +802,10 @@
 	          "quick.help":
 	            "소비해도 안전한 아이템만 표시합니다(착용 중 제외, 즐겨찾기 보호는 설정). 렉 방지를 위해 페이지네이션됩니다. 행을 클릭해 선택한 뒤 Enter로 등록할 수 있습니다.",
 	          "rewards.help": "환불은 기록된 보너스 스탯만 제거합니다. 소비한 아이템은 복구되지 않으며, 등록 기록도 지워지지 않습니다.",
-	          "settings.toggleKeyHelp": "토글 키 코드(DIK). 예: <span class=\"mono\">0x3E</span> (F4)",
+	          "settings.toggleKeyHelp":
+	            "토글 키(키 이름 또는 DIK). 예: <span class=\"mono\">F4</span>, <span class=\"mono\">E</span>, <span class=\"mono\">1</span>, <span class=\"mono\">0x3E</span>",
+	          "settings.resolved": "해석",
+	          "settings.invalid": "유효하지 않음",
 	          "settings.languageOverride": "언어 강제",
 	          "lang.auto": "자동(게임)",
 	          "lang.en": "영어(en)",
@@ -814,6 +853,9 @@
 	          "toast.info": "알림",
 	          "toast.error": "오류",
 	          "toast.warn": "경고",
+	          "toast.bindKey": "키를 눌러 지정하세요 (Esc 취소).",
+	          "toast.bindKeyUnknown": "지원하지 않는 키입니다. DIK 코드를 입력하세요(예: 0x3E).",
+	          "toast.bindKeySet": "단축키 설정",
 	          "confirm.refund": "보상을 환불할까요? 되돌릴 수 없습니다.",
 	          "status.ui": "UI",
 	          "status.loading": "로딩",
@@ -1154,6 +1196,44 @@
         toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2500);
       }
 
+	      function getToggleKeyDik() {
+	        if (settings && isFinite(settings.toggleKeyCode)) return (settings.toggleKeyCode >>> 0) & 0xff;
+	        if (state && isFinite(state.toggleKeyCode)) return (state.toggleKeyCode >>> 0) & 0xff;
+	        return 0x3e;
+	      }
+
+	      function formatToggleKeyLabel(dik) {
+	        const name = KC && KC.dikToKeyName ? KC.dikToKeyName(dik) : null;
+	        if (name) return name;
+	        const hex = KC && KC.dikToHex ? KC.dikToHex(dik) : null;
+	        return hex || toHex32(dik >>> 0);
+	      }
+
+	      function formatToggleKeyDisplay(dik) {
+	        const formatted = KC && KC.formatDikDisplay ? KC.formatDikDisplay(dik) : null;
+	        if (formatted) return formatted;
+	        const hex = KC && KC.dikToHex ? KC.dikToHex(dik) : null;
+	        return hex || toHex32(dik >>> 0);
+	      }
+
+	      function updateToggleKeyResolved() {
+	        if (!toggleKeyResolvedEl) return;
+	        const raw = (document.getElementById("setToggleKey").value || "").trim();
+	        const parsed = KC && KC.parseKeybindInput ? KC.parseKeybindInput(raw) : null;
+	        if (parsed == null) {
+	          toggleKeyResolvedEl.textContent = `${t("settings.resolved", "Resolved")}: ${t("settings.invalid", "invalid")}`;
+	          return;
+	        }
+	        toggleKeyResolvedEl.textContent = `${t("settings.resolved", "Resolved")}: ${formatToggleKeyDisplay(parsed)}`;
+	      }
+
+	      function setToggleKeyInputFromDik(dik) {
+	        const input = document.getElementById("setToggleKey");
+	        if (!input) return;
+	        input.value = formatToggleKeyLabel(dik);
+	        updateToggleKeyResolved();
+	      }
+
       function setTab(tabId) {
         document.querySelectorAll(".tabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tabId));
         document.querySelectorAll(".section").forEach((sec) => sec.classList.toggle("active", sec.id === tabId));
@@ -1167,7 +1247,7 @@
         } | ${ui.focused ? t("status.focus", "focus") : t("status.noFocus", "no-focus")}`;
         countsEl.textContent = `${t("status.registered", "Registered")}: ${coalesce(state.registeredCount, 0)}`;
         langEl.textContent = `${t("status.lang", "Lang")}: ${coalesce(state.language, "?")}`;
-        hotkeyEl.textContent = `${t("status.hotkey", "Hotkey")}: ${toHex32(coalesce(state.toggleKeyCode, 0))}`;
+        hotkeyEl.textContent = `${t("status.hotkey", "Hotkey")}: ${formatToggleKeyDisplay(coalesce(state.toggleKeyCode, 0) >>> 0)}`;
 	        if (inputScalePillEl) inputScalePillEl.textContent = `Input: ${inputScale.toFixed(2)}`;
       }
 
@@ -1358,7 +1438,7 @@
 
       function renderSettings() {
         if (!settings) return;
-        document.getElementById("setToggleKey").value = toHex32(coalesce(settings.toggleKeyCode, 0));
+        setToggleKeyInputFromDik(coalesce(settings.toggleKeyCode, 0) >>> 0);
         document.getElementById("setLang").value = coalesce(settings.languageOverride, "auto");
         document.getElementById("setPauseGame").checked = !!settings.uiPauseGame;
         document.getElementById("setDisableFocusMenu").checked = !!settings.uiDisableFocusMenu;
@@ -1603,10 +1683,14 @@
       document.getElementById("btnReloadSettings").addEventListener("click", () => safeCall("copng_getSettings", {}));
       document.getElementById("btnSaveSettings").addEventListener("click", () => {
         const keyRaw = (document.getElementById("setToggleKey").value || "").trim();
-        const isHex = keyRaw.indexOf("0x") === 0 || keyRaw.indexOf("0X") === 0;
-        const key = isHex ? parseInt(keyRaw, 16) : parseInt(keyRaw, 10);
+        let key = KC && KC.parseKeybindInput ? KC.parseKeybindInput(keyRaw) : null;
+        if (key == null) {
+          key = getToggleKeyDik();
+          setToggleKeyInputFromDik(key);
+          showToast("warn", `${t("toast.bindKeyUnknown", "Unsupported key.")}`);
+        }
         const payload = {
-          toggleKeyCode: isFinite(key) ? key >>> 0 : 0x3e,
+          toggleKeyCode: (key >>> 0) & 0xff,
           languageOverride: document.getElementById("setLang").value,
           uiPauseGame: document.getElementById("setPauseGame").checked,
           uiDisableFocusMenu: document.getElementById("setDisableFocusMenu").checked,
@@ -1622,6 +1706,19 @@
         };
         safeCall("copng_saveSettings", payload);
       });
+
+	      const toggleKeyInputEl = document.getElementById("setToggleKey");
+	      if (toggleKeyInputEl) {
+	        toggleKeyInputEl.addEventListener("input", () => updateToggleKeyResolved());
+	        toggleKeyInputEl.addEventListener("blur", () => updateToggleKeyResolved());
+	      }
+
+	      if (btnCaptureToggleKeyEl) {
+	        btnCaptureToggleKeyEl.addEventListener("click", () => {
+	          captureToggleKey = true;
+	          showToast("info", t("toast.bindKey", "Press a key to bind (Esc cancels)."));
+	        });
+	      }
 
 	      // UI scale prefs (Auto/Manual)
 	      loadUiScalePrefs();
@@ -2008,15 +2105,17 @@
 	        true
 	      );
 
-      // Emergency close: when the view has focus, the game's input sink may not receive F4.
+      // Emergency close: when the view has focus, the game's input sink may not receive the toggle key.
       // Handle common close keys in JS so the user can always regain control.
       window.addEventListener("keydown", (e) => {
         const key = e.key || "";
         const code = e.code || "";
         const keyCode = e.keyCode || e.which || 0;
 
+        const tag = (e.target && e.target.tagName) || "";
+        const isTyping = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target && e.target.isContentEditable);
+
         const isEscape = key === "Escape" || code === "Escape" || keyCode === 27;
-        const isF4 = key === "F4" || code === "F4" || keyCode === 115;
         const isEnter = key === "Enter" || code === "Enter" || keyCode === 13;
         const isUp = key === "ArrowUp" || code === "ArrowUp" || keyCode === 38;
         const isDown = key === "ArrowDown" || code === "ArrowDown" || keyCode === 40;
@@ -2025,14 +2124,35 @@
         const isZero = key === "0" || code === "Digit0";
         const isCtrlS = (e.ctrlKey || e.metaKey) && (key.toLowerCase() === "s" || code === "KeyS" || keyCode === 83);
 
-        if (isEscape || isF4) {
+	      const eventDik = KC && KC.jsCodeToDik ? KC.jsCodeToDik(code) : null;
+	      const toggleDik = getToggleKeyDik();
+	      const toggleName = KC && KC.dikToKeyName ? KC.dikToKeyName(toggleDik) : "";
+	      const toggleIsAlnum = /^[A-Z0-9]$/.test(String(toggleName || ""));
+	      const isToggle = eventDik != null && ((eventDik >>> 0) & 0xff) === ((toggleDik >>> 0) & 0xff);
+
+	      if (captureToggleKey) {
+	        if (e.preventDefault) e.preventDefault();
+	        if (isEscape) {
+	          captureToggleKey = false;
+	          showToast("info", t("toast.bindKey", "Press a key to bind (Esc cancels)."));
+	          return;
+	        }
+	        if (eventDik != null) {
+	          setToggleKeyInputFromDik(eventDik);
+	          captureToggleKey = false;
+	          showToast("info", `${t("toast.bindKeySet", "Hotkey set")}: ${formatToggleKeyDisplay(eventDik)}`);
+	          return;
+	        }
+	        showToast("warn", t("toast.bindKeyUnknown", "Unsupported key."));
+	        return;
+	      }
+
+        if (isEscape || (isToggle && !(isTyping && toggleIsAlnum))) {
           if (e.preventDefault) e.preventDefault();
           safeCall("copng_requestToggle", {});
           return;
         }
 
-        const tag = (e.target && e.target.tagName) || "";
-        const isTyping = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target && e.target.isContentEditable);
         const activeSection = document.querySelector(".section.active");
         const isQuickTab = activeSection && activeSection.id === "tabQuick";
 

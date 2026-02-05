@@ -42,6 +42,13 @@ test("jsCodeToDik maps common KeyboardEvent.code values", () => {
   assert.equal(kc.jsCodeToDik("Digit1"), 0x02);
 });
 
+test("jsKeyCodeToDik maps keyCode fallback values (Ultralight)", () => {
+  assert.equal(kc.jsKeyCodeToDik(115), 0x3e); // F4
+  assert.equal(kc.jsKeyCodeToDik(69), 0x12); // E
+  assert.equal(kc.jsKeyCodeToDik(49), 0x02); // 1
+  assert.equal(kc.jsKeyCodeToDik(27), 0x01); // Escape
+});
+
 test("dikToHex returns compact DIK hex", () => {
   assert.equal(kc.dikToHex(0x3e), "0x3E");
   assert.equal(kc.dikToHex(0x12), "0x12");

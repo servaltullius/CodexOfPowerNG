@@ -327,12 +327,82 @@
     return null;
   }
 
+  function jsKeyCodeToDik(keyCodeRaw) {
+    const kc = Number(keyCodeRaw);
+    if (!isFinite(kc)) return null;
+    const n = kc | 0;
+
+    // A-Z
+    if (n >= 65 && n <= 90) {
+      return parseKeybindInput(String.fromCharCode(n));
+    }
+
+    // 0-9 (main keyboard)
+    if (n >= 48 && n <= 57) {
+      return parseKeybindInput(String.fromCharCode(n));
+    }
+
+    // F1-F12
+    if (n >= 112 && n <= 123) {
+      return parseKeybindInput("F" + String(n - 111));
+    }
+
+    // Numpad0..9
+    if (n >= 96 && n <= 105) {
+      return parseKeybindInput("NUMPAD" + String(n - 96));
+    }
+
+    const map = {
+      27: "ESC",
+      9: "TAB",
+      13: "ENTER",
+      32: "SPACE",
+      8: "BACKSPACE",
+      20: "CAPSLOCK",
+      37: "LEFT",
+      38: "UP",
+      39: "RIGHT",
+      40: "DOWN",
+      33: "PGUP",
+      34: "PGDN",
+      36: "HOME",
+      35: "END",
+      45: "INS",
+      46: "DEL",
+      16: "LSHIFT",
+      17: "LCTRL",
+      18: "LALT",
+      189: "MINUS",
+      187: "EQUALS",
+      219: "LBRACKET",
+      221: "RBRACKET",
+      220: "BACKSLASH",
+      186: "SEMICOLON",
+      222: "APOSTROPHE",
+      192: "GRAVE",
+      188: "COMMA",
+      190: "PERIOD",
+      191: "SLASH",
+      106: "NUMPADMULTIPLY",
+      107: "NUMPADADD",
+      109: "NUMPADSUBTRACT",
+      110: "NUMPADDECIMAL",
+      111: "NUMPADDIVIDE",
+    };
+
+    const mapped = map[n];
+    if (mapped) return parseKeybindInput(mapped);
+
+    return null;
+  }
+
   const api = Object.freeze({
     parseKeybindInput,
     dikToKeyName,
     dikToHex,
     formatDikDisplay,
     jsCodeToDik,
+    jsKeyCodeToDik,
   });
 
   // Node/CommonJS

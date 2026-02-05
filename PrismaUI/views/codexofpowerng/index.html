@@ -2272,7 +2272,17 @@
         const isZero = key === "0" || code === "Digit0";
         const isCtrlS = (e.ctrlKey || e.metaKey) && (key.toLowerCase() === "s" || code === "KeyS" || keyCode === 83);
 
-	      const eventDik = KC && KC.jsCodeToDik ? KC.jsCodeToDik(code) : null;
+	      let eventDik = null;
+	      if (KC && KC.jsCodeToDik) {
+	        eventDik = KC.jsCodeToDik(code);
+	        if (eventDik == null) eventDik = KC.jsCodeToDik(key);
+	      }
+	      if (eventDik == null && KC && KC.jsKeyCodeToDik) {
+	        eventDik = KC.jsKeyCodeToDik(keyCode);
+	      }
+	      if (eventDik == null && KC && KC.parseKeybindInput) {
+	        eventDik = KC.parseKeybindInput(key);
+	      }
 	      const toggleDik = getToggleKeyDik();
 	      const toggleName = KC && KC.dikToKeyName ? KC.dikToKeyName(toggleDik) : "";
 	      const toggleIsAlnum = /^[A-Z0-9]$/.test(String(toggleName || ""));

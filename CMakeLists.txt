@@ -23,10 +23,15 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     src/Events.cpp
     src/Inventory.cpp
     src/PrismaUIManager.cpp
+    src/PrismaUIPayloads.cpp
+    src/RegistrationMaps.cpp
+    src/RegistrationRules.cpp
+    src/RegistrationStateStore.cpp
     src/Registration.cpp
     src/Rewards.cpp
     src/Serialization.cpp
     src/State.cpp
+    src/TaskScheduler.cpp
     include/CodexOfPowerNG/Constants.h
     include/CodexOfPowerNG/Config.h
     include/CodexOfPowerNG/Events.h
@@ -34,9 +39,13 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     include/CodexOfPowerNG/L10n.h
     include/CodexOfPowerNG/PrismaUIManager.h
     include/CodexOfPowerNG/Registration.h
+    include/CodexOfPowerNG/RegistrationMaps.h
+    include/CodexOfPowerNG/RegistrationRules.h
+    include/CodexOfPowerNG/RegistrationStateStore.h
     include/CodexOfPowerNG/Rewards.h
     include/CodexOfPowerNG/Serialization.h
     include/CodexOfPowerNG/State.h
+    include/CodexOfPowerNG/TaskScheduler.h
 )
 
 target_include_directories(${PROJECT_NAME}

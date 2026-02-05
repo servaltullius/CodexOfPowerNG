@@ -4,8 +4,10 @@
 #include "CodexOfPowerNG/Constants.h"
 #include "CodexOfPowerNG/Inventory.h"
 #include "CodexOfPowerNG/L10n.h"
+#include "CodexOfPowerNG/RegistrationMaps.h"
+#include "CodexOfPowerNG/RegistrationRules.h"
+#include "CodexOfPowerNG/RegistrationStateStore.h"
 #include "CodexOfPowerNG/Rewards.h"
-#include "CodexOfPowerNG/State.h"
 
 #include <RE/Skyrim.h>
 
@@ -13,13 +15,8 @@
 
 #include <SKSE/Logger.h>
 
-#include <nlohmann/json.hpp>
-
 #include <algorithm>
 #include <charconv>
-#include <cstdio>
-#include <filesystem>
-#include <fstream>
 #include <mutex>
 #include <optional>
 #include <string_view>
@@ -84,7 +81,7 @@ namespace CodexOfPowerNG::Registration
 			return anyID & 0x00FFFFFFu;
 		}
 
-		[[nodiscard]] std::optional<RE::TESForm*> LookupFormFromEntry(std::string_view fileName, std::string_view idStr) noexcept
+		[[nodiscard]] std::optional<RE::FormID> LookupFormFromEntry(std::string_view fileName, std::string_view idStr) noexcept
 		{
 			auto idRawOpt = ParseFormID(idStr);
 			if (!idRawOpt) {
@@ -106,106 +103,7 @@ namespace CodexOfPowerNG::Registration
 				return std::nullopt;
 			}
 
-			return form;
-		}
-
-		void LoadExcludeFile(const std::filesystem::path& path, std::unordered_set<RE::FormID>& out) noexcept
-		{
-			std::ifstream in(path, std::ios::binary);
-			if (!in.is_open()) {
-				return;
-			}
-
-			try {
-				nlohmann::json j;
-				in >> j;
-
-				auto it = j.find("forms");
-				if (it == j.end() || !it->is_array()) {
-					return;
-				}
-
-				for (const auto& entry : *it) {
-					if (!entry.is_object()) {
-						continue;
-					}
-
-					auto fileIt = entry.find("file");
-					auto idIt = entry.find("id");
-					if (fileIt == entry.end() || idIt == entry.end() || !fileIt->is_string() || !idIt->is_string()) {
-						continue;
-					}
-
-					const auto file = fileIt->get<std::string>();
-					const auto id = idIt->get<std::string>();
-
-					auto formOpt = LookupFormFromEntry(file, id);
-					if (!formOpt) {
-						continue;
-					}
-
-					out.insert((*formOpt)->GetFormID());
-				}
-			} catch (const std::exception& e) {
-				SKSE::log::warn("Failed to parse exclude file '{}': {}", path.string(), e.what());
-			}
-		}
-
-		void LoadVariantMapFile(const std::filesystem::path& path, std::unordered_map<RE::FormID, RE::FormID>& out) noexcept
-		{
-			std::ifstream in(path, std::ios::binary);
-			if (!in.is_open()) {
-				return;
-			}
-
-			try {
-				nlohmann::json j;
-				in >> j;
-
-				auto it = j.find("mappings");
-				if (it == j.end() || !it->is_array()) {
-					return;
-				}
-
-				for (const auto& entry : *it) {
-					if (!entry.is_object()) {
-						continue;
-					}
-
-					const auto v = entry.find("variant");
-					const auto b = entry.find("base");
-					if (v == entry.end() || b == entry.end() || !v->is_object() || !b->is_object()) {
-						continue;
-					}
-
-					const auto vFileIt = v->find("file");
-					const auto vIdIt = v->find("id");
-					const auto bFileIt = b->find("file");
-					const auto bIdIt = b->find("id");
-					if (vFileIt == v->end() || vIdIt == v->end() || bFileIt == b->end() || bIdIt == b->end()) {
-						continue;
-					}
-					if (!vFileIt->is_string() || !vIdIt->is_string() || !bFileIt->is_string() || !bIdIt->is_string()) {
-						continue;
-					}
-
-					const auto vFormOpt = LookupFormFromEntry(vFileIt->get<std::string>(), vIdIt->get<std::string>());
-					const auto bFormOpt = LookupFormFromEntry(bFileIt->get<std::string>(), bIdIt->get<std::string>());
-					if (!vFormOpt || !bFormOpt) {
-						continue;
-					}
-
-					auto* vForm = *vFormOpt;
-					auto* bForm = *bFormOpt;
-					if (!vForm || !bForm || vForm == bForm) {
-						continue;
-					}
-
-					out.emplace(vForm->GetFormID(), bForm->GetFormID());
-				}
-			} catch (const std::exception& e) {
-				SKSE::log::warn("Failed to parse variant map '{}': {}", path.string(), e.what());
-			}
+			return form->GetFormID();
 		}
 
 		void EnsureMapsLoaded() noexcept
@@ -219,23 +117,16 @@ namespace CodexOfPowerNG::Registration
 			g_excluded.clear();
 			g_variantBase.clear();
 
-			LoadExcludeFile(std::filesystem::path(kExcludeMapPath), g_excluded);
-			LoadExcludeFile(std::filesystem::path(kExcludeUserPath), g_excluded);
-
-			for (std::uint32_t i = 1; i <= kExcludePatchMax; ++i) {
-				char name[64];
-				const auto written = std::snprintf(name, sizeof(name), "exclude_patch_%02u.json", i);
-				if (written <= 0) {
-					break;
-				}
-				const auto patchPath = std::filesystem::path(kPluginDataDir) / name;
-				if (!std::filesystem::exists(patchPath)) {
-					break;
-				}
-				LoadExcludeFile(patchPath, g_excluded);
-			}
-
-			LoadVariantMapFile(std::filesystem::path(kVariantMapPath), g_variantBase);
+			const RegistrationMaps::Paths paths{
+				.excludeMapPath = kExcludeMapPath,
+				.excludeUserPath = kExcludeUserPath,
+				.pluginDataDir = kPluginDataDir,
+				.variantMapPath = kVariantMapPath,
+				.excludePatchMax = kExcludePatchMax
+			};
+			auto loaded = RegistrationMaps::LoadFromDisk(paths, LookupFormFromEntry);
+			g_excluded = std::move(loaded.excluded);
+			g_variantBase = std::move(loaded.variantBase);
 
 			SKSE::log::info("Exclude map loaded: {} forms", g_excluded.size());
 			SKSE::log::info("Variant map loaded: {} mappings", g_variantBase.size());
@@ -256,15 +147,15 @@ namespace CodexOfPowerNG::Registration
 			return {};
 		}
 
-			[[nodiscard]] RE::TESForm* GetRegisterKey(const RE::TESForm* item, const Settings& settings) noexcept
-			{
-				if (!item) {
-					return nullptr;
-				}
+		[[nodiscard]] RE::TESForm* GetRegisterKey(const RE::TESForm* item, const Settings& settings) noexcept
+		{
+			if (!item) {
+				return nullptr;
+			}
 
-				if (!settings.normalizeRegistration) {
-					return const_cast<RE::TESForm*>(item);
-				}
+			if (!settings.normalizeRegistration) {
+				return const_cast<RE::TESForm*>(item);
+			}
 
 			RE::TESForm* regKey = const_cast<RE::TESForm*>(item);
 
@@ -281,7 +172,7 @@ namespace CodexOfPowerNG::Registration
 				}
 
 				const auto baseID = it->second;
-				if (baseID == 0 || baseID == regKey->GetFormID()) {
+				if (!RegistrationRules::IsValidVariantStep(regKey->GetFormID(), baseID)) {
 					break;
 				}
 
@@ -293,37 +184,13 @@ namespace CodexOfPowerNG::Registration
 				regKey = baseForm;
 			}
 
-				return regKey;
-			}
+			return regKey;
+		}
 
-			[[nodiscard]] RE::TESForm* GetRegisterKey(const RE::TESForm* item) noexcept
-			{
-				const auto settings = GetSettings();
-				return GetRegisterKey(item, settings);
-			}
-
-		[[nodiscard]] bool IsDragonClaw(const RE::TESForm* item) noexcept
+		[[nodiscard]] RE::TESForm* GetRegisterKey(const RE::TESForm* item) noexcept
 		{
-			auto* misc = item ? item->As<RE::TESObjectMISC>() : nullptr;
-			if (!misc) {
-				return false;
-			}
-
-			auto* n = misc->GetName();
-			if (!n || n[0] == '\0') {
-				return false;
-			}
-
-			std::string_view name = n;
-			if (name.find("Dragon Claw") != std::string_view::npos || name.find("dragon claw") != std::string_view::npos) {
-				return true;
-			}
-			// Korean (commonly "용발톱"); avoid matching generic "발톱" (e.g., bear claws ingredient).
-			if (name.find("용발톱") != std::string_view::npos) {
-				return true;
-			}
-
-			return false;
+			const auto settings = GetSettings();
+			return GetRegisterKey(item, settings);
 		}
 
 		[[nodiscard]] bool IsExcludedForm(const RE::TESForm* item) noexcept
@@ -340,19 +207,11 @@ namespace CodexOfPowerNG::Registration
 				return true;
 			}
 
-			auto& state = GetState();
-			{
-				std::scoped_lock lock(state.mutex);
-				if (state.blockedItems.contains(id)) {
-					return true;
-				}
-			}
-
-			if (item->IsKey() || item->IsLockpick() || item->IsGold()) {
+			if (RegistrationStateStore::IsBlocked(id)) {
 				return true;
 			}
 
-			if (IsDragonClaw(item)) {
+			if (RegistrationRules::IsIntrinsicExcluded(item)) {
 				return true;
 			}
 
@@ -370,18 +229,7 @@ namespace CodexOfPowerNG::Registration
 				return false;
 			}
 
-			auto& state = GetState();
-			std::scoped_lock lock(state.mutex);
-			if (state.registeredItems.contains(regKey->GetFormID())) {
-				return true;
-			}
-
-			// Backward compat: older data may have stored the non-template variant as the key.
-			if (item != regKey) {
-				return state.registeredItems.contains(item->GetFormID());
-			}
-
-			return false;
+			return RegistrationStateStore::IsRegisteredEither(regKey->GetFormID(), item->GetFormID());
 		}
 
 		[[nodiscard]] std::uint32_t ClampGroup(std::uint32_t group, const RE::TESForm* item) noexcept
@@ -412,33 +260,7 @@ namespace CodexOfPowerNG::Registration
 
 	std::uint32_t GetDiscoveryGroup(const RE::TESForm* item) noexcept
 	{
-		if (!item) {
-			return 255;
-		}
-
-		if (IsExcludedForm(item)) {
-			return 255;
-		}
-
-		switch (item->GetFormType()) {
-		case RE::FormType::Weapon:
-			return 0;
-		case RE::FormType::Armor:
-			return 1;
-		case RE::FormType::AlchemyItem:
-			return 2;
-		case RE::FormType::Ingredient:
-			return 3;
-		case RE::FormType::Book:
-			return 4;
-		case RE::FormType::Ammo:
-		case RE::FormType::Scroll:
-		case RE::FormType::SoulGem:
-		case RE::FormType::Misc:
-			return 5;
-		default:
-			return 255;
-		}
+		return RegistrationRules::DiscoveryGroupFor(item, IsExcludedForm(item));
 	}
 
 	std::string GetDiscoveryGroupName(std::uint32_t group)
@@ -502,212 +324,150 @@ namespace CodexOfPowerNG::Registration
 		return GetDiscoveryGroup(regKey) <= 5;
 	}
 
-			QuickRegisterList BuildQuickRegisterList(std::size_t offset, std::size_t limit)
-			{
-				QuickRegisterList result{};
-				std::vector<ListItem> pageItems;
-				pageItems.reserve(limit);
-				std::size_t eligibleSeen = 0;
-				bool hasMore = false;
+	QuickRegisterList BuildQuickRegisterList(std::size_t offset, std::size_t limit)
+	{
+		QuickRegisterList result{};
+		std::vector<ListItem> pageItems;
+		pageItems.reserve(limit);
+		std::size_t eligibleSeen = 0;
+		bool hasMore = false;
 
-			auto* player = RE::PlayerCharacter::GetSingleton();
-			if (!player) {
-				return result;
+		auto* player = RE::PlayerCharacter::GetSingleton();
+		if (!player) {
+			return result;
+		}
+
+		const auto settings = GetSettings();
+
+		EnsureMapsLoaded();
+
+		const auto quickListState = RegistrationStateStore::SnapshotQuickList();
+		const auto& blocked = quickListState.blockedItems;
+		const auto& registered = quickListState.registeredKeys;
+
+		const auto isExcludedFast = [&](const RE::TESForm* item) noexcept -> bool {
+			if (!item) {
+				return true;
 			}
 
-			const auto settings = GetSettings();
+			const auto id = item->GetFormID();
+			if (g_excluded.contains(id) || blocked.contains(id)) {
+				return true;
+			}
 
-			EnsureMapsLoaded();
+			if (RegistrationRules::IsIntrinsicExcluded(item)) {
+				return true;
+			}
 
-			std::unordered_set<RE::FormID> blocked;
-			std::unordered_set<RE::FormID> registered;
-				{
-					auto& state = GetState();
-					std::scoped_lock lock(state.mutex);
-					blocked = state.blockedItems;
-					registered.reserve(state.registeredItems.size() * 2);
-					for (const auto& [id, _] : state.registeredItems) {
-						registered.insert(id);
-					}
+			return false;
+		};
+
+		const auto getDiscoveryGroupFast = [&](const RE::TESForm* item) noexcept -> std::uint32_t {
+			if (!item) {
+				return 255;
+			}
+
+			if (isExcludedFast(item)) {
+				return 255;
+			}
+
+			return RegistrationRules::GroupFromFormType(item->GetFormType());
+		};
+
+		if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
+			for (auto* entry : *changes->entryList) {
+				if (!entry) {
+					continue;
 				}
 
-				const auto isExcludedFast = [&](const RE::TESForm* item) noexcept -> bool {
-					if (!item) {
-						return true;
-					}
+				if (entry->IsQuestObject()) {
+					continue;
+				}
 
-					const auto id = item->GetFormID();
-					if (g_excluded.contains(id) || blocked.contains(id)) {
-						return true;
-					}
+				auto* obj = entry->GetObject();
+				if (!obj) {
+					continue;
+				}
 
-					if (item->IsKey() || item->IsLockpick() || item->IsGold()) {
-						return true;
-					}
+				auto* regKey = GetRegisterKey(obj, settings);
+				if (!regKey) {
+					continue;
+				}
 
-					if (IsDragonClaw(item)) {
-						return true;
-					}
+				const auto group = getDiscoveryGroupFast(regKey);
+				if (group > 5) {
+					continue;
+				}
 
-					return false;
-				};
+				if (isExcludedFast(obj) || (regKey != obj && isExcludedFast(regKey))) {
+					continue;
+				}
 
-				const auto getDiscoveryGroupFast = [&](const RE::TESForm* item) noexcept -> std::uint32_t {
-					if (!item) {
-						return 255;
-					}
+				const auto regKeyId = regKey->GetFormID();
+				const auto objId = obj->GetFormID();
+				if (registered.contains(regKeyId) || registered.contains(objId)) {
+					continue;
+				}
 
-					if (isExcludedFast(item)) {
-						return 255;
-					}
+				const auto totalCount = entry->countDelta;
+				if (totalCount <= 0) {
+					continue;
+				}
 
-					switch (item->GetFormType()) {
-					case RE::FormType::Weapon:
-						return 0;
-					case RE::FormType::Armor:
-						return 1;
-					case RE::FormType::AlchemyItem:
-						return 2;
-					case RE::FormType::Ingredient:
-						return 3;
-					case RE::FormType::Book:
-						return 4;
-					case RE::FormType::Ammo:
-					case RE::FormType::Scroll:
-					case RE::FormType::SoulGem:
-					case RE::FormType::Misc:
-						return 5;
-					default:
-						return 255;
-					}
-				};
+				// Keep quick-list safe-count logic aligned with actual consume logic.
+				const auto removal =
+					Inventory::SelectSafeRemoval(entry, totalCount, settings.protectFavorites);
+				const auto safeCount = removal.safeCount;
+				if (safeCount <= 0) {
+					continue;
+				}
 
-					if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
-						for (auto* entry : *changes->entryList) {
-							if (!entry) {
-								continue;
-							}
+				if (eligibleSeen < offset) {
+					++eligibleSeen;
+					continue;
+				}
 
-							if (entry->IsQuestObject()) {
-								continue;
-							}
+				if (pageItems.size() >= limit) {
+					hasMore = true;
+					break;
+				}
 
-							auto* obj = entry->GetObject();
-							if (!obj) {
-								continue;
-							}
+				++eligibleSeen;
 
-						auto* regKey = GetRegisterKey(obj, settings);
-						if (!regKey) {
-							continue;
-						}
+				ListItem li{};
+				li.formId = objId;
+				li.regKey = regKeyId;
+				li.group = group;
+				li.totalCount = totalCount;
+				li.safeCount = safeCount;
+				li.excluded = false;
+				li.registered = false;
+				li.blocked = false;
+				li.name = BestItemName(regKey, obj);
+				if (li.name.empty()) {
+					li.name = L10n::T("ui.unnamed", "(unnamed)");
+				}
 
-						const auto group = getDiscoveryGroupFast(regKey);
-						if (group > 5) {
-							continue;
-						}
-
-						if (isExcludedFast(obj) || (regKey != obj && isExcludedFast(regKey))) {
-							continue;
-						}
-
-						const auto regKeyId = regKey->GetFormID();
-						const auto objId = obj->GetFormID();
-						if (registered.contains(regKeyId) || registered.contains(objId)) {
-							continue;
-						}
-
-						const auto totalCount = entry->countDelta;
-						if (totalCount <= 0) {
-							continue;
-						}
-
-							std::int32_t extraCountTotal = 0;
-							std::int32_t safeExtraCount = 0;
-
-							if (entry->extraLists) {
-								for (auto* xList : *entry->extraLists) {
-									if (!xList) {
-									continue;
-								}
-
-								const auto count = xList->GetCount();
-								if (count > 0) {
-									extraCountTotal += count;
-								}
-
-								const bool worn = xList->HasType<RE::ExtraWorn>() || xList->HasType<RE::ExtraWornLeft>();
-								const bool hotkey = settings.protectFavorites && xList->HasType<RE::ExtraHotkey>();
-								if (worn || hotkey) {
-									continue;
-								}
-
-								if (count > 0) {
-									safeExtraCount += count;
-								}
-							}
-						}
-
-							const auto baseCount = totalCount - extraCountTotal;
-							const auto safeCount = safeExtraCount + (baseCount > 0 ? baseCount : 0);
-							if (safeCount <= 0) {
-								continue;
-							}
-
-							if (eligibleSeen < offset) {
-								++eligibleSeen;
-								continue;
-							}
-
-							if (pageItems.size() >= limit) {
-								hasMore = true;
-								break;
-							}
-
-							++eligibleSeen;
-
-							ListItem li{};
-							li.formId = objId;
-							li.regKey = regKeyId;
-							li.group = group;
-							li.totalCount = totalCount;
-							li.safeCount = safeCount;
-							li.excluded = false;
-							li.registered = false;
-							li.blocked = false;
-							li.name = BestItemName(regKey, obj);
-							if (li.name.empty()) {
-								li.name = L10n::T("ui.unnamed", "(unnamed)");
-							}
-
-							pageItems.push_back(std::move(li));
-						}
-					}
-
-				std::sort(pageItems.begin(), pageItems.end(), [](const ListItem& a, const ListItem& b) {
-					if (a.group != b.group) {
-						return a.group < b.group;
-					}
-					return a.name < b.name;
-				});
-
-				result.hasMore = hasMore;
-				result.total = hasMore ? 0 : eligibleSeen;
-				result.items = std::move(pageItems);
-				return result;
+				pageItems.push_back(std::move(li));
 			}
+		}
+
+		std::sort(pageItems.begin(), pageItems.end(), [](const ListItem& a, const ListItem& b) {
+			if (a.group != b.group) {
+				return a.group < b.group;
+			}
+			return a.name < b.name;
+		});
+
+		result.hasMore = hasMore;
+		result.total = hasMore ? 0 : eligibleSeen;
+		result.items = std::move(pageItems);
+		return result;
+	}
 
 	std::vector<ListItem> BuildRegisteredList()
 	{
-		std::vector<std::pair<RE::FormID, std::uint32_t>> ids;
-		{
-			auto& state = GetState();
-			std::scoped_lock lock(state.mutex);
-			ids.reserve(state.registeredItems.size());
-			for (const auto& [id, group] : state.registeredItems) {
-				ids.emplace_back(id, group);
-			}
-		}
+		auto ids = RegistrationStateStore::SnapshotRegisteredItems();
 
 		std::vector<ListItem> out;
 		out.reserve(ids.size());
@@ -739,29 +499,29 @@ namespace CodexOfPowerNG::Registration
 		return out;
 	}
 
-		RegisterResult TryRegisterItem(RE::FormID formId)
-		{
-			RegisterResult result{};
+	RegisterResult TryRegisterItem(RE::FormID formId)
+	{
+		RegisterResult result{};
 
-			auto* player = RE::PlayerCharacter::GetSingleton();
-			if (!player) {
-				result.message = "Player unavailable";
-				return result;
-			}
+		auto* player = RE::PlayerCharacter::GetSingleton();
+		if (!player) {
+			result.message = "Player unavailable";
+			return result;
+		}
 
-			auto* item = RE::TESForm::LookupByID<RE::TESBoundObject>(formId);
-			if (!item) {
-				result.message = "Invalid FormID";
-				return result;
-			}
+		auto* item = RE::TESForm::LookupByID<RE::TESBoundObject>(formId);
+		if (!item) {
+			result.message = "Invalid FormID";
+			return result;
+		}
 
-			const auto settings = GetSettings();
+		const auto settings = GetSettings();
 
-			auto* regKey = GetRegisterKey(item, settings);
-			if (!regKey) {
-				result.message = "Invalid register key";
-				return result;
-			}
+		auto* regKey = GetRegisterKey(item, settings);
+		if (!regKey) {
+			result.message = "Invalid register key";
+			return result;
+		}
 
 		if (IsExcludedOrBlocked(item, regKey)) {
 			result.message = L10n::T("msg.registerQuestItem", "Codex of Power: Cannot register (quest item)");
@@ -769,54 +529,47 @@ namespace CodexOfPowerNG::Registration
 			return result;
 		}
 
-		if (IsRegisteredForm(item)) {
+		if (RegistrationStateStore::IsRegisteredEither(regKey->GetFormID(), item->GetFormID())) {
 			result.message = "Already registered";
 			return result;
 		}
 
 		const auto group = GetDiscoveryGroup(regKey);
-			if (group > 5) {
-				result.message = "Not discoverable";
-				return result;
-			}
+		if (group > 5) {
+			result.message = "Not discoverable";
+			return result;
+		}
 
-				RE::InventoryEntryData* foundEntry = nullptr;
-				if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
-					for (auto* entry : *changes->entryList) {
-						if (!entry) {
-							continue;
-						}
-
-						if (entry->GetObject() == item) {
-							foundEntry = entry;
-							break;
-						}
-					}
+		RE::InventoryEntryData* foundEntry = nullptr;
+		if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
+			for (auto* entry : *changes->entryList) {
+				if (!entry) {
+					continue;
 				}
 
-			if (!foundEntry) {
-				result.message = "Not in inventory";
-				return result;
+				if (entry->GetObject() == item) {
+					foundEntry = entry;
+					break;
+				}
 			}
+		}
 
-			const auto totalCount = player->GetItemCount(item);
-			const auto removal = Inventory::SelectSafeRemoval(foundEntry, totalCount, settings.protectFavorites);
-			if (removal.isQuestObject) {
-				result.message = L10n::T("msg.registerQuestItem", "Codex of Power: Cannot register (quest item)");
-				RE::DebugNotification(result.message.c_str());
-				return result;
-			}
+		if (!foundEntry) {
+			result.message = "Not in inventory";
+			return result;
+		}
+
+		const auto totalCount = player->GetItemCount(item);
+		const auto removal = Inventory::SelectSafeRemoval(foundEntry, totalCount, settings.protectFavorites);
+		if (removal.isQuestObject) {
+			result.message = L10n::T("msg.registerQuestItem", "Codex of Power: Cannot register (quest item)");
+			RE::DebugNotification(result.message.c_str());
+			return result;
+		}
 
 		const auto displayName = BestItemName(regKey, item);
 		if (displayName.empty()) {
-			{
-				auto& state = GetState();
-				std::scoped_lock lock(state.mutex);
-				state.blockedItems.insert(regKey->GetFormID());
-				if (item->GetFormID() != regKey->GetFormID()) {
-					state.blockedItems.insert(item->GetFormID());
-				}
-			}
+			RegistrationStateStore::BlockPair(regKey->GetFormID(), item->GetFormID());
 
 			result.message = L10n::T("msg.registerUnnamed", "Codex of Power: Cannot register (unnamed item)");
 			RE::DebugNotification(result.message.c_str());
@@ -835,27 +588,14 @@ namespace CodexOfPowerNG::Registration
 
 		const auto newHave = player->GetItemCount(item);
 		if (newHave >= oldHave) {
-			{
-				auto& state = GetState();
-				std::scoped_lock lock(state.mutex);
-				state.blockedItems.insert(regKey->GetFormID());
-				if (item->GetFormID() != regKey->GetFormID()) {
-					state.blockedItems.insert(item->GetFormID());
-				}
-			}
+			RegistrationStateStore::BlockPair(regKey->GetFormID(), item->GetFormID());
 
 			result.message = L10n::T("msg.registerCantDestroy", "Codex of Power: Cannot register (cannot destroy item)");
 			RE::DebugNotification(result.message.c_str());
 			return result;
 		}
 
-		std::size_t totalRegistered = 0;
-		{
-			auto& state = GetState();
-			std::scoped_lock lock(state.mutex);
-			state.registeredItems.emplace(regKey->GetFormID(), group);
-			totalRegistered = state.registeredItems.size();
-		}
+		const auto totalRegistered = RegistrationStateStore::InsertRegistered(regKey->GetFormID(), group);
 
 		const auto msg =
 			L10n::T("msg.registerOkPrefix", "Registered: ") + displayName +

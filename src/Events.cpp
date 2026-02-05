@@ -1,9 +1,11 @@
 #include "CodexOfPowerNG/Events.h"
 
 #include "CodexOfPowerNG/Config.h"
+#include "CodexOfPowerNG/EventsNotifyGate.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/Registration.h"
 #include "CodexOfPowerNG/State.h"
+#include "CodexOfPowerNG/TaskScheduler.h"
 
 #include <RE/Skyrim.h>
 
@@ -94,20 +96,30 @@ namespace CodexOfPowerNG::Events
 					return RE::BSEventNotifyControl::kContinue;
 				}
 
+				bool alreadyNotified = false;
+				{
+					auto& state = GetState();
+					std::scoped_lock lock(state.mutex);
+					alreadyNotified =
+						state.notifiedItems.contains(regKeyId) ||
+						state.notifiedItems.contains(baseId);
+				}
+
+				const auto lastNotify = g_lastNotifyMs.load(std::memory_order_relaxed);
+				const auto decision =
+					DecideLootNotify(alreadyNotified, nowMs, lastNotify, kNotifyThrottleMs);
+				if (decision != LootNotifyDecision::kNotify) {
+					return RE::BSEventNotifyControl::kContinue;
+				}
+
 				{
 					auto& state = GetState();
 					std::scoped_lock lock(state.mutex);
 					if (state.notifiedItems.contains(regKeyId) || state.notifiedItems.contains(baseId)) {
 						return RE::BSEventNotifyControl::kContinue;
 					}
-
 					state.notifiedItems.insert(regKeyId);
 					state.notifiedItems.insert(baseId);
-				}
-
-				const auto lastNotify = g_lastNotifyMs.load(std::memory_order_relaxed);
-				if (lastNotify > 0 && nowMs < lastNotify + kNotifyThrottleMs) {
-					return RE::BSEventNotifyControl::kContinue;
 				}
 				g_lastNotifyMs.store(nowMs, std::memory_order_relaxed);
 
@@ -119,9 +131,7 @@ namespace CodexOfPowerNG::Events
 					std::string(name && name[0] != '\0' ? name : L10n::T("ui.unnamed", "(unnamed)")) +
 					L10n::T("msg.lootUnregisteredSuffix", " (press hotkey to register)");
 
-				if (auto* tasks = SKSE::GetTaskInterface(); tasks) {
-					tasks->AddUITask([msg]() { RE::DebugNotification(msg.c_str()); });
-				} else {
+				if (!QueueUITask([msg]() { RE::DebugNotification(msg.c_str()); })) {
 					RE::DebugNotification(msg.c_str());
 				}
 				return RE::BSEventNotifyControl::kContinue;

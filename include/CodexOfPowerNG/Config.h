@@ -32,6 +32,17 @@ namespace CodexOfPowerNG
 		std::int32_t rewardEvery{ 10 };
 		double rewardMultiplier{ 1.0 };
 		bool allowSkillRewards{ false };
+
+		// Proc: corpse explosion (VFX only)
+		bool        corpseExplosionEnabled{ true };
+		double      corpseExplosionChancePct{ 10.0 };
+		std::int32_t corpseExplosionCooldownMs{ 2000 };
+		// "auto" | "art" | "shader" | "none"
+		std::string corpseExplosionVfxMode{ "auto" };
+		// Optional override: EditorID of ARTO/EFSH to use.
+		std::string corpseExplosionVfxEditorID{};
+		// Optional: show a notification when it procs.
+		bool corpseExplosionNotify{ false };
 	};
 
 	[[nodiscard]] Settings GetSettings();

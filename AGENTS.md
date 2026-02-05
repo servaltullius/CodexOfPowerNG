@@ -60,9 +60,7 @@ Expected outputs:
   - Verified: zip updated ✅
 
 ## Repo Notes
-- GitHub repo: `servaltullius/CodexOfPowerNG`
-- Worktrees: `.worktrees/` (git ignored; safe for isolated feature work)
-- Plans/checkpoints: `docs/plans/`
+- This workspace currently has **no `.git/` directory**. Plan/checkpoints are kept in `docs/plans/`.
 - vcpkg manifest files:
   - `vcpkg.json`
   - `vcpkg-configuration.json`
@@ -75,14 +73,6 @@ Expected outputs:
     - `g_gameReady == true` + `RE::Main::gameActive == true`일 때만 처리
     - 로드/뉴게임 직후 **5초 그레이스 기간**(`kDebounceMs=5000`)으로 초기 폭주 구간 무시 (`Events::OnGameLoaded()`)
     - 알림 스팸 방지: `kNotifyThrottleMs=750`로 디버그 알림 throttle + `state.notifiedItems` 중복 방지
-  - **시체 폭발(킬 시) proc (VFX-only)**:
-    - 트리거: `TESDeathEvent` (player가 killer인 경우만)
-    - 가드: `gameActive` + 로드 직후 5초 디바운스 + 쿨다운
-    - 효과: **데미지 없음**, ARTO/EFSH 기반 짧은 VFX만 적용
-    - 설정 파일: `SKSE/Plugins/CodexOfPowerNG/settings.json` → `corpseExplosion`
-      - `enabled`, `chancePct`, `cooldownMs`, `vfxMode(auto|art|shader|none)`, `vfxEditorID`, `notify`
-    - UI: Settings → Procs → Corpse explosion (on kill)
-    - 테스트 팁: `chancePct=100`, `cooldownMs=0`, `notify=true`로 두고 적 1마리 처치 → VFX/알림 확인
   - Prisma UI view는 **핫키(기본 F4)로 처음 열 때 지연 생성(lazy create)** 합니다(로드 직후 자동 생성하지 않음).
   - **핫키는 메인메뉴/로딩 화면에서는 동작하지 않도록 차단**합니다(PrismaUI focus/input 충돌로 프리징이 날 수 있음).
   - Prisma UI Focus 관련 프리징이 의심되면 `settings.json`의 `ui.disableFocusMenu`를 사용합니다:

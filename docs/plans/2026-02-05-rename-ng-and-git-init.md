@@ -2,7 +2,7 @@
 
 > **For Codex:** REQUIRED SUB-SKILL: Use `superpowers:executing-plans` to implement this plan task-by-task.
 
-**Goal:** Remove legacy `1.1` naming remnants, standardize on “NG” naming, and initialize a local git repository with clean ignore rules.
+**Goal:** Remove legacy version-number naming remnants, standardize on “NG” naming, and initialize a local git repository with clean ignore rules.
 
 **Architecture:** Rename legacy “Codex of Power” artifacts/docs to `Codex of Power NG` naming, update all references, and regenerate the MO2-ready archive under the new name. Initialize git with a `.gitignore` that excludes generated outputs (`build/`, `dist/`, `vcpkg_installed/`, release zips) and IDE metadata.
 
@@ -22,7 +22,7 @@
 Run:
 - `rg -n \"Codex of Power\\s+\\d+\\.\\d+|\\d+\\.\\d+\\.zip|\\bv\\d+\\.\\d+\\b\" .`
 
-**Expected:** Identify all places that still use `1.1` as a “name” (not as an internal version).
+**Expected:** Identify all places that still use a version number as a “name” (not as an internal version).
 
 ---
 

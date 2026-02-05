@@ -4,6 +4,8 @@
 /out/
 *.log
 CMakeUserPresets.json
+.worktrees/
+worktrees/
 .vs/
 .vscode/
 .idea/

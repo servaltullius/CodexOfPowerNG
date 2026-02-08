@@ -12,10 +12,10 @@ Register items (consumes **1** of that item) and manage settings safely and quic
 - Built for **Skyrim SE 1.5.97 + AE 1.6+** (CommonLibSSE-NG multi-target)
 
 ## Requirements
-- SKSE for your game version
-- Prisma UI (`PrismaUI.dll`)
-- Address Library for SKSE Plugins
-- Media Keys Fix SKSE
+- [SKSE](https://skse.silverlock.org/) for your game version
+- [Prisma UI (`PrismaUI.dll`)](https://www.nexusmods.com/skyrimspecialedition/mods/148718)
+- [Address Library for SKSE Plugins](https://www.nexusmods.com/skyrimspecialedition/mods/32444)
+- [Media Keys Fix SKSE](https://www.nexusmods.com/skyrimspecialedition/mods/92948)
 
 ## Install (MO2)
 Install the archive and ensure these paths exist:

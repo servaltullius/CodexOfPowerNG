@@ -37,10 +37,10 @@ Codex of Power NG는 기존 SVCollection 계열을 이어가는 패치가 아니
 - 기본 핫키 `F4`로 메뉴 토글
 
 ### 3) 필수 요구사항
-- Skyrim SE/AE + SKSE
-- Prisma UI (`PrismaUI.dll`)
-- Address Library for SKSE Plugins
-- Media Keys Fix SKSE
+- Skyrim SE/AE + [SKSE](https://skse.silverlock.org/)
+- [Prisma UI (`PrismaUI.dll`)](https://www.nexusmods.com/skyrimspecialedition/mods/148718)
+- [Address Library for SKSE Plugins](https://www.nexusmods.com/skyrimspecialedition/mods/32444)
+- [Media Keys Fix SKSE](https://www.nexusmods.com/skyrimspecialedition/mods/92948)
 
 ### 4) 설치 방법 (MO2 기준)
 1. `releases/Codex of Power NG.zip`를 MO2에서 모드로 설치합니다.
@@ -107,10 +107,10 @@ Codex of Power NG is not a continuation patch for SVCollection. It is a separate
 - Default hotkey is `F4`
 
 ### 3) Requirements
-- Skyrim SE/AE + SKSE
-- Prisma UI (`PrismaUI.dll`)
-- Address Library for SKSE Plugins
-- Media Keys Fix SKSE
+- Skyrim SE/AE + [SKSE](https://skse.silverlock.org/)
+- [Prisma UI (`PrismaUI.dll`)](https://www.nexusmods.com/skyrimspecialedition/mods/148718)
+- [Address Library for SKSE Plugins](https://www.nexusmods.com/skyrimspecialedition/mods/32444)
+- [Media Keys Fix SKSE](https://www.nexusmods.com/skyrimspecialedition/mods/92948)
 
 ### 4) Installation (MO2)
 1. Install `releases/Codex of Power NG.zip` as a mod in MO2.

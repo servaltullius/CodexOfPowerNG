@@ -11,19 +11,38 @@
 
 ## 한국어 안내 (KR)
 
-### 1) 모드 소개
+### 1) 이 모드가 실제로 하는 일 (상세)
+Codex of Power NG는 아이템 수집을 "일회성 파밍"에서 "누적 기록형 진행"으로 바꾸는 SKSE 기반 시스템 모드입니다.
+
+핵심 게임 루프:
+- 인벤토리에서 아이템을 선택해 `Register`합니다.
+- 등록 시 해당 아이템 1개를 소비하고, 등록 기록이 저장됩니다.
+- 등록 기록을 기반으로 장기적인 수집/정리 플레이를 유도합니다.
+- 옵션으로 보상(Rewards) 시스템을 켜면 일정 등록 수마다 추가 보너스를 받을 수 있습니다.
+
+플레이 체감 포인트:
+- 아이템을 "쌓아두기만" 하지 않고 실제로 소모해 진행 목표를 만듭니다.
+- 등록/보상 규칙을 설정에서 조정해 취향에 맞는 난이도와 템포를 만들 수 있습니다.
+- 고DPI 환경, 대량 인벤토리 환경에서도 조작 가능하도록 UI 성능/입력 보정을 제공합니다.
+
+무엇을 하지 않는 모드인가:
+- 퀘스트/지역/월드스페이스를 추가하지 않습니다.
+- 새로운 ESP/ESM 폼을 요구하지 않습니다.
+- 구버전(Codex/SVCollection) 세이브 상태를 마이그레이션하지 않습니다.
+
+### 2) 모드 소개
 Codex of Power NG는 기존 SVCollection 계열을 이어가는 패치가 아니라, 런타임/구조/UI를 새로 설계한 별도 모드입니다.
 - ESP/ESM 없이 동작 (`SKSE/Plugins/CodexOfPowerNG.dll`)
 - SkyUI/MCM/UIExtensions 대신 Prisma UI(Web UI) 사용
 - 기본 핫키 `F4`로 메뉴 토글
 
-### 2) 필수 요구사항
+### 3) 필수 요구사항
 - Skyrim SE/AE + SKSE
 - Prisma UI (`PrismaUI.dll`)
 - Address Library for SKSE Plugins
 - Media Keys Fix SKSE
 
-### 3) 설치 방법 (MO2 기준)
+### 4) 설치 방법 (MO2 기준)
 1. `releases/Codex of Power NG.zip`를 MO2에서 모드로 설치합니다.
 2. 아래 파일이 설치되었는지 확인합니다.
    - `SKSE/Plugins/CodexOfPowerNG.dll`
@@ -31,7 +50,7 @@ Codex of Power NG는 기존 SVCollection 계열을 이어가는 패치가 아니
 3. 선택 항목으로 아래 설정 파일을 조정할 수 있습니다.
    - `SKSE/Plugins/CodexOfPowerNG/settings.json`
 
-### 4) 구버전 사용자 필수 정리 절차
+### 5) 구버전 사용자 필수 정리 절차
 NG는 구버전 런타임 상태와 호환되지 않습니다. 아래 잔재를 먼저 정리하세요.
 - `MCM/Settings/SVCollection.ini` 삭제
 - `MCM/Settings/keybinds.json`에서 `modName: "SVCollection"` 항목 제거
@@ -39,7 +58,7 @@ NG는 구버전 런타임 상태와 호환되지 않습니다. 아래 잔재를 
 
 NG는 잔재가 남아 있으면 런타임에서 경고 로그/알림을 표시합니다.
 
-### 5) 기본 사용법
+### 6) 기본 사용법
 - `F4`: 메뉴 열기/닫기
 - Quick Register:
   - 목록에서 아이템 선택 후 `Register` 클릭 시 해당 아이템 1개 소비 + 등록
@@ -50,31 +69,50 @@ NG는 잔재가 남아 있으면 런타임에서 경고 로그/알림을 표시�
   - 고DPI 클릭 보정: `Input scale` (예: 175% -> 1.75, 200% -> 2.0)
   - 커서/호버 끊김 완화: `Performance mode` -> `On (Smooth cursor)`
 
-### 6) 자주 묻는 문제
+### 7) 자주 묻는 문제
 - 클릭 위치가 어긋남: `Input scale`을 Windows 배율과 맞춥니다.
 - UI 열림 상태에서 커서/호버가 무거움: `Performance mode`를 `On`으로 설정합니다.
 - UI를 닫았는데도 프레임 드랍이 남음: `Destroy view on close`를 `ON` 권장(기본값).
 - UI 포커스로 게임 입력이 묶인 느낌: `ESC` 또는 `F4`로 닫아 복구합니다.
 
-### 7) 로그 위치
+### 8) 로그 위치
 - Prisma UI: `Documents/My Games/Skyrim Special Edition/SKSE/PrismaUI.log`
 - Codex NG: `Documents/My Games/Skyrim Special Edition/SKSE/CodexOfPowerNG.log`
 
 ## English Guide (EN)
 
-### 1) What this mod is
+### 1) What this mod actually does (detailed)
+Codex of Power NG turns item collection into a long-term progression loop instead of one-time hoarding.
+
+Core gameplay loop:
+- Pick an inventory item and `Register` it.
+- Registration consumes 1 copy of that item and stores a persistent record.
+- Your records become the progression layer for collection-focused play.
+- Optional Rewards can grant bonuses every N registrations (configurable).
+
+Why this feels different:
+- It creates a meaningful item sink and collection objective.
+- You can tune pacing/safety with settings instead of hardcoded rules.
+- It is designed to stay usable in high-DPI and large-inventory scenarios.
+
+What this mod does not do:
+- It does not add quests/worldspace content.
+- It does not require new ESP/ESM forms.
+- It does not migrate old Codex/SVCollection runtime state.
+
+### 2) What this mod is
 Codex of Power NG is not a continuation patch for SVCollection. It is a separately rebuilt mod line with a new runtime/UI architecture.
 - No ESP/ESM required (`SKSE/Plugins/CodexOfPowerNG.dll`)
 - Prisma UI (Web UI) replaces SkyUI/MCM/UIExtensions
 - Default hotkey is `F4`
 
-### 2) Requirements
+### 3) Requirements
 - Skyrim SE/AE + SKSE
 - Prisma UI (`PrismaUI.dll`)
 - Address Library for SKSE Plugins
 - Media Keys Fix SKSE
 
-### 3) Installation (MO2)
+### 4) Installation (MO2)
 1. Install `releases/Codex of Power NG.zip` as a mod in MO2.
 2. Verify the following files exist:
    - `SKSE/Plugins/CodexOfPowerNG.dll`
@@ -82,7 +120,7 @@ Codex of Power NG is not a continuation patch for SVCollection. It is a separate
 3. Optional runtime settings file:
    - `SKSE/Plugins/CodexOfPowerNG/settings.json`
 
-### 4) Mandatory cleanup for legacy users
+### 5) Mandatory cleanup for legacy users
 NG is not compatible with old Codex/SVCollection runtime residue.
 - Delete `MCM/Settings/SVCollection.ini`
 - Remove entries with `modName: "SVCollection"` from `MCM/Settings/keybinds.json`
@@ -90,7 +128,7 @@ NG is not compatible with old Codex/SVCollection runtime residue.
 
 If residue is detected, NG logs and shows an in-game warning.
 
-### 5) Basic usage
+### 6) Basic usage
 - `F4`: Toggle menu
 - Quick Register:
   - Select an item and click `Register` to consume 1 item and register it
@@ -101,13 +139,13 @@ If residue is detected, NG logs and shows an in-game warning.
   - High-DPI hitbox correction: `Input scale` (ex: 175% -> 1.75, 200% -> 2.0)
   - Cursor smoothness: `Performance mode` -> `On (Smooth cursor)`
 
-### 6) Common troubleshooting
+### 7) Common troubleshooting
 - Click mismatch on high DPI: set `Input scale` to your Windows scaling factor.
 - Cursor/hover feels choppy while UI is open: set `Performance mode` to `On`.
 - FPS drop remains after closing UI: keep `Destroy view on close` enabled.
 - Input feels stuck in UI focus mode: close with `ESC` or `F4`.
 
-### 7) Log locations
+### 8) Log locations
 - Prisma UI: `Documents/My Games/Skyrim Special Edition/SKSE/PrismaUI.log`
 - Codex NG: `Documents/My Games/Skyrim Special Edition/SKSE/CodexOfPowerNG.log`
 

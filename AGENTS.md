@@ -60,7 +60,7 @@ Expected outputs:
   - Verified: zip updated ✅
 
 ## Repo Notes
-- This workspace currently has **no `.git/` directory**. Plan/checkpoints are kept in `docs/plans/`.
+- This workspace is git-initialized. Plan/checkpoints are kept in `docs/plans/`.
 - vcpkg manifest files:
   - `vcpkg.json`
   - `vcpkg-configuration.json`
@@ -123,7 +123,7 @@ Expected outputs:
       - `on`은 그림자/호버 효과를 줄여 **커서 부드러움**을 우선합니다.
 
 ## Repo Hygiene
-- `MCM/`, `Scripts/`, `SKSE/Plugins/SVCollection/` 등은 **v1.x 레거시 템플릿/레퍼런스**이며, NG 런타임 산출물에 포함하지 않습니다.
+- `MCM/`, `Scripts/`, `SKSE/Plugins/SVCollection/` 레거시 자산은 NG 레포/런타임에서 제거되었습니다. 다시 추가하지 마세요.
 
 <!-- skills-scout:start -->
 ## Skills (Auto-Pinned by skills-scout)

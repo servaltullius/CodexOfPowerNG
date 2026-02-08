@@ -22,6 +22,13 @@
 3. (선택) 설정 파일:
    - `SKSE/Plugins/CodexOfPowerNG/settings.json`
 
+### 구버전(Codex of Power / SVCollection) 사용 이력이 있는 경우
+- NG와 구버전은 호환되지 않습니다. 구버전 잔재를 먼저 정리하세요.
+- 활성 Data 경로(MO2 사용 시 보통 `overwrite`)에서 아래를 확인/정리:
+  - `MCM/Settings/SVCollection.ini` 삭제
+  - `MCM/Settings/keybinds.json`에서 `"modName": "SVCollection"` 항목 제거
+- NG는 런타임에서 구버전 잔재를 감지하면 로그/알림으로 경고합니다.
+
 ## 사용법
 - `F4`: 메뉴 열기/닫기
 - Quick Register:
@@ -54,4 +61,3 @@ cmake --install build/wsl-release
 cd dist/CodexOfPowerNG
 zip -r -FS "../../releases/Codex of Power NG.zip" .
 ```
-

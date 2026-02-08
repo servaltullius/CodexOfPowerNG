@@ -5,6 +5,7 @@
 #include "CodexOfPowerNG/PrismaUIManager.h"
 #include "CodexOfPowerNG/Registration.h"
 #include "CodexOfPowerNG/Serialization.h"
+#include "CodexOfPowerNG/TaskScheduler.h"
 
 #include <RE/Skyrim.h>
 
@@ -12,13 +13,110 @@
 #include <SKSE/Logger.h>
 #include <SKSE/SKSE.h>
 
+#include <nlohmann/json.hpp>
+
 #include <spdlog/sinks/basic_file_sink.h>
 #include <spdlog/spdlog.h>
 
+#include <filesystem>
+#include <fstream>
 #include <string>
+#include <exception>
 
 namespace CodexOfPowerNG
 {
+	namespace
+	{
+		inline constexpr auto kLegacySVCollectionIniPath = "Data/MCM/Settings/SVCollection.ini";
+		inline constexpr auto kLegacyMCMKeybindsPath = "Data/MCM/Settings/keybinds.json";
+
+		bool g_hasLegacySVCollectionResidue{ false };
+		bool g_legacyResidueNotified{ false };
+
+		[[nodiscard]] bool FileExists(const std::filesystem::path& path)
+		{
+			std::error_code ec{};
+			return std::filesystem::exists(path, ec) && !ec;
+		}
+
+		[[nodiscard]] bool HasLegacySVCollectionKeybind() noexcept
+		{
+			std::ifstream in(std::filesystem::path(kLegacyMCMKeybindsPath), std::ios::binary);
+			if (!in.is_open()) {
+				return false;
+			}
+
+			try {
+				nlohmann::json json;
+				in >> json;
+
+				auto keybindsIt = json.find("keybinds");
+				if (keybindsIt == json.end() || !keybindsIt->is_array()) {
+					return false;
+				}
+
+				for (const auto& entry : *keybindsIt) {
+					if (!entry.is_object()) {
+						continue;
+					}
+
+					auto modNameIt = entry.find("modName");
+					if (modNameIt != entry.end() && modNameIt->is_string() && modNameIt->get<std::string>() == "SVCollection") {
+						return true;
+					}
+				}
+			} catch (const std::exception& e) {
+				SKSE::log::warn(
+					"Failed to parse '{}': {}",
+					kLegacyMCMKeybindsPath,
+					e.what());
+			}
+
+			return false;
+		}
+
+		[[nodiscard]] bool DetectLegacySVCollectionResidue() noexcept
+		{
+			const bool hasIni = FileExists(std::filesystem::path(kLegacySVCollectionIniPath));
+			const bool hasKeybind = HasLegacySVCollectionKeybind();
+
+			if (!hasIni && !hasKeybind) {
+				return false;
+			}
+
+			SKSE::log::warn("Detected legacy Codex of Power (SVCollection) residue.");
+			if (hasIni) {
+				SKSE::log::warn(" - Found '{}'", kLegacySVCollectionIniPath);
+			}
+			if (hasKeybind) {
+				SKSE::log::warn(
+					" - Found 'SVCollection' keybind registration in '{}'",
+					kLegacyMCMKeybindsPath);
+			}
+
+			SKSE::log::warn(
+				"Legacy SVCollection MCM files can interfere with NG. "
+				"Remove stale files from your active Data path (MO2: overwrite).");
+			return true;
+		}
+
+		void NotifyLegacyResidueIfNeeded() noexcept
+		{
+			if (!g_hasLegacySVCollectionResidue || g_legacyResidueNotified) {
+				return;
+			}
+			g_legacyResidueNotified = true;
+
+			constexpr auto message =
+				"Codex NG: Old SVCollection MCM settings detected. "
+				"Delete SVCollection.ini and SVCollection keybind entry.";
+
+			if (!QueueUITask([message]() { RE::DebugNotification(message); })) {
+				RE::DebugNotification(message);
+			}
+		}
+	}
+
 	void SetupLogging()
 	{
 		auto path = SKSE::log::log_directory();
@@ -125,6 +223,7 @@ namespace CodexOfPowerNG
 			PrismaUIManager::OnGameLoaded();
 			Events::Install();
 			Events::OnGameLoaded();
+			NotifyLegacyResidueIfNeeded();
 			break;
 		default:
 			break;
@@ -141,6 +240,7 @@ SKSEPluginLoad(const SKSE::LoadInterface* skse)
 
 	CodexOfPowerNG::LoadSettingsFromDisk();
 	CodexOfPowerNG::L10n::Load();
+	CodexOfPowerNG::g_hasLegacySVCollectionResidue = CodexOfPowerNG::DetectLegacySVCollectionResidue();
 
 	CodexOfPowerNG::Serialization::Install();
 

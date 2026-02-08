@@ -1019,6 +1019,7 @@
       const QUICK_ROW_BASE_PX = 78;
       const REG_ROW_BASE_PX = 54;
       const VIRTUAL_OVERSCAN = 7;
+      const VIRTUAL_MIN_ROWS = 24;
 
       let state = {};
       let inventoryPage = { page: 0, pageSize: 200, total: 0, hasMore: false, items: [] };
@@ -1189,6 +1190,19 @@
           renderQuickVirtual({ force: f });
           renderRegisteredVirtual({ force: f });
         });
+      }
+
+      function resetVirtualWindow(v) {
+        if (!v) return;
+        v.lastStart = -1;
+        v.lastEnd = -1;
+        v.tbodyTopPx = NaN;
+      }
+
+      function schedulePostRefreshVirtualResync() {
+        // First pass updates rows immediately; second pass re-syncs after layout/scroll clamping settles.
+        scheduleVirtualRender({ force: true });
+        requestAnimationFrame(() => scheduleVirtualRender({ force: true }));
       }
 
       // Auto UI scaling (resolution aware)
@@ -1445,6 +1459,42 @@
           return;
         }
 
+        const shouldVirtualize = total > VIRTUAL_MIN_ROWS;
+        if (!shouldVirtualize) {
+          if (!force && quickVirtual.lastStart === 0 && quickVirtual.lastEnd === total) return;
+          quickVirtual.lastStart = 0;
+          quickVirtual.lastEnd = total;
+          quickVirtual.tbodyTopPx = NaN;
+
+          let html = "";
+          for (let i = 0; i < total; i++) {
+            const it = rows[i] || {};
+            const id = Number(it.formId) >>> 0;
+            const classes = [
+              "dataRow",
+              i % 2 === 0 ? "rowOdd" : "",
+              id && id === quickSelectedId ? "selected" : "",
+            ]
+              .filter(Boolean)
+              .join(" ");
+            html += `
+          <tr data-row-id="${id}" class="${classes}">
+            <td><span class="pill">${escapeHtml(it.groupName || String(it.group))}</span></td>
+            <td>
+              <div class="itemName">${escapeHtml(it.name || "(unnamed)")}</div>
+              <div class="small mono">${toHex32(id)} → ${toHex32(it.regKey)}</div>
+            </td>
+            <td class="mono colCount"><span class="good">${coalesce(it.safeCount, 0)}</span>/${coalesce(it.totalCount, 0)}</td>
+            <td class="colAction"><button class="primary" data-action="reg" data-id="${id}"><span class="btnLabel">${t(
+              "btn.register",
+              "Register"
+            )}</span></button></td>
+          </tr>`;
+          }
+          quickBody.innerHTML = html;
+          return;
+        }
+
         if (force || !isFinite(quickVirtual.tbodyTopPx) || !isFinite(quickVirtual.rowHeightPx) || quickVirtual.rowHeightPx <= 0) {
           const uiScale = getCurrentUiScale();
           quickVirtual.rowHeightPx = QUICK_ROW_BASE_PX * uiScale;
@@ -1510,6 +1560,28 @@
           regBody.innerHTML = `<tr><td colspan="3" class="small">${escapeHtml(t("reg.none", "(No registered items)"))}</td></tr>`;
           regVirtual.lastStart = 0;
           regVirtual.lastEnd = 0;
+          return;
+        }
+
+        const shouldVirtualize = total > VIRTUAL_MIN_ROWS;
+        if (!shouldVirtualize) {
+          if (!force && regVirtual.lastStart === 0 && regVirtual.lastEnd === total) return;
+          regVirtual.lastStart = 0;
+          regVirtual.lastEnd = total;
+          regVirtual.tbodyTopPx = NaN;
+
+          let html = "";
+          for (let i = 0; i < total; i++) {
+            const it = rows[i] || {};
+            const classes = ["dataRow", i % 2 === 0 ? "rowOdd" : ""].filter(Boolean).join(" ");
+            html += `
+          <tr class="${classes}">
+            <td class="colGroup"><span class="pill">${escapeHtml(it.groupName || String(it.group))}</span></td>
+            <td><span class="itemName">${escapeHtml(it.name || "(unnamed)")}</span></td>
+            <td class="colFormId mono">${toHex32(it.formId)}</td>
+          </tr>`;
+          }
+          regBody.innerHTML = html;
           return;
         }
 
@@ -1693,7 +1765,9 @@
         } else {
           inventoryPage = { page: 0, pageSize: 200, total: 0, hasMore: false, items: [] };
         }
+        resetVirtualWindow(quickVirtual);
         renderQuick();
+        schedulePostRefreshVirtualResync();
       };
 
       window.copng_setRegistered = (jsonStr) => {
@@ -1702,7 +1776,9 @@
         } catch {
           registered = [];
         }
+        resetVirtualWindow(regVirtual);
         renderRegistered();
+        schedulePostRefreshVirtualResync();
       };
 
       window.copng_setRewards = (jsonStr) => {

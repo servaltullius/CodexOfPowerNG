@@ -410,6 +410,20 @@
       .section.active {
         display: block;
       }
+      #tabSettings {
+        padding-bottom: calc(70px * var(--uiScale));
+      }
+      #tabSettings .settingsActions {
+        position: sticky;
+        bottom: calc(-12px * var(--uiScale));
+        z-index: 20;
+        margin: calc(12px * var(--uiScale)) 0 0 0;
+        padding: calc(10px * var(--uiScale));
+        border-radius: calc(12px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-color: var(--border);
+        background: rgba(12, 12, 16, 0.94);
+      }
       .grid2 {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -684,9 +698,10 @@
         </div>
 
         <div style="height: 12px"></div>
-        <div class="row">
+        <div class="row settingsActions">
           <button id="btnReloadSettings"><span class="btnLabel" data-i18n="btn.reload">Reload</span></button>
           <button class="primary" id="btnSaveSettings"><span class="btnLabel" data-i18n="btn.save">Save</span></button>
+          <button id="btnCloseSettings"><span class="btnLabel" data-i18n="btn.close">Close</span></button>
         </div>
       </div>
     </div>
@@ -1875,6 +1890,7 @@
         };
         safeCall("copng_saveSettings", payload);
       });
+      document.getElementById("btnCloseSettings").addEventListener("click", () => safeCall("copng_requestToggle", {}));
 
       const toggleKeyInputEl = document.getElementById("setToggleKey");
       if (toggleKeyInputEl) {

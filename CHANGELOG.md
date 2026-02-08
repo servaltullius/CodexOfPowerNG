@@ -9,7 +9,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
-## [0.1.0] - 2026-02-08
+## [1.0.0] - 2026-02-08
 
 ### Added
 - Prisma UI-based in-game menu at `PrismaUI/views/codexofpowerng/index.html`.
@@ -31,5 +31,5 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v0.1.0
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.0

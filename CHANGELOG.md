@@ -9,6 +9,13 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-02-08
+
+### Fixed
+- Settings tab action controls are now always visible without scrolling via a sticky action bar.
+- Added `Close` button next to `Reload`/`Save` inside Settings for faster exit while editing options.
+- Added regression test `tests/settings_sticky_actions.test.cjs` to keep sticky Settings actions from regressing.
+
 ## [1.0.0] - 2026-02-08
 
 ### Added
@@ -31,5 +38,6 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.0

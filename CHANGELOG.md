@@ -9,6 +9,17 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-02-08
+
+### Changed
+- README and Nexus description now include direct links to prerequisite mods for faster setup.
+- README now explains the mod gameplay loop and scope in more detail (KR/EN).
+
+### Fixed
+- Quick Register now derives displayed item count from live inventory count (`GetItemCount`) instead of `countDelta` snapshots.
+- Ammo items are now categorized under Weapons (instead of Misc) in discovery/quick-register grouping.
+- Added regression test `tests/quick_register_rules.test.cjs` for ammo grouping and live count behavior.
+
 ## [1.0.1] - 2026-02-08
 
 ### Fixed
@@ -38,6 +49,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.0

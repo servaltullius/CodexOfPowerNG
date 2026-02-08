@@ -33,6 +33,7 @@ namespace CodexOfPowerNG::RegistrationRules
 	{
 		switch (formType) {
 		case RE::FormType::Weapon:
+		case RE::FormType::Ammo:
 			return 0;
 		case RE::FormType::Armor:
 			return 1;
@@ -42,7 +43,6 @@ namespace CodexOfPowerNG::RegistrationRules
 			return 3;
 		case RE::FormType::Book:
 			return 4;
-		case RE::FormType::Ammo:
 		case RE::FormType::Scroll:
 		case RE::FormType::SoulGem:
 		case RE::FormType::Misc:

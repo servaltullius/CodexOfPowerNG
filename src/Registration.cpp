@@ -409,7 +409,9 @@ namespace CodexOfPowerNG::Registration
 					continue;
 				}
 
-				const auto totalCount = entry->countDelta;
+				// countDelta can drift from user-perceived quantity in some load/runtime states.
+				// Use live inventory count for quick-list display and safe-removal calculation.
+				const auto totalCount = player->GetItemCount(obj);
 				if (totalCount <= 0) {
 					continue;
 				}

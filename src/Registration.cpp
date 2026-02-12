@@ -378,6 +378,7 @@ namespace CodexOfPowerNG::Registration
 
 		// Phase 1: collect ALL eligible items (stable pagination requires full scan)
 		std::vector<ListItem> allEligible;
+		std::unordered_set<RE::FormID> seenRegKeys;
 
 		if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
 			for (auto* entry : *changes->entryList) {
@@ -407,6 +408,10 @@ namespace CodexOfPowerNG::Registration
 				const auto regKeyId = regKey->GetFormID();
 				const auto objId = obj->GetFormID();
 				if (registered.contains(regKeyId) || registered.contains(objId)) {
+					continue;
+				}
+
+				if (!seenRegKeys.insert(regKeyId).second) {
 					continue;
 				}
 

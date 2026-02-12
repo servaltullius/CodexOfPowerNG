@@ -54,6 +54,26 @@ namespace CodexOfPowerNG::PrismaUIManager
 		std::atomic_int g_focusAttemptCount{ 0 };
 		std::atomic_bool g_shuttingDown{ false };
 
+		std::mutex g_workerMutex;
+		std::thread g_settingsSaveThread;
+		std::thread g_closeRetryThread;
+		std::thread g_focusDelayThread;
+
+		void JoinIfJoinable(std::thread& t) noexcept
+		{
+			if (t.joinable()) {
+				t.join();
+			}
+		}
+
+		void JoinAllWorkers() noexcept
+		{
+			std::scoped_lock lock(g_workerMutex);
+			JoinIfJoinable(g_settingsSaveThread);
+			JoinIfJoinable(g_closeRetryThread);
+			JoinIfJoinable(g_focusDelayThread);
+		}
+
 		struct SettingsSaveJob
 		{
 			Settings settings{};
@@ -197,7 +217,10 @@ namespace CodexOfPowerNG::PrismaUIManager
 				return;
 			}
 
-			std::thread([]() {
+			{
+				std::scoped_lock lock(g_workerMutex);
+				JoinIfJoinable(g_settingsSaveThread);
+				g_settingsSaveThread = std::thread([]() {
 				for (;;) {
 					if (g_shuttingDown.load(std::memory_order_relaxed)) return;
 
@@ -238,7 +261,8 @@ namespace CodexOfPowerNG::PrismaUIManager
 						SendStateToUI();
 					});
 				}
-			}).detach();
+				});
+			}
 		}
 
 		[[nodiscard]] Settings SettingsFromJson(const json& j, Settings base)
@@ -356,7 +380,10 @@ namespace CodexOfPowerNG::PrismaUIManager
 		{
 			constexpr std::uint32_t kMaxAttempts = 20;
 
-			std::thread([view, destroyOnClose, kMaxAttempts]() {
+			{
+				std::scoped_lock lock(g_workerMutex);
+				JoinIfJoinable(g_closeRetryThread);
+				g_closeRetryThread = std::thread([view, destroyOnClose, kMaxAttempts]() {
 				for (std::uint32_t attempt = 1; attempt <= kMaxAttempts; ++attempt) {
 					std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
@@ -409,7 +436,8 @@ namespace CodexOfPowerNG::PrismaUIManager
 				SKSE::log::error("Close: focus did not clear after {} attempts; leaving view {}", kMaxAttempts, view);
 				QueueForceHideFocusMenu();
 				QueueHideSkyrimCursor();
-			}).detach();
+				});
+			}
 		}
 
 		void CallJS(const char* fn, const json& payload) noexcept
@@ -440,7 +468,10 @@ namespace CodexOfPowerNG::PrismaUIManager
 				return;
 			}
 
-			std::thread([delayMs]() {
+			{
+				std::scoped_lock lock(g_workerMutex);
+				JoinIfJoinable(g_focusDelayThread);
+				g_focusDelayThread = std::thread([delayMs]() {
 				std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
 
 				if (g_shuttingDown.load(std::memory_order_relaxed)) {
@@ -459,8 +490,9 @@ namespace CodexOfPowerNG::PrismaUIManager
 					})) {
 						g_focusDelayArmed.store(false, std::memory_order_relaxed);
 					}
-				}).detach();
+				});
 			}
+		}
 
 		[[nodiscard]] bool FocusFromSettings() noexcept
 		{
@@ -917,6 +949,12 @@ namespace CodexOfPowerNG::PrismaUIManager
 		}
 	}
 
+	void Shutdown() noexcept
+	{
+		g_shuttingDown.store(true, std::memory_order_relaxed);
+		JoinAllWorkers();
+	}
+
 	void OnDataLoaded() noexcept
 	{
 		if (!QueueUITask([]() { (void)EnsureCreatedOnUIThread(); })) {
@@ -926,7 +964,7 @@ namespace CodexOfPowerNG::PrismaUIManager
 
 	void OnPreLoadGame() noexcept
 	{
-		g_shuttingDown.store(true, std::memory_order_relaxed);
+		Shutdown();
 		g_toggleAllowed.store(false, std::memory_order_relaxed);
 		g_toggleAllowedAtMs.store(0, std::memory_order_relaxed);
 	}

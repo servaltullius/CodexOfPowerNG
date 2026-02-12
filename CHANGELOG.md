@@ -15,6 +15,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Removed overly aggressive `IsQuestObject()` pre-check that blocked registration of items from large quest mods (e.g. Glenmoril). The actual `RemoveItem()` + count verification remains as the safety net.
 - Fixed misleading "quest item" error message on excluded items; now correctly reports "excluded item".
 - Removed unused `isQuestObject` field from `RemoveSelection`.
+- Quick-register list now deduplicates items sharing the same registration key (quest-aliased copies no longer appear as separate rows).
 
 ## [1.0.4] - 2026-02-12
 

@@ -27,6 +27,7 @@
 #include <atomic>
 #include <charconv>
 #include <chrono>
+#include <future>
 #include <cmath>
 #include <cstdint>
 #include <mutex>
@@ -383,20 +384,21 @@ namespace CodexOfPowerNG::PrismaUIManager
 
 					if (g_shuttingDown.load(std::memory_order_relaxed)) return;
 
-					std::atomic_bool done{ false };
-					std::atomic_bool needsRetry{ false };
+					enum class CloseResult { kDone, kRetry };
+					auto promise = std::make_shared<std::promise<CloseResult>>();
+					auto future = promise->get_future();
 
-					if (!QueueUITask([&]() {
+					if (!QueueUITask([promise, view, destroyOnClose, attempt]() {
 						if (g_openRequested.load(std::memory_order_relaxed)) {
 							SKSE::log::info("Close: aborted (re-open requested)");
-							done.store(true, std::memory_order_relaxed);
+							promise->set_value(CloseResult::kDone);
 							return;
 						}
 
 						auto* api = g_prismaAPI.load(std::memory_order_acquire);
 						const auto activeView = g_view.load(std::memory_order_acquire);
 						if (!api || view == 0 || activeView == 0 || activeView != view || !api->IsValid(view)) {
-							done.store(true, std::memory_order_relaxed);
+							promise->set_value(CloseResult::kDone);
 							return;
 						}
 
@@ -406,7 +408,7 @@ namespace CodexOfPowerNG::PrismaUIManager
 							api->Hide(view);
 							QueueForceHideFocusMenu();
 							QueueHideSkyrimCursor();
-							needsRetry.store(true, std::memory_order_relaxed);
+							promise->set_value(CloseResult::kRetry);
 							return;
 						}
 
@@ -415,16 +417,15 @@ namespace CodexOfPowerNG::PrismaUIManager
 							SKSE::log::info("PrismaView destroyed: {}", view);
 							ResetViewStateOnUIThread();
 						}
-						done.store(true, std::memory_order_relaxed);
+						promise->set_value(CloseResult::kDone);
 					})) {
 						return;
 					}
 
-					while (!done.load(std::memory_order_relaxed) && !needsRetry.load(std::memory_order_relaxed)) {
-						if (g_shuttingDown.load(std::memory_order_relaxed)) return;
-						std::this_thread::sleep_for(std::chrono::milliseconds(5));
-					}
-					if (done.load(std::memory_order_relaxed)) return;
+					// Block until UI task completes (no spin-wait)
+					const auto result = future.get();
+					if (result == CloseResult::kDone) return;
+					// kRetry -> loop continues
 				}
 
 				SKSE::log::error("Close: focus did not clear after {} attempts; leaving view {}", kMaxAttempts, view);

@@ -17,6 +17,7 @@
 
 #include <algorithm>
 #include <charconv>
+#include <iterator>
 #include <mutex>
 #include <optional>
 #include <string_view>
@@ -327,10 +328,6 @@ namespace CodexOfPowerNG::Registration
 	QuickRegisterList BuildQuickRegisterList(std::size_t offset, std::size_t limit)
 	{
 		QuickRegisterList result{};
-		std::vector<ListItem> pageItems;
-		pageItems.reserve(limit);
-		std::size_t eligibleSeen = 0;
-		bool hasMore = false;
 
 		auto* player = RE::PlayerCharacter::GetSingleton();
 		if (!player) {
@@ -374,6 +371,9 @@ namespace CodexOfPowerNG::Registration
 			return RegistrationRules::GroupFromFormType(item->GetFormType());
 		};
 
+		// Phase 1: collect ALL eligible items (stable pagination requires full scan)
+		std::vector<ListItem> allEligible;
+
 		if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
 			for (auto* entry : *changes->entryList) {
 				if (!entry) {
@@ -409,32 +409,17 @@ namespace CodexOfPowerNG::Registration
 					continue;
 				}
 
-				// countDelta can drift from user-perceived quantity in some load/runtime states.
-				// Use live inventory count for quick-list display and safe-removal calculation.
 				const auto totalCount = player->GetItemCount(obj);
 				if (totalCount <= 0) {
 					continue;
 				}
 
-				// Keep quick-list safe-count logic aligned with actual consume logic.
 				const auto removal =
 					Inventory::SelectSafeRemoval(entry, totalCount, settings.protectFavorites);
 				const auto safeCount = removal.safeCount;
 				if (safeCount <= 0) {
 					continue;
 				}
-
-				if (eligibleSeen < offset) {
-					++eligibleSeen;
-					continue;
-				}
-
-				if (pageItems.size() >= limit) {
-					hasMore = true;
-					break;
-				}
-
-				++eligibleSeen;
 
 				ListItem li{};
 				li.formId = objId;
@@ -450,20 +435,30 @@ namespace CodexOfPowerNG::Registration
 					li.name = L10n::T("ui.unnamed", "(unnamed)");
 				}
 
-				pageItems.push_back(std::move(li));
+				allEligible.push_back(std::move(li));
 			}
 		}
 
-		std::sort(pageItems.begin(), pageItems.end(), [](const ListItem& a, const ListItem& b) {
+		// Phase 2: sort ALL eligible items for stable ordering
+		std::sort(allEligible.begin(), allEligible.end(), [](const ListItem& a, const ListItem& b) {
 			if (a.group != b.group) {
 				return a.group < b.group;
 			}
 			return a.name < b.name;
 		});
 
-		result.hasMore = hasMore;
-		result.total = hasMore ? 0 : eligibleSeen;
-		result.items = std::move(pageItems);
+		// Phase 3: paginate from sorted result
+		const auto totalEligible = allEligible.size();
+		const auto clampedOffset = (std::min)(offset, totalEligible);
+		const auto remaining = totalEligible - clampedOffset;
+		const auto pageSize = (std::min)(limit, remaining);
+
+		result.total = totalEligible;
+		result.hasMore = (clampedOffset + pageSize) < totalEligible;
+		result.items.assign(
+			std::make_move_iterator(allEligible.begin() + static_cast<std::ptrdiff_t>(clampedOffset)),
+			std::make_move_iterator(allEligible.begin() + static_cast<std::ptrdiff_t>(clampedOffset + pageSize)));
+
 		return result;
 	}
 

@@ -9,6 +9,23 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.4] - 2026-02-12
+
+### Changed
+- Mouse wheel scroll replaced with direct delta application for smoother feel across all tabs.
+- Virtual table render throttled to ~30fps to reduce layout thrashing during rapid scroll.
+- Virtual table overscan increased from 7 to 15 rows for fewer blank flashes.
+- Quick-register pagination now sorts the full eligible list before slicing pages (stable page order).
+- `QueueCloseRetry` spin-wait replaced with `std::promise`/`std::future` for cleaner thread synchronization.
+- Duplicated `NowMs()` helper consolidated into shared `Util.h`.
+
+### Fixed
+- Co-save serialization no longer abandons remaining records (BLCK, NTFY, RWDS) when an earlier record write fails.
+- Three detached background threads (settings save, close retry, focus delay) are now stored and joined on shutdown, preventing potential crashes during DLL unload.
+- Settings "no changes" comparison now clamps values before comparing, avoiding spurious disk writes for out-of-range inputs.
+- Quick-register `total` field now always reflects the true eligible item count (was 0 when `hasMore` was true).
+- Normalized inconsistent indentation in `Registration.h`.
+
 ## [1.0.2] - 2026-02-08
 
 ### Changed
@@ -49,7 +66,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.4...HEAD
+[1.0.4]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.3...v1.0.4
 [1.0.2]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.0

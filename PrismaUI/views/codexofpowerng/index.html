@@ -1431,6 +1431,9 @@
       function setTab(tabId) {
         document.querySelectorAll(".tabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tabId));
         document.querySelectorAll(".section").forEach((sec) => sec.classList.toggle("active", sec.id === tabId));
+        // Stop any in-flight scroll momentum when switching tabs.
+        const rootEl = document.querySelector(".root");
+        if (rootEl && rootEl._resetScrollVelocity) rootEl._resetScrollVelocity();
         scheduleVirtualRender({ force: true });
       }
 
@@ -2064,14 +2067,22 @@
       if (inputScaleNumberEl) inputScaleNumberEl.addEventListener("input", () => onInputScaleChange(inputScaleNumberEl.value));
       if (inputScalePresetEl) inputScalePresetEl.addEventListener("change", () => onInputScaleChange(inputScalePresetEl.value, { toast: true }));
 
-      // Smooth wheel scrolling: Ultralight can report very small deltaY, making scrolling feel "stiff".
+      // Smooth wheel scrolling: velocity + friction model for natural momentum.
+      // Replaces the old lerp model that caused "jump-and-crawl" stutter.
       (function installSmoothWheelScroll() {
         const rootEl = document.querySelector(".root");
         if (!rootEl) return;
 
-        let scrollTarget = null;
+        const FRICTION = 0.88;
+        const VELOCITY_GAIN = 0.15;
+        const STOP_THRESHOLD = 0.5;
+
+        let velocity = 0;
         let animating = false;
         let lastWheelTs = 0;
+
+        // Expose reset for tab switches / external callers.
+        rootEl._resetScrollVelocity = function () { velocity = 0; };
 
         function wheelNow(e) {
           const ts = typeof e.timeStamp === "number" && isFinite(e.timeStamp) ? e.timeStamp : 0;
@@ -2085,8 +2096,8 @@
           if (!isFinite(dy) || dy === 0) return 0;
 
           const mode = Number(e.deltaMode || 0);
-          if (mode === 1) dy *= 16; // lines -> px
-          else if (mode === 2) dy *= Number(container.clientHeight || 800); // pages -> px
+          if (mode === 1) dy *= 16;
+          else if (mode === 2) dy *= Number(container.clientHeight || 800);
 
           const uiScale = clamp(getCurrentUiScale(), 1.0, 3.0);
           const abs = Math.abs(dy);
@@ -2095,30 +2106,40 @@
           const dt = lastWheelTs > 0 ? now - lastWheelTs : 999;
           lastWheelTs = now;
 
-          // Tiny deltas + low frequency usually mean a notched wheel under Ultralight; snap to a nicer step.
+          // Tiny deltas from Ultralight notched wheel: use a moderate fixed step.
           if (abs > 0 && abs < 12 && dt > 24) {
-            dy = Math.sign(dy) * 180 * uiScale;
+            dy = Math.sign(dy) * 80 * uiScale;
           } else if (abs < 40) {
-            dy = dy * 3.0 * uiScale;
+            dy = dy * 2.0 * uiScale;
           } else {
             dy = dy * uiScale;
           }
 
-          const maxStep = Number(container.clientHeight || 800) * 0.9;
+          const maxStep = Number(container.clientHeight || 800) * 0.6;
           return clamp(dy, -maxStep, maxStep);
         }
 
         function step() {
-          if (!animating || scrollTarget === null) return;
-          const cur = rootEl.scrollTop;
-          const diff = scrollTarget - cur;
-          if (Math.abs(diff) <= 0.5) {
-            rootEl.scrollTop = scrollTarget;
-            scrollTarget = null;
+          if (!animating) return;
+          if (Math.abs(velocity) < STOP_THRESHOLD) {
+            velocity = 0;
             animating = false;
             return;
           }
-          rootEl.scrollTop = cur + diff * 0.25;
+
+          const maxScroll = Math.max(0, rootEl.scrollHeight - rootEl.clientHeight);
+          const cur = rootEl.scrollTop;
+          const next = clamp(cur + velocity, 0, maxScroll);
+          rootEl.scrollTop = next;
+
+          // Stop if we hit the edge.
+          if ((next <= 0 && velocity < 0) || (next >= maxScroll && velocity > 0)) {
+            velocity = 0;
+            animating = false;
+            return;
+          }
+
+          velocity *= FRICTION;
           requestAnimationFrame(step);
         }
 
@@ -2135,8 +2156,7 @@
             if (e.preventDefault) e.preventDefault();
             if (e.stopPropagation) e.stopPropagation();
 
-            const base = scrollTarget === null ? rootEl.scrollTop : scrollTarget;
-            scrollTarget = clamp(base + deltaPx, 0, maxScroll);
+            velocity += deltaPx * VELOCITY_GAIN;
 
             if (!animating) {
               animating = true;

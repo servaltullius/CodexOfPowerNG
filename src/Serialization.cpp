@@ -43,13 +43,12 @@ namespace CodexOfPowerNG::Serialization
 			auto& state = GetState();
 			std::scoped_lock lock(state.mutex);
 
-			// REGI: registered items (regKey -> group)
-			if (!a_intfc->OpenRecord(kRecordRegisteredItems, kSerializationVersion)) {
-				SKSE::log::error("Failed to open co-save record REGI");
-				return;
-			}
+			auto writeRegistered = [&]() {
+				if (!a_intfc->OpenRecord(kRecordRegisteredItems, kSerializationVersion)) {
+					SKSE::log::error("Failed to open co-save record REGI");
+					return;
+				}
 
-			{
 				const std::uint32_t count = static_cast<std::uint32_t>(state.registeredItems.size());
 				if (!a_intfc->WriteRecordData(count)) {
 					SKSE::log::error("Failed to write registered count");
@@ -62,14 +61,13 @@ namespace CodexOfPowerNG::Serialization
 						return;
 					}
 				}
-			}
+			};
 
-			// BLCK: blocked items
-			if (!a_intfc->OpenRecord(kRecordBlockedItems, kSerializationVersion)) {
-				SKSE::log::error("Failed to open co-save record BLCK");
-				return;
-			}
-			{
+			auto writeBlocked = [&]() {
+				if (!a_intfc->OpenRecord(kRecordBlockedItems, kSerializationVersion)) {
+					SKSE::log::error("Failed to open co-save record BLCK");
+					return;
+				}
 				const std::uint32_t count = static_cast<std::uint32_t>(state.blockedItems.size());
 				if (!a_intfc->WriteRecordData(count)) {
 					SKSE::log::error("Failed to write blocked count");
@@ -81,14 +79,13 @@ namespace CodexOfPowerNG::Serialization
 						return;
 					}
 				}
-			}
+			};
 
-			// NTFY: notified items
-			if (!a_intfc->OpenRecord(kRecordNotifiedItems, kSerializationVersion)) {
-				SKSE::log::error("Failed to open co-save record NTFY");
-				return;
-			}
-			{
+			auto writeNotified = [&]() {
+				if (!a_intfc->OpenRecord(kRecordNotifiedItems, kSerializationVersion)) {
+					SKSE::log::error("Failed to open co-save record NTFY");
+					return;
+				}
 				const std::uint32_t count = static_cast<std::uint32_t>(state.notifiedItems.size());
 				if (!a_intfc->WriteRecordData(count)) {
 					SKSE::log::error("Failed to write notified count");
@@ -100,14 +97,13 @@ namespace CodexOfPowerNG::Serialization
 						return;
 					}
 				}
-			}
+			};
 
-			// RWDS: reward totals
-			if (!a_intfc->OpenRecord(kRecordRewards, kSerializationVersion)) {
-				SKSE::log::error("Failed to open co-save record RWDS");
-				return;
-			}
-			{
+			auto writeRewards = [&]() {
+				if (!a_intfc->OpenRecord(kRecordRewards, kSerializationVersion)) {
+					SKSE::log::error("Failed to open co-save record RWDS");
+					return;
+				}
 				const std::uint32_t count = static_cast<std::uint32_t>(state.rewardTotals.size());
 				if (!a_intfc->WriteRecordData(count)) {
 					SKSE::log::error("Failed to write reward count");
@@ -121,7 +117,12 @@ namespace CodexOfPowerNG::Serialization
 						return;
 					}
 				}
-			}
+			};
+
+			writeRegistered();
+			writeBlocked();
+			writeNotified();
+			writeRewards();
 		}
 
 		void Load(SKSE::SerializationInterface* a_intfc) noexcept

@@ -7,6 +7,7 @@
 #include "CodexOfPowerNG/Rewards.h"
 #include "CodexOfPowerNG/State.h"
 #include "CodexOfPowerNG/TaskScheduler.h"
+#include "CodexOfPowerNG/Util.h"
 #include "PrismaUIPayloads.h"
 
 #include <Windows.h>
@@ -94,13 +95,6 @@ namespace CodexOfPowerNG::PrismaUIManager
 			std::uint32_t page{ 0 };
 			std::uint32_t pageSize{ 200 };
 		};
-
-		[[nodiscard]] std::uint64_t NowMs() noexcept
-		{
-			using namespace std::chrono;
-			return static_cast<std::uint64_t>(
-				duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count());
-		}
 
 		[[nodiscard]] InventoryRequest ParseInventoryRequest(const char* argument) noexcept
 		{

@@ -6,6 +6,7 @@
 #include "CodexOfPowerNG/Registration.h"
 #include "CodexOfPowerNG/State.h"
 #include "CodexOfPowerNG/TaskScheduler.h"
+#include "CodexOfPowerNG/Util.h"
 
 #include <RE/Skyrim.h>
 
@@ -22,13 +23,6 @@ namespace CodexOfPowerNG::Events
 {
 	namespace
 	{
-		[[nodiscard]] std::uint64_t NowMs() noexcept
-		{
-			using namespace std::chrono;
-			return static_cast<std::uint64_t>(
-				duration_cast<milliseconds>(steady_clock::now().time_since_epoch()).count());
-		}
-
 		std::atomic_bool g_gameReady{ false };
 		std::atomic<std::uint64_t> g_ignoreUntilMs{ 0 };
 		constexpr std::uint64_t kDebounceMs = 5000;

@@ -2068,21 +2068,26 @@
       if (inputScalePresetEl) inputScalePresetEl.addEventListener("change", () => onInputScaleChange(inputScalePresetEl.value, { toast: true }));
 
       // Smooth wheel scrolling: velocity + friction model for natural momentum.
-      // Replaces the old lerp model that caused "jump-and-crawl" stutter.
+      // Avoids layout thrashing by caching maxScroll outside the animation loop.
       (function installSmoothWheelScroll() {
         const rootEl = document.querySelector(".root");
         if (!rootEl) return;
 
-        const FRICTION = 0.88;
-        const VELOCITY_GAIN = 0.15;
-        const STOP_THRESHOLD = 0.5;
+        const FRICTION = 0.82;
+        const VELOCITY_GAIN = 0.25;
+        const STOP_THRESHOLD = 1.5;
 
         let velocity = 0;
         let animating = false;
         let lastWheelTs = 0;
+        let cachedMaxScroll = 0;
 
         // Expose reset for tab switches / external callers.
         rootEl._resetScrollVelocity = function () { velocity = 0; };
+
+        function refreshMaxScroll() {
+          cachedMaxScroll = Math.max(0, rootEl.scrollHeight - rootEl.clientHeight);
+        }
 
         function wheelNow(e) {
           const ts = typeof e.timeStamp === "number" && isFinite(e.timeStamp) ? e.timeStamp : 0;
@@ -2127,13 +2132,13 @@
             return;
           }
 
-          const maxScroll = Math.max(0, rootEl.scrollHeight - rootEl.clientHeight);
+          // Use cached maxScroll to avoid forced layout reflow every frame.
           const cur = rootEl.scrollTop;
-          const next = clamp(cur + velocity, 0, maxScroll);
+          const next = clamp(cur + velocity, 0, cachedMaxScroll);
           rootEl.scrollTop = next;
 
           // Stop if we hit the edge.
-          if ((next <= 0 && velocity < 0) || (next >= maxScroll && velocity > 0)) {
+          if ((next <= 0 && velocity < 0) || (next >= cachedMaxScroll && velocity > 0)) {
             velocity = 0;
             animating = false;
             return;
@@ -2147,8 +2152,9 @@
           "wheel",
           (e) => {
             if (!e || e.isTrusted === false) return;
-            const maxScroll = Math.max(0, rootEl.scrollHeight - rootEl.clientHeight);
-            if (maxScroll <= 0) return;
+            // Refresh cache once per wheel event (outside animation loop).
+            refreshMaxScroll();
+            if (cachedMaxScroll <= 0) return;
 
             const deltaPx = normalizeWheelDelta(e, rootEl);
             if (!isFinite(deltaPx) || deltaPx === 0) return;

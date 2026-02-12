@@ -11,8 +11,6 @@ namespace CodexOfPowerNG::Inventory
 			return out;
 		}
 
-		out.isQuestObject = entry->IsQuestObject();
-
 		std::int32_t extraCountTotal = 0;
 		if (entry->extraLists) {
 			for (auto* xList : *entry->extraLists) {

@@ -66,7 +66,7 @@
     "countSuffix": " items)",
     "registerCantDestroy": "Codex of Power: Cannot register (cannot destroy item)",
     "registerProtected": "Codex of Power: Cannot register (equipped/favorited)",
-    "registerQuestItem": "Codex of Power: Cannot register (quest item)",
+    "registerExcluded": "Codex of Power: Cannot register (excluded item)",
     "registerUnnamed": "Codex of Power: Cannot register (unnamed item)",
     "registerSaveFail": "Codex of Power: Register failed (save failed)",
     "registerOkPrefix": "Registered: ",

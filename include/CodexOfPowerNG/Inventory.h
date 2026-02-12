@@ -12,7 +12,6 @@ namespace CodexOfPowerNG::Inventory
 		RE::ExtraDataList* extraList{ nullptr };
 		std::int32_t       safeCount{ 0 };
 		std::int32_t       baseCount{ 0 };
-		bool               isQuestObject{ false };
 	};
 
 	// Computes a safe removal target for an inventory entry (never removes worn items; optionally protects hotkey items).

@@ -66,7 +66,7 @@
     "countSuffix": "개)",
     "registerCantDestroy": "힘의 도감: 등록 불가(소각 불가)",
     "registerProtected": "힘의 도감: 등록 불가(착용/즐겨찾기)",
-    "registerQuestItem": "힘의 도감: 등록 불가(퀘스트 아이템)",
+    "registerExcluded": "힘의 도감: 등록 불가(제외된 아이템)",
     "registerUnnamed": "힘의 도감: 등록 불가(이름 없음)",
     "registerSaveFail": "힘의 도감: 등록 실패(기록 저장 안됨)",
     "registerOkPrefix": "등록 완료: ",

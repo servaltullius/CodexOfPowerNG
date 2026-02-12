@@ -9,6 +9,13 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.5] - 2026-02-12
+
+### Fixed
+- Removed overly aggressive `IsQuestObject()` pre-check that blocked registration of items from large quest mods (e.g. Glenmoril). The actual `RemoveItem()` + count verification remains as the safety net.
+- Fixed misleading "quest item" error message on excluded items; now correctly reports "excluded item".
+- Removed unused `isQuestObject` field from `RemoveSelection`.
+
 ## [1.0.4] - 2026-02-12
 
 ### Changed
@@ -66,7 +73,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.3...v1.0.4
 [1.0.2]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.0...v1.0.1

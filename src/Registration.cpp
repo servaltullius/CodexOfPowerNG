@@ -385,10 +385,6 @@ namespace CodexOfPowerNG::Registration
 					continue;
 				}
 
-				if (entry->IsQuestObject()) {
-					continue;
-				}
-
 				auto* obj = entry->GetObject();
 				if (!obj) {
 					continue;
@@ -526,7 +522,7 @@ namespace CodexOfPowerNG::Registration
 		}
 
 		if (IsExcludedOrBlocked(item, regKey)) {
-			result.message = L10n::T("msg.registerQuestItem", "Codex of Power: Cannot register (quest item)");
+			result.message = L10n::T("msg.registerExcluded", "Codex of Power: Cannot register (excluded item)");
 			RE::DebugNotification(result.message.c_str());
 			return result;
 		}
@@ -563,12 +559,6 @@ namespace CodexOfPowerNG::Registration
 
 		const auto totalCount = player->GetItemCount(item);
 		const auto removal = Inventory::SelectSafeRemoval(foundEntry, totalCount, settings.protectFavorites);
-		if (removal.isQuestObject) {
-			result.message = L10n::T("msg.registerQuestItem", "Codex of Power: Cannot register (quest item)");
-			RE::DebugNotification(result.message.c_str());
-			return result;
-		}
-
 		const auto displayName = BestItemName(regKey, item);
 		if (displayName.empty()) {
 			RegistrationStateStore::BlockPair(regKey->GetFormID(), item->GetFormID());

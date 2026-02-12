@@ -198,6 +198,11 @@ namespace CodexOfPowerNG
 		g_settings = Clamp(settings);
 	}
 
+	Settings ClampSettings(const Settings& settings)
+	{
+		return Clamp(settings);
+	}
+
 	void LoadSettingsFromDisk()
 	{
 		const auto path = std::filesystem::path(kSettingsPath);

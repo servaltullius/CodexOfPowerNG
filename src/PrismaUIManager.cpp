@@ -779,7 +779,7 @@ namespace CodexOfPowerNG::PrismaUIManager
 			}
 
 			const auto current = GetSettings();
-			const auto next = SettingsFromJson(payload, current);
+			const auto next = ClampSettings(SettingsFromJson(payload, current));
 			if (SettingsEquivalent(current, next)) {
 				Toast("info", "No changes");
 				CallJS("copng_setSettings", SettingsToJson(current));

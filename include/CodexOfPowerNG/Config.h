@@ -37,6 +37,9 @@ namespace CodexOfPowerNG
 	[[nodiscard]] Settings GetSettings();
 	void                  SetSettings(const Settings& settings);
 
+	// Clamps setting values to their valid ranges.
+	[[nodiscard]] Settings ClampSettings(const Settings& settings);
+
 	// Loads from disk and replaces current settings (falls back to defaults on error).
 	void LoadSettingsFromDisk();
 	// Saves current settings to disk.

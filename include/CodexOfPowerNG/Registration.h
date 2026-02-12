@@ -6,33 +6,33 @@
 #include <string>
 #include <vector>
 
-	namespace CodexOfPowerNG::Registration
+namespace CodexOfPowerNG::Registration
+{
+	struct ListItem
 	{
-		struct ListItem
-		{
-		RE::FormID      formId{ 0 };   // consumed base object
-		RE::FormID      regKey{ 0 };   // normalization key
-		std::uint32_t   group{ 255 };  // 0..5, 255 = unknown
+		RE::FormID      formId{ 0 };
+		RE::FormID      regKey{ 0 };
+		std::uint32_t   group{ 255 };
 		std::int32_t    totalCount{ 0 };
 		std::int32_t    safeCount{ 0 };
 		bool            excluded{ false };
 		bool            registered{ false };
 		bool            blocked{ false };
-			std::string     name;
-		};
+		std::string     name;
+	};
 
-		struct QuickRegisterList
-		{
-			bool                 hasMore{ false };
-			std::size_t          total{ 0 };
-			std::vector<ListItem> items;
-		};
+	struct QuickRegisterList
+	{
+		bool                  hasMore{ false };
+		std::size_t           total{ 0 };
+		std::vector<ListItem> items;
+	};
 
-		struct RegisterResult
-		{
-			bool            success{ false };
-			std::string     message;
-			RE::FormID      regKey{ 0 };
+	struct RegisterResult
+	{
+		bool            success{ false };
+		std::string     message;
+		RE::FormID      regKey{ 0 };
 		std::uint32_t   group{ 255 };
 		std::size_t     totalRegistered{ 0 };
 	};
@@ -52,11 +52,11 @@
 	// Returns whether a FormID is discoverable (group 0..5 and not excluded).
 	[[nodiscard]] bool IsDiscoverable(RE::FormID formId) noexcept;
 
-		// Quick-register inventory: unregistered + owned + registerable + safe to consume.
-		[[nodiscard]] QuickRegisterList BuildQuickRegisterList(std::size_t offset, std::size_t limit);
+	// Quick-register inventory: unregistered + owned + registerable + safe to consume.
+	[[nodiscard]] QuickRegisterList BuildQuickRegisterList(std::size_t offset, std::size_t limit);
 
-		// Registered items view (discovery mode): state map keys -> names + groups.
-		[[nodiscard]] std::vector<ListItem> BuildRegisteredList();
+	// Registered items view (discovery mode): state map keys -> names + groups.
+	[[nodiscard]] std::vector<ListItem> BuildRegisteredList();
 
 	// Registers an inventory item (consumes 1) and updates co-save state.
 	[[nodiscard]] RegisterResult TryRegisterItem(RE::FormID formId);

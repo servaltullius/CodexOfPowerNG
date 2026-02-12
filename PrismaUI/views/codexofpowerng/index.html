@@ -1018,7 +1018,7 @@
 
       const QUICK_ROW_BASE_PX = 78;
       const REG_ROW_BASE_PX = 54;
-      const VIRTUAL_OVERSCAN = 7;
+      const VIRTUAL_OVERSCAN = 15;
       const VIRTUAL_MIN_ROWS = 24;
 
       let state = {};
@@ -1180,11 +1180,20 @@
       let virtualRaf = 0;
       let virtualForceNext = false;
       let keyNavRaf = 0;
+      let lastVirtualRenderTs = 0;
+      const VIRTUAL_RENDER_THROTTLE_MS = 32; // ~30fps cap for scroll-driven renders
       function scheduleVirtualRender({ force = false } = {}) {
         if (force) virtualForceNext = true;
         if (virtualRaf) return;
         virtualRaf = requestAnimationFrame(() => {
           virtualRaf = 0;
+          const now = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
+          // Throttle non-forced renders to reduce innerHTML frequency during scroll.
+          if (!virtualForceNext && now - lastVirtualRenderTs < VIRTUAL_RENDER_THROTTLE_MS) {
+            scheduleVirtualRender();
+            return;
+          }
+          lastVirtualRenderTs = now;
           const f = virtualForceNext;
           virtualForceNext = false;
           renderQuickVirtual({ force: f });
@@ -1431,9 +1440,6 @@
       function setTab(tabId) {
         document.querySelectorAll(".tabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tabId));
         document.querySelectorAll(".section").forEach((sec) => sec.classList.toggle("active", sec.id === tabId));
-        // Stop any in-flight scroll momentum when switching tabs.
-        const rootEl = document.querySelector(".root");
-        if (rootEl && rootEl._resetScrollVelocity) rootEl._resetScrollVelocity();
         scheduleVirtualRender({ force: true });
       }
 
@@ -2067,27 +2073,15 @@
       if (inputScaleNumberEl) inputScaleNumberEl.addEventListener("input", () => onInputScaleChange(inputScaleNumberEl.value));
       if (inputScalePresetEl) inputScalePresetEl.addEventListener("change", () => onInputScaleChange(inputScalePresetEl.value, { toast: true }));
 
-      // Smooth wheel scrolling: velocity + friction model for natural momentum.
-      // Avoids layout thrashing by caching maxScroll outside the animation loop.
-      (function installSmoothWheelScroll() {
+      // Direct wheel scroll: no JS animation loop. Ultralight's rAF timing is
+      // tied to the game framerate and too inconsistent for smooth JS animation.
+      // Instead we apply the delta immediately and let the virtualRender throttle
+      // handle DOM update frequency.
+      (function installDirectWheelScroll() {
         const rootEl = document.querySelector(".root");
         if (!rootEl) return;
 
-        const FRICTION = 0.82;
-        const VELOCITY_GAIN = 0.25;
-        const STOP_THRESHOLD = 1.5;
-
-        let velocity = 0;
-        let animating = false;
         let lastWheelTs = 0;
-        let cachedMaxScroll = 0;
-
-        // Expose reset for tab switches / external callers.
-        rootEl._resetScrollVelocity = function () { velocity = 0; };
-
-        function refreshMaxScroll() {
-          cachedMaxScroll = Math.max(0, rootEl.scrollHeight - rootEl.clientHeight);
-        }
 
         function wheelNow(e) {
           const ts = typeof e.timeStamp === "number" && isFinite(e.timeStamp) ? e.timeStamp : 0;
@@ -2113,48 +2107,23 @@
 
           // Tiny deltas from Ultralight notched wheel: use a moderate fixed step.
           if (abs > 0 && abs < 12 && dt > 24) {
-            dy = Math.sign(dy) * 80 * uiScale;
+            dy = Math.sign(dy) * 60 * uiScale;
           } else if (abs < 40) {
-            dy = dy * 2.0 * uiScale;
+            dy = dy * 1.5 * uiScale;
           } else {
             dy = dy * uiScale;
           }
 
-          const maxStep = Number(container.clientHeight || 800) * 0.6;
+          const maxStep = Number(container.clientHeight || 800) * 0.45;
           return clamp(dy, -maxStep, maxStep);
-        }
-
-        function step() {
-          if (!animating) return;
-          if (Math.abs(velocity) < STOP_THRESHOLD) {
-            velocity = 0;
-            animating = false;
-            return;
-          }
-
-          // Use cached maxScroll to avoid forced layout reflow every frame.
-          const cur = rootEl.scrollTop;
-          const next = clamp(cur + velocity, 0, cachedMaxScroll);
-          rootEl.scrollTop = next;
-
-          // Stop if we hit the edge.
-          if ((next <= 0 && velocity < 0) || (next >= cachedMaxScroll && velocity > 0)) {
-            velocity = 0;
-            animating = false;
-            return;
-          }
-
-          velocity *= FRICTION;
-          requestAnimationFrame(step);
         }
 
         rootEl.addEventListener(
           "wheel",
           (e) => {
             if (!e || e.isTrusted === false) return;
-            // Refresh cache once per wheel event (outside animation loop).
-            refreshMaxScroll();
-            if (cachedMaxScroll <= 0) return;
+            const maxScroll = Math.max(0, rootEl.scrollHeight - rootEl.clientHeight);
+            if (maxScroll <= 0) return;
 
             const deltaPx = normalizeWheelDelta(e, rootEl);
             if (!isFinite(deltaPx) || deltaPx === 0) return;
@@ -2162,12 +2131,7 @@
             if (e.preventDefault) e.preventDefault();
             if (e.stopPropagation) e.stopPropagation();
 
-            velocity += deltaPx * VELOCITY_GAIN;
-
-            if (!animating) {
-              animating = true;
-              requestAnimationFrame(step);
-            }
+            rootEl.scrollTop = clamp(rootEl.scrollTop + deltaPx, 0, maxScroll);
           },
           { passive: false }
         );

@@ -33,6 +33,11 @@ namespace CodexOfPowerNG::Registration
 		std::mutex g_mapsMutex;
 		bool       g_mapsLoaded{ false };
 
+		// Write-once maps: populated by EnsureMapsLoaded(), then immutable.
+		// Thread safety: every public function that reads these calls
+		// EnsureMapsLoaded() first. The mutex acquire/release there provides
+		// a happens-before relationship with the initial write, so subsequent
+		// lock-free reads are safe. Do NOT modify after initialization.
 		std::unordered_set<RE::FormID>            g_excluded{};
 		std::unordered_map<RE::FormID, RE::FormID> g_variantBase{};
 

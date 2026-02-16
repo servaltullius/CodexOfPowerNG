@@ -8,6 +8,7 @@
 - Latest release: `https://github.com/servaltullius/CodexOfPowerNG/releases/latest`
 - Changelog: `CHANGELOG.md`
 - Release package path in this repo: `releases/Codex of Power NG.zip`
+- Release note rules (KR): `docs/releases/PATCH_NOTE_RULES.ko.md`
 
 ## 한국어 안내 (KR)
 

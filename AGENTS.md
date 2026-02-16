@@ -2,6 +2,10 @@
 
 # Codex of Power NG (CodexOfPowerNG)
 
+## Agent First Action
+- Context entrypoint: `.vibe/context/LATEST_CONTEXT.md` (or `.vibe/AGENT_CHECKLIST.md`)
+- First command: `python3 scripts/vibe.py doctor --full`
+
 ## Project Intent (TL;DR)
 - This repo is for a **new mod**: **Codex of Power NG** (not a continuation of Codex of Power / SVCollection).
 - **No save migration / no backwards compatibility**. Ship with a clear “not compatible” notice.
@@ -58,6 +62,14 @@ Expected outputs:
   - `cd dist/CodexOfPowerNG`
   - `zip -r -FS \"../../releases/Codex of Power NG.zip\" .`
   - Verified: zip updated ✅
+
+## Release Patch Note Policy
+- Release/patch note markdown must follow: `docs/releases/PATCH_NOTE_RULES.ko.md`
+- Default language for release notes is Korean.
+- Release note filenames must match version tags:
+  - `docs/releases/vX.Y.Z.md`
+  - `docs/releases/vX.Y.Z-rc.N.md`
+- When publishing/updating a GitHub release, sync notes from the matching markdown file in `docs/releases/`.
 
 ## Repo Notes
 - This workspace is git-initialized. Plan/checkpoints are kept in `docs/plans/`.

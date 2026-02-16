@@ -169,6 +169,7 @@ namespace CodexOfPowerNG::PrismaUIManager
 				{ "uiDestroyOnClose", s.uiDestroyOnClose },
 				{ "languageOverride", s.languageOverride },
 				{ "normalizeRegistration", s.normalizeRegistration },
+				{ "requireTccDisplayed", s.requireTccDisplayed },
 				{ "protectFavorites", s.protectFavorites },
 				{ "enableLootNotify", s.enableLootNotify },
 				{ "enableRewards", s.enableRewards },
@@ -192,6 +193,7 @@ namespace CodexOfPowerNG::PrismaUIManager
 			       a.uiDestroyOnClose == b.uiDestroyOnClose &&
 			       a.languageOverride == b.languageOverride &&
 			       a.normalizeRegistration == b.normalizeRegistration &&
+			       a.requireTccDisplayed == b.requireTccDisplayed &&
 			       a.protectFavorites == b.protectFavorites &&
 			       a.enableLootNotify == b.enableLootNotify &&
 			       a.enableRewards == b.enableRewards &&
@@ -283,6 +285,9 @@ namespace CodexOfPowerNG::PrismaUIManager
 				}
 				if (auto it = j.find("normalizeRegistration"); it != j.end() && it->is_boolean()) {
 					base.normalizeRegistration = it->get<bool>();
+				}
+				if (auto it = j.find("requireTccDisplayed"); it != j.end() && it->is_boolean()) {
+					base.requireTccDisplayed = it->get<bool>();
 				}
 				if (auto it = j.find("protectFavorites"); it != j.end() && it->is_boolean()) {
 					base.protectFavorites = it->get<bool>();
@@ -1097,6 +1102,12 @@ namespace CodexOfPowerNG::PrismaUIManager
 		j["rewardCount"] = rewardCount;
 		j["language"] = L10n::ActiveLanguage();
 		j["toggleKeyCode"] = settings.toggleKeyCode;
+		const bool tccListsAvailable = Registration::IsTccDisplayedListsAvailable();
+		j["lotdGate"] = {
+			{ "requireTccDisplayed", settings.requireTccDisplayed },
+			{ "tccListsAvailable", tccListsAvailable },
+			{ "blocking", settings.requireTccDisplayed && !tccListsAvailable },
+		};
 
 		CallJS("copng_setState", j);
 	}

@@ -3,7 +3,7 @@
   "language": "auto",
   "hotkey": { "toggleKeyCode": 62 },
   "ui": { "disableFocusMenu": false, "pauseGame": true, "inputScale": 1.0, "destroyOnClose": true },
-  "registration": { "normalize": false },
+  "registration": { "normalize": false, "requireTccDisplayed": false },
   "safety": { "protectFavorites": true },
   "lootNotify": { "enabled": true },
   "rewards": { "enabled": true, "every": 10, "multiplier": 1.0, "allowSkillRewards": false }

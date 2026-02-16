@@ -7,6 +7,7 @@
 #include "CodexOfPowerNG/RegistrationMaps.h"
 #include "CodexOfPowerNG/RegistrationRules.h"
 #include "CodexOfPowerNG/RegistrationStateStore.h"
+#include "CodexOfPowerNG/RegistrationTccGate.h"
 #include "CodexOfPowerNG/Rewards.h"
 
 #include <RE/Skyrim.h>
@@ -16,6 +17,7 @@
 #include <SKSE/Logger.h>
 
 #include <algorithm>
+#include <atomic>
 #include <charconv>
 #include <iterator>
 #include <mutex>
@@ -40,6 +42,73 @@ namespace CodexOfPowerNG::Registration
 		// lock-free reads are safe. Do NOT modify after initialization.
 		std::unordered_set<RE::FormID>            g_excluded{};
 		std::unordered_map<RE::FormID, RE::FormID> g_variantBase{};
+
+		struct TccLists
+		{
+			RE::BGSListForm* master{ nullptr };
+			RE::BGSListForm* displayed{ nullptr };
+		};
+
+		std::atomic_bool g_tccListsAvailable{ false };
+		std::atomic_bool g_tccListsKnown{ false };
+
+		void WarnMissingTccListsOnce() noexcept
+		{
+			static std::atomic_bool warned{ false };
+			bool expected = false;
+			if (!warned.compare_exchange_strong(expected, true, std::memory_order_relaxed)) {
+				return;
+			}
+
+			SKSE::log::warn(
+				"registration.requireTccDisplayed is enabled, but TCC FormLists (dbmMaster/dbmDisp) were not found. "
+				"Registration is now fail-closed until TCC lists are available.");
+		}
+
+		[[nodiscard]] TccLists ResolveTccLists() noexcept
+		{
+			TccLists lists{};
+			lists.master = RE::TESForm::LookupByEditorID<RE::BGSListForm>("dbmMaster");
+			lists.displayed = RE::TESForm::LookupByEditorID<RE::BGSListForm>("dbmDisp");
+
+			const bool available = lists.master != nullptr && lists.displayed != nullptr;
+			g_tccListsAvailable.store(available, std::memory_order_relaxed);
+			g_tccListsKnown.store(true, std::memory_order_relaxed);
+			return lists;
+		}
+
+		[[nodiscard]] bool ListHasEitherForm(const RE::BGSListForm* list, const RE::TESForm* first, const RE::TESForm* second) noexcept
+		{
+			if (!list) {
+				return false;
+			}
+
+			if (first && list->HasForm(first)) {
+				return true;
+			}
+
+			if (second && second != first && list->HasForm(second)) {
+				return true;
+			}
+
+			return false;
+		}
+
+		[[nodiscard]] TccGateDecision EvaluateTccGate(
+			const Settings& settings,
+			const TccLists& lists,
+			const RE::TESForm* item,
+			const RE::TESForm* regKey) noexcept
+		{
+			const bool trackedByLotd = ListHasEitherForm(lists.master, regKey, item);
+			const bool displayed = ListHasEitherForm(lists.displayed, regKey, item);
+			return DecideTccGate(
+				settings.requireTccDisplayed,
+				lists.master != nullptr,
+				lists.displayed != nullptr,
+				trackedByLotd,
+				displayed);
+		}
 
 		[[nodiscard]] std::optional<std::uint32_t> ParseUInt32(std::string_view text, int base) noexcept
 		{
@@ -340,6 +409,10 @@ namespace CodexOfPowerNG::Registration
 		}
 
 		const auto settings = GetSettings();
+		const auto tccLists = ResolveTccLists();
+		if (settings.requireTccDisplayed && (!tccLists.master || !tccLists.displayed)) {
+			WarnMissingTccListsOnce();
+		}
 
 		EnsureMapsLoaded();
 
@@ -402,6 +475,10 @@ namespace CodexOfPowerNG::Registration
 				}
 
 				if (isExcludedFast(obj) || (regKey != obj && isExcludedFast(regKey))) {
+					continue;
+				}
+
+				if (EvaluateTccGate(settings, tccLists, obj, regKey) != TccGateDecision::kAllow) {
 					continue;
 				}
 
@@ -519,6 +596,10 @@ namespace CodexOfPowerNG::Registration
 		}
 
 		const auto settings = GetSettings();
+		const auto tccLists = ResolveTccLists();
+		if (settings.requireTccDisplayed && (!tccLists.master || !tccLists.displayed)) {
+			WarnMissingTccListsOnce();
+		}
 
 		auto* regKey = GetRegisterKey(item, settings);
 		if (!regKey) {
@@ -540,6 +621,20 @@ namespace CodexOfPowerNG::Registration
 		const auto group = GetDiscoveryGroup(regKey);
 		if (group > 5) {
 			result.message = "Not discoverable";
+			return result;
+		}
+
+		const auto tccGate = EvaluateTccGate(settings, tccLists, item, regKey);
+		if (tccGate == TccGateDecision::kBlockNotDisplayed) {
+			result.message = L10n::T("msg.registerLotdNotDisplayed", "Codex of Power: Cannot register (LOTD item not displayed yet)");
+			RE::DebugNotification(result.message.c_str());
+			return result;
+		}
+		if (tccGate == TccGateDecision::kBlockUnavailable) {
+			result.message = L10n::T(
+				"msg.registerLotdGateUnavailable",
+				"Codex of Power: Cannot register (LOTD gate unavailable; check TCC install/load order)");
+			RE::DebugNotification(result.message.c_str());
 			return result;
 		}
 
@@ -611,8 +706,17 @@ namespace CodexOfPowerNG::Registration
 		return result;
 	}
 
+	bool IsTccDisplayedListsAvailable() noexcept
+	{
+		if (!g_tccListsKnown.load(std::memory_order_relaxed)) {
+			(void)ResolveTccLists();
+		}
+		return g_tccListsAvailable.load(std::memory_order_relaxed);
+	}
+
 	void Warmup() noexcept
 	{
 		EnsureMapsLoaded();
+		(void)ResolveTccLists();
 	}
 }

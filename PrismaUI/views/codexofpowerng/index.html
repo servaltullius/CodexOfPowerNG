@@ -372,6 +372,16 @@
         color: var(--muted);
         font-size: calc(12px * var(--uiScale));
       }
+      .pill.warn {
+        border-color: rgba(255, 107, 107, 0.6);
+        background: rgba(255, 107, 107, 0.15);
+        color: rgba(255, 186, 186, 0.98);
+      }
+      .pill.ok {
+        border-color: rgba(124, 92, 255, 0.65);
+        background: rgba(124, 92, 255, 0.18);
+        color: rgba(212, 202, 255, 0.98);
+      }
       table .pill {
         max-width: 100%;
         white-space: nowrap;
@@ -412,6 +422,16 @@
       }
       #tabSettings {
         padding-bottom: calc(70px * var(--uiScale));
+      }
+      #tabSettings .settingsWarnBanner {
+        border-color: rgba(255, 107, 107, 0.6);
+        background: rgba(90, 18, 18, 0.34);
+      }
+      #tabSettings .settingsWarnBanner h2 {
+        color: rgba(255, 186, 186, 0.98);
+      }
+      #tabSettings .settingsWarnBanner .small {
+        color: rgba(255, 220, 220, 0.92);
       }
       #tabSettings .settingsActions {
         position: sticky;
@@ -582,6 +602,7 @@
           <span class="pill" id="lang">Lang: ...</span>
           <span class="pill mono" id="hotkey">Hotkey: ...</span>
           <span class="pill mono" id="inputScale">Input: 1.00</span>
+          <span class="pill" id="lotdGate" style="display: none">LOTD: ...</span>
         </div>
         <div class="left">
           <button id="btnRefreshState"><span class="btnLabel" data-i18n="btn.refresh">Refresh</span></button>
@@ -689,6 +710,13 @@
       </div>
 
       <div class="card section" id="tabSettings">
+        <div class="card settingsWarnBanner" id="lotdGateWarnBanner" style="display: none">
+          <h2 data-i18n="settings.lotdGateWarnTitle">LOTD gate warning</h2>
+          <div class="small" data-i18n="settings.lotdGateWarnBody">
+            LOTD Display gate is enabled, but TCC lists are unavailable. Registration is currently blocked for safety.
+          </div>
+        </div>
+        <div style="height: 12px"></div>
         <div class="grid2">
           <div>
             <div class="small" data-i18n-html="settings.toggleKeyHelp">
@@ -813,6 +841,11 @@
             <div style="height: 10px"></div>
             <label class="inline"><input type="checkbox" id="setNormalize" /> <span data-i18n="settings.normalizeRegistration">Normalize registration (template/variant map)</span></label>
             <div style="height: 10px"></div>
+            <label class="inline"><input type="checkbox" id="setRequireTccDisplayed" /> <span data-i18n="settings.requireTccDisplayed">LOTD items: require Displayed (Curator's Companion)</span></label>
+            <div class="small" style="margin-top: 8px" data-i18n="settings.requireTccDisplayedHelp">
+              Applies to LOTD/TCC-tracked items. If TCC lists are unavailable, registration is blocked for safety.
+            </div>
+            <div style="height: 10px"></div>
             <label class="inline"><input type="checkbox" id="setLootNotify" /> <span data-i18n="settings.lootNotify">Loot notification</span></label>
           </div>
           <div class="card">
@@ -868,6 +901,8 @@
       const langEl = document.getElementById("lang");
       const hotkeyEl = document.getElementById("hotkey");
       const inputScalePillEl = document.getElementById("inputScale");
+      const lotdGatePillEl = document.getElementById("lotdGate");
+      const lotdGateWarnBannerEl = document.getElementById("lotdGateWarnBanner");
 
       const KC = window.COPNG_KEYCODES || null;
       const LANGUI = window.COPNG_LANGUI || null;
@@ -906,6 +941,7 @@
       const toastMetaEl = document.getElementById("toastMeta");
       const toastMsgEl = document.getElementById("toastMsg");
       let toastTimer = null;
+      let lotdGateBlockingToastShown = false;
 
       const I18N = {
         en: {
@@ -979,6 +1015,8 @@
           "settings.safetyTitle": "Safety",
           "settings.protectFavorites": "Protect favorited/hotkey items",
           "settings.normalizeRegistration": "Normalize registration (template/variant map)",
+          "settings.requireTccDisplayed": "LOTD items: require Displayed (Curator's Companion)",
+          "settings.requireTccDisplayedHelp": "Applies to LOTD/TCC-tracked items. If TCC lists are unavailable, registration is blocked for safety.",
           "settings.lootNotify": "Loot notification",
           "settings.rewardsTitle": "Rewards",
           "settings.enableRewards": "Enable rewards",
@@ -995,6 +1033,7 @@
           "toast.bindKey": "Press a key to bind (Esc cancels).",
           "toast.bindKeyUnknown": "Unsupported key. Type a DIK code (e.g. 0x3E).",
           "toast.bindKeySet": "Hotkey set",
+          "toast.lotdGateBlocked": "LOTD Display gate is enabled, but TCC lists are unavailable. Registration is blocked.",
           "confirm.refund": "Refund rewards? This cannot be undone.",
           "btn.cancel": "Cancel",
           "btn.ok": "OK",
@@ -1008,6 +1047,12 @@
           "status.registered": "Registered",
           "status.lang": "Lang",
           "status.hotkey": "Hotkey",
+          "status.lotdGate": "LOTD Gate",
+          "status.lotdOk": "TCC ready",
+          "status.lotdBlocked": "TCC missing",
+          "settings.lotdGateWarnTitle": "LOTD gate warning",
+          "settings.lotdGateWarnBody":
+            "LOTD Display gate is enabled, but TCC lists are unavailable. Registration is currently blocked for safety.",
           "inv.inventory": "Inventory",
           "inv.page": "page",
           "inv.showing": "showing",
@@ -1087,6 +1132,8 @@
           "settings.safetyTitle": "안전",
           "settings.protectFavorites": "즐겨찾기/단축키 아이템 보호",
           "settings.normalizeRegistration": "등록 정규화(템플릿/변형 맵)",
+          "settings.requireTccDisplayed": "LOTD 물품은 Displayed(큐레이터 컴패니언)일 때만 등록",
+          "settings.requireTccDisplayedHelp": "LOTD/TCC 추적 대상에 적용되며, TCC 리스트를 찾지 못하면 안전을 위해 등록이 차단됩니다.",
           "settings.lootNotify": "루팅 알림",
           "settings.rewardsTitle": "보상",
           "settings.enableRewards": "보상 활성화",
@@ -1103,6 +1150,7 @@
           "toast.bindKey": "키를 눌러 지정하세요 (Esc 취소).",
           "toast.bindKeyUnknown": "지원하지 않는 키입니다. DIK 코드를 입력하세요(예: 0x3E).",
           "toast.bindKeySet": "단축키 설정",
+          "toast.lotdGateBlocked": "LOTD 전시 게이트가 켜져 있지만 TCC 리스트를 찾지 못했습니다. 등록이 차단됩니다.",
           "confirm.refund": "보상을 환불할까요? 되돌릴 수 없습니다.",
           "btn.cancel": "취소",
           "btn.ok": "확인",
@@ -1116,6 +1164,12 @@
           "status.registered": "등록됨",
           "status.lang": "언어",
           "status.hotkey": "단축키",
+          "status.lotdGate": "LOTD 게이트",
+          "status.lotdOk": "TCC 준비됨",
+          "status.lotdBlocked": "TCC 없음",
+          "settings.lotdGateWarnTitle": "LOTD 게이트 경고",
+          "settings.lotdGateWarnBody":
+            "LOTD 전시 게이트가 켜져 있지만 TCC 리스트를 찾지 못했습니다. 안전을 위해 현재 등록이 차단됩니다.",
           "inv.inventory": "인벤토리",
           "inv.page": "페이지",
           "inv.showing": "표시",
@@ -1635,6 +1689,39 @@
         langEl.textContent = `${t("status.lang", "Lang")}: ${coalesce(state.language, "?")}`;
         hotkeyEl.textContent = `${t("status.hotkey", "Hotkey")}: ${formatToggleKeyDisplay(coalesce(state.toggleKeyCode, 0) >>> 0)}`;
         if (inputScalePillEl) inputScalePillEl.textContent = `Input: ${inputScale.toFixed(2)}`;
+
+        if (lotdGatePillEl) {
+          const gate = (state && state.lotdGate) || {};
+          const enabled = !!gate.requireTccDisplayed;
+          const blocking = !!gate.blocking;
+
+          if (!enabled) {
+            lotdGatePillEl.style.display = "none";
+            lotdGatePillEl.classList.remove("warn", "ok");
+            lotdGateBlockingToastShown = false;
+          } else {
+            lotdGatePillEl.style.display = "";
+            lotdGatePillEl.classList.toggle("warn", blocking);
+            lotdGatePillEl.classList.toggle("ok", !blocking);
+            lotdGatePillEl.textContent = `${t("status.lotdGate", "LOTD Gate")}: ${
+              blocking ? t("status.lotdBlocked", "TCC missing") : t("status.lotdOk", "TCC ready")
+            }`;
+
+            if (blocking && !lotdGateBlockingToastShown) {
+              showToast("warn", t("toast.lotdGateBlocked", "LOTD Display gate is enabled, but TCC lists are unavailable. Registration is blocked."));
+              lotdGateBlockingToastShown = true;
+            } else if (!blocking) {
+              lotdGateBlockingToastShown = false;
+            }
+          }
+        }
+
+        if (lotdGateWarnBannerEl) {
+          const gate = (state && state.lotdGate) || {};
+          const enabled = !!gate.requireTccDisplayed;
+          const blocking = !!gate.blocking;
+          lotdGateWarnBannerEl.style.display = enabled && blocking ? "" : "none";
+        }
       }
 
       function renderQuickVirtual({ force = false } = {}) {
@@ -1766,6 +1853,7 @@
         document.getElementById("setDisableFocusMenu").checked = !!settings.uiDisableFocusMenu;
         document.getElementById("setDestroyOnClose").checked = !!settings.uiDestroyOnClose;
         document.getElementById("setNormalize").checked = !!settings.normalizeRegistration;
+        document.getElementById("setRequireTccDisplayed").checked = !!settings.requireTccDisplayed;
         document.getElementById("setProtectFav").checked = !!settings.protectFavorites;
         document.getElementById("setLootNotify").checked = !!settings.enableLootNotify;
         document.getElementById("setRewardsEnabled").checked = !!settings.enableRewards;
@@ -2019,6 +2107,7 @@
           uiDestroyOnClose: document.getElementById("setDestroyOnClose").checked,
           uiInputScale: clamp(inputScale, 0.5, 3.0),
           normalizeRegistration: document.getElementById("setNormalize").checked,
+          requireTccDisplayed: document.getElementById("setRequireTccDisplayed").checked,
           protectFavorites: document.getElementById("setProtectFav").checked,
           enableLootNotify: document.getElementById("setLootNotify").checked,
           enableRewards: document.getElementById("setRewardsEnabled").checked,

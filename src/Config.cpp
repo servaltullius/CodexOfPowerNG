@@ -108,6 +108,9 @@ namespace CodexOfPowerNG
 					if (auto k = reg.find("normalize"); k != reg.end() && k->is_boolean()) {
 						settings.normalizeRegistration = k->get<bool>();
 					}
+					if (auto k = reg.find("requireTccDisplayed"); k != reg.end() && k->is_boolean()) {
+						settings.requireTccDisplayed = k->get<bool>();
+					}
 				}
 
 				if (auto it = j.find("safety"); it != j.end() && it->is_object()) {
@@ -164,7 +167,10 @@ namespace CodexOfPowerNG
 				{ "inputScale", settings.uiInputScale },
 				{ "destroyOnClose", settings.uiDestroyOnClose },
 			};
-			j["registration"] = { { "normalize", settings.normalizeRegistration } };
+			j["registration"] = {
+				{ "normalize", settings.normalizeRegistration },
+				{ "requireTccDisplayed", settings.requireTccDisplayed },
+			};
 			j["safety"] = { { "protectFavorites", settings.protectFavorites } };
 			j["lootNotify"] = { { "enabled", settings.enableLootNotify } };
 			j["rewards"] = {

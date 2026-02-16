@@ -61,6 +61,9 @@ namespace CodexOfPowerNG::Registration
 	// Registers an inventory item (consumes 1) and updates co-save state.
 	[[nodiscard]] RegisterResult TryRegisterItem(RE::FormID formId);
 
+	// Whether TCC LOTD tracking lists (dbmMaster/dbmDisp) are currently available.
+	[[nodiscard]] bool IsTccDisplayedListsAvailable() noexcept;
+
 	// Loads exclude/variant maps early (safe to call multiple times).
 	void Warmup() noexcept;
 }

@@ -72,7 +72,9 @@
     "registerOkPrefix": "Registered: ",
     "categoryRewardPrefix": "Category completion reward: ",
     "totalPrefix": "total ",
-    "totalSuffix": " items"
+    "totalSuffix": " items",
+    "registerLotdNotDisplayed": "Codex of Power: Cannot register (LOTD item not displayed yet)",
+    "registerLotdGateUnavailable": "Codex of Power: Cannot register (LOTD gate unavailable; check TCC install/load order)"
   },
   "av": {
     "health": "Health",

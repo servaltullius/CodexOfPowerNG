@@ -72,7 +72,9 @@
     "registerOkPrefix": "등록 완료: ",
     "categoryRewardPrefix": "카테고리 완성 보상: ",
     "totalPrefix": "총 ",
-    "totalSuffix": "개"
+    "totalSuffix": "개",
+    "registerLotdNotDisplayed": "힘의 도감: 등록 불가(LOTD 전시 미완료)",
+    "registerLotdGateUnavailable": "힘의 도감: 등록 불가(LOTD 게이트 확인 불가 - TCC 설치/로드순서 확인)"
   },
   "av": {
     "health": "체력",

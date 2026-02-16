@@ -20,6 +20,7 @@ namespace CodexOfPowerNG
 
 		// Registration
 		bool normalizeRegistration{ false };
+		bool requireTccDisplayed{ false };
 
 		// Safety
 		bool protectFavorites{ true };

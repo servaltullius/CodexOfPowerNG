@@ -4,7 +4,9 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const viewPath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "index.html");
+const virtualTablesModulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "virtual_tables.js");
 const html = fs.readFileSync(viewPath, "utf8");
+const virtualTablesModuleSource = fs.readFileSync(virtualTablesModulePath, "utf8");
 
 test("virtualized tables schedule a second forced pass after list refresh", () => {
   assert.match(
@@ -15,14 +17,20 @@ test("virtualized tables schedule a second forced pass after list refresh", () =
 
   assert.match(
     html,
-    /window\.copng_setInventory\s*=\s*\(jsonStr\)\s*=>\s*\{[\s\S]*renderQuick\(\);[\s\S]*schedulePostRefreshVirtualResync\(\);[\s\S]*\}/,
-    "Inventory refresh should trigger post-refresh virtual resync",
+    /function onNativeInventory\(nextInventoryPage\)\s*\{[\s\S]*renderQuick\(\);[\s\S]*schedulePostRefreshVirtualResync\(\);[\s\S]*\}/,
+    "Inventory native callback should trigger post-refresh virtual resync",
   );
 
   assert.match(
     html,
-    /window\.copng_setRegistered\s*=\s*\(jsonStr\)\s*=>\s*\{[\s\S]*renderRegistered\(\);[\s\S]*schedulePostRefreshVirtualResync\(\);[\s\S]*\}/,
-    "Registered refresh should trigger post-refresh virtual resync",
+    /function onNativeRegistered\(nextRegistered\)\s*\{[\s\S]*renderRegistered\(\);[\s\S]*schedulePostRefreshVirtualResync\(\);[\s\S]*\}/,
+    "Registered native callback should trigger post-refresh virtual resync",
+  );
+
+  assert.match(
+    html,
+    /interopBridgeApi\.installNativeCallbacks\(\{[\s\S]*onInventory:\s*onNativeInventory[\s\S]*onRegistered:\s*onNativeRegistered[\s\S]*\}\);/,
+    "Interop bridge wiring should connect native inventory/registered callbacks",
   );
 
   assert.match(
@@ -33,13 +41,25 @@ test("virtualized tables schedule a second forced pass after list refresh", () =
 
   assert.match(
     html,
-    /function renderQuickVirtual\(\{ force = false \} = \{\}\)\s*\{[\s\S]*const shouldVirtualize = total > VIRTUAL_MIN_ROWS;[\s\S]*if \(!shouldVirtualize\)\s*\{/,
-    "Quick list should bypass virtualization for small row counts",
+    /function renderQuickVirtual\(\{ force = false \} = \{\}\)\s*\{[\s\S]*mgr\.renderQuickVirtual\(\{ force \}\);[\s\S]*\}/,
+    "Quick render should delegate to virtual table manager",
   );
 
   assert.match(
     html,
-    /function renderRegisteredVirtual\(\{ force = false \} = \{\}\)\s*\{[\s\S]*const shouldVirtualize = total > VIRTUAL_MIN_ROWS;[\s\S]*if \(!shouldVirtualize\)\s*\{/,
-    "Registered list should bypass virtualization for small row counts",
+    /function renderRegisteredVirtual\(\{ force = false \} = \{\}\)\s*\{[\s\S]*mgr\.renderRegisteredVirtual\(\{ force \}\);[\s\S]*\}/,
+    "Registered render should delegate to virtual table manager",
+  );
+
+  assert.match(
+    virtualTablesModuleSource,
+    /function renderQuickVirtual\([^)]*\)\s*\{[\s\S]*const shouldVirtualize = total > minRows;[\s\S]*if \(!shouldVirtualize\)\s*\{/,
+    "Virtual tables module should bypass quick virtualization for small row counts",
+  );
+
+  assert.match(
+    virtualTablesModuleSource,
+    /function renderRegisteredVirtual\([^)]*\)\s*\{[\s\S]*const shouldVirtualize = total > minRows;[\s\S]*if \(!shouldVirtualize\)\s*\{/,
+    "Virtual tables module should bypass registered virtualization for small row counts",
   );
 });

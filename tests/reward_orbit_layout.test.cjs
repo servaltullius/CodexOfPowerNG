@@ -4,7 +4,12 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const viewPath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "index.html");
+const orbitModulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "reward_orbit.js");
+const uiWiringModulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "ui_wiring.js");
 const html = fs.readFileSync(viewPath, "utf8");
+const orbitModuleSource = fs.readFileSync(orbitModulePath, "utf8");
+const uiWiringModuleSource = fs.readFileSync(uiWiringModulePath, "utf8");
+const rewardOrbit = require(orbitModulePath);
 
 test("rewards tab includes character image and orbit container", () => {
   assert.match(
@@ -20,30 +25,51 @@ test("rewards tab includes character image and orbit container", () => {
   );
 });
 
-test("reward orbit layout has high-DPI compact mode and dynamic node width", () => {
+test("rewards view loads reward orbit module", () => {
   assert.match(
     html,
-    /function getRewardOrbitLayout\(\)\s*\{[\s\S]*scale >= 2\.0 \|\| viewportW < 1280[\s\S]*positions:\s*REWARD_ORBIT_POSITIONS_COMPACT[\s\S]*nodeWidthPx:\s*162[\s\S]*positions:\s*REWARD_ORBIT_POSITIONS_REGULAR[\s\S]*nodeWidthPx:\s*188[\s\S]*\}/,
+    /<script src="reward_orbit\.js"><\/script>/,
+    "Rewards view should load reward_orbit.js before inline script",
+  );
+});
+
+test("reward orbit module has high-DPI compact mode and dynamic node width", () => {
+  assert.match(
+    orbitModuleSource,
+    /function getRewardOrbitLayout\([^)]*\)\s*\{[\s\S]*scale >= 2\.0 \|\| viewportW < 1280[\s\S]*positions:\s*REWARD_ORBIT_POSITIONS_COMPACT[\s\S]*nodeWidthPx:\s*162[\s\S]*positions:\s*REWARD_ORBIT_POSITIONS_REGULAR[\s\S]*nodeWidthPx:\s*188[\s\S]*\}/,
     "Reward orbit should switch to compact layout for high DPI or smaller viewport",
   );
 
   assert.match(
-    html,
-    /renderRewardOrbit\(rows\)\s*\{[\s\S]*getRewardOrbitLayout\(\)[\s\S]*style\.setProperty\("--rewardNodeWidth", `\$\{layout\.nodeWidthPx\}px`\)[\s\S]*const maxNodes = layout\.positions\.length;[\s\S]*\}/,
+    orbitModuleSource,
+    /function renderRewardOrbit\([^)]*\)\s*\{[\s\S]*getRewardOrbitLayout\([\s\S]*\)[\s\S]*style\.setProperty\("--rewardNodeWidth", `\$\{layout\.nodeWidthPx\}px`\)[\s\S]*const maxNodes = layout\.positions\.length;[\s\S]*\}/,
     "Reward orbit renderer should apply dynamic node width and cap visible nodes by selected layout",
   );
 });
 
+test("reward orbit module exports behavior helpers", () => {
+  assert.equal(typeof rewardOrbit.getRewardOrbitLayout, "function");
+  assert.equal(typeof rewardOrbit.renderRewardOrbit, "function");
+  assert.equal(typeof rewardOrbit.syncRewardCharacterImageState, "function");
+
+  const regular = rewardOrbit.getRewardOrbitLayout({ scale: 1.0, viewportW: 1920 });
+  const compact = rewardOrbit.getRewardOrbitLayout({ scale: 2.0, viewportW: 1920 });
+  assert.equal(regular.nodeWidthPx, 188);
+  assert.equal(compact.nodeWidthPx, 162);
+  assert.equal(regular.positions.length, 8);
+  assert.equal(compact.positions.length, 6);
+});
+
 test("reward orbit updates on resize and handles image load errors", () => {
   assert.match(
-    html,
-    /window\.addEventListener\("resize", \(\) => \{[\s\S]*renderRewards\(\);[\s\S]*\}\);/,
-    "Resize handling should rerender rewards so orbit layout reflows",
+    uiWiringModuleSource,
+    /addListener\(win, "resize", function \(\) \{[\s\S]*scheduleVirtualRender\(\{ force: true \}\);[\s\S]*renderRewards\(\);[\s\S]*\}\);/,
+    "UI wiring should rerender rewards on resize so orbit layout reflows",
   );
 
   assert.match(
-    html,
-    /rewardCharacterImgEl\.addEventListener\("load", syncRewardCharacterImageState\);[\s\S]*rewardCharacterImgEl\.addEventListener\("error", syncRewardCharacterImageState\);/,
+    uiWiringModuleSource,
+    /addListener\(rewardCharacterImgEl, "load", syncRewardCharacterImageState\);[\s\S]*addListener\(rewardCharacterImgEl, "error", syncRewardCharacterImageState\);/,
     "Character image should toggle fallback on both load and error",
   );
 });

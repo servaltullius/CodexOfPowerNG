@@ -855,6 +855,12 @@
 
     <script src="keycodes.js"></script>
     <script src="lang_ui.js"></script>
+    <script src="virtual_tables.js"></script>
+    <script src="ui_wiring.js"></script>
+    <script src="interop_bridge.js"></script>
+    <script src="input_shortcuts.js"></script>
+    <script src="reward_orbit.js"></script>
+    <script src="input_correction.js"></script>
     <script>
       const rootScrollEl = document.querySelector(".root");
       const statusEl = document.getElementById("status");
@@ -1167,24 +1173,12 @@
       const REG_ROW_BASE_PX = 54;
       const VIRTUAL_OVERSCAN = 15;
       const VIRTUAL_MIN_ROWS = 24;
-      const REWARD_ORBIT_POSITIONS_REGULAR = [
-        { x: 50, y: 10 },
-        { x: 75, y: 18 },
-        { x: 88, y: 40 },
-        { x: 75, y: 62 },
-        { x: 50, y: 76 },
-        { x: 25, y: 62 },
-        { x: 12, y: 40 },
-        { x: 25, y: 18 },
-      ];
-      const REWARD_ORBIT_POSITIONS_COMPACT = [
-        { x: 50, y: 12 },
-        { x: 78, y: 28 },
-        { x: 78, y: 60 },
-        { x: 50, y: 76 },
-        { x: 22, y: 60 },
-        { x: 22, y: 28 },
-      ];
+      const virtualTablesApi = (typeof window !== "undefined" && window.COPNGVirtualTables) || null;
+      const uiWiringApi = (typeof window !== "undefined" && window.COPNGUIWiring) || null;
+      const interopBridgeApi = (typeof window !== "undefined" && window.COPNGInteropBridge) || null;
+      const inputShortcutsApi = (typeof window !== "undefined" && window.COPNGInputShortcuts) || null;
+      const rewardOrbitApi = (typeof window !== "undefined" && window.COPNGRewardOrbit) || null;
+      const inputCorrectionApi = (typeof window !== "undefined" && window.COPNGInputCorrection) || null;
 
       let state = {};
       let inventoryPage = { page: 0, pageSize: 200, total: 0, hasMore: false, items: [] };
@@ -1342,31 +1336,51 @@
         return Number(re.top || 0) - Number(rr.top || 0) + Number(rootEl.scrollTop || 0);
       }
 
-      let virtualRaf = 0;
-      let virtualForceNext = false;
       let keyNavRaf = 0;
-      let lastVirtualRenderTs = 0;
       const VIRTUAL_RENDER_THROTTLE_MS = 32; // ~30fps cap for scroll-driven renders
-      function scheduleVirtualRender({ force = false } = {}) {
-        if (force) virtualForceNext = true;
-        if (virtualRaf) return;
-        virtualRaf = requestAnimationFrame(() => {
-          virtualRaf = 0;
-          const now = typeof performance !== "undefined" && performance.now ? performance.now() : Date.now();
-          // Throttle non-forced renders to reduce innerHTML frequency during scroll.
-          if (!virtualForceNext && now - lastVirtualRenderTs < VIRTUAL_RENDER_THROTTLE_MS) {
-            scheduleVirtualRender();
-            return;
-          }
-          lastVirtualRenderTs = now;
-          const f = virtualForceNext;
-          virtualForceNext = false;
-          renderQuickVirtual({ force: f });
-          renderRegisteredVirtual({ force: f });
+      let virtualTablesManager = null;
+
+      function ensureVirtualTablesManager() {
+        if (virtualTablesManager) return virtualTablesManager;
+        if (!virtualTablesApi || typeof virtualTablesApi.createVirtualTableManager !== "function") return null;
+
+        virtualTablesManager = virtualTablesApi.createVirtualTableManager({
+          rootScrollEl,
+          quickBody,
+          regBody,
+          quickVirtual,
+          regVirtual,
+          quickRowBasePx: QUICK_ROW_BASE_PX,
+          regRowBasePx: REG_ROW_BASE_PX,
+          overscan: VIRTUAL_OVERSCAN,
+          minRows: VIRTUAL_MIN_ROWS,
+          renderThrottleMs: VIRTUAL_RENDER_THROTTLE_MS,
+          getCurrentUiScale,
+          getQuickSelectedId: () => quickSelectedId,
+          escapeHtml,
+          t,
+          coalesce,
+          toHex32,
+          clamp,
+          documentObj: document,
+          requestAnimationFrameFn: requestAnimationFrame,
         });
+
+        return virtualTablesManager;
+      }
+
+      function scheduleVirtualRender({ force = false } = {}) {
+        const mgr = ensureVirtualTablesManager();
+        if (!mgr) return;
+        mgr.scheduleVirtualRender({ force });
       }
 
       function resetVirtualWindow(v) {
+        const mgr = ensureVirtualTablesManager();
+        if (mgr) {
+          mgr.resetVirtualWindow(v);
+          return;
+        }
         if (!v) return;
         v.lastStart = -1;
         v.lastEnd = -1;
@@ -1374,7 +1388,11 @@
       }
 
       function schedulePostRefreshVirtualResync() {
-        // First pass updates rows immediately; second pass re-syncs after layout/scroll clamping settles.
+        const mgr = ensureVirtualTablesManager();
+        if (mgr) {
+          mgr.schedulePostRefreshVirtualResync();
+          return;
+        }
         scheduleVirtualRender({ force: true });
         requestAnimationFrame(() => scheduleVirtualRender({ force: true }));
       }
@@ -1620,183 +1638,15 @@
       }
 
       function renderQuickVirtual({ force = false } = {}) {
-        if (!rootScrollEl || !quickBody) return;
-        const active = document.querySelector(".section.active");
-        if (!active || active.id !== "tabQuick") return;
-
-        const rows = quickVirtual.rows || [];
-        const total = rows.length;
-        if (total === 0) {
-          quickBody.innerHTML = `<tr><td colspan="4" class="small">${escapeHtml(t("inv.none", "(No items)"))}</td></tr>`;
-          quickVirtual.lastStart = 0;
-          quickVirtual.lastEnd = 0;
-          return;
-        }
-
-        const shouldVirtualize = total > VIRTUAL_MIN_ROWS;
-        if (!shouldVirtualize) {
-          if (!force && quickVirtual.lastStart === 0 && quickVirtual.lastEnd === total) return;
-          quickVirtual.lastStart = 0;
-          quickVirtual.lastEnd = total;
-          quickVirtual.tbodyTopPx = NaN;
-
-          let html = "";
-          for (let i = 0; i < total; i++) {
-            const it = rows[i] || {};
-            const id = Number(it.formId) >>> 0;
-            const classes = [
-              "dataRow",
-              i % 2 === 0 ? "rowOdd" : "",
-              id && id === quickSelectedId ? "selected" : "",
-            ]
-              .filter(Boolean)
-              .join(" ");
-            html += `
-          <tr data-row-id="${id}" class="${classes}">
-            <td><span class="pill">${escapeHtml(it.groupName || String(it.group))}</span></td>
-            <td>
-              <div class="itemName">${escapeHtml(it.name || "(unnamed)")}</div>
-              <div class="small mono">${toHex32(id)} → ${toHex32(it.regKey)}</div>
-            </td>
-            <td class="mono colCount"><span class="good">${coalesce(it.safeCount, 0)}</span>/${coalesce(it.totalCount, 0)}</td>
-            <td class="colAction"><button class="primary" data-action="reg" data-id="${id}"><span class="btnLabel">${t(
-              "btn.register",
-              "Register"
-            )}</span></button></td>
-          </tr>`;
-          }
-          quickBody.innerHTML = html;
-          return;
-        }
-
-        if (force || !isFinite(quickVirtual.tbodyTopPx) || !isFinite(quickVirtual.rowHeightPx) || quickVirtual.rowHeightPx <= 0) {
-          const uiScale = getCurrentUiScale();
-          quickVirtual.rowHeightPx = QUICK_ROW_BASE_PX * uiScale;
-          quickVirtual.tbodyTopPx = getOffsetTopInRoot(rootScrollEl, quickBody);
-        }
-
-        const rowHeight = quickVirtual.rowHeightPx;
-        const tbodyTop = quickVirtual.tbodyTopPx;
-        const viewTop = Number(rootScrollEl.scrollTop || 0);
-        const startRaw = Math.floor((viewTop - tbodyTop) / rowHeight);
-        const approxVisible = Math.ceil(Number(rootScrollEl.clientHeight || 900) / rowHeight) + 2;
-        const start = clamp(startRaw - VIRTUAL_OVERSCAN, 0, Math.max(0, total - 1));
-        const end = clamp(start + approxVisible + VIRTUAL_OVERSCAN * 2, 0, total);
-
-        if (!force && start === quickVirtual.lastStart && end === quickVirtual.lastEnd) return;
-
-        quickVirtual.lastStart = start;
-        quickVirtual.lastEnd = end;
-
-        const topPad = start * rowHeight;
-        const bottomPad = (total - end) * rowHeight;
-
-        let html = "";
-        if (topPad > 0) html += `<tr class="spacerRow"><td colspan="4" style="height:${Math.round(topPad)}px"></td></tr>`;
-
-        for (let i = start; i < end; i++) {
-          const it = rows[i] || {};
-          const id = Number(it.formId) >>> 0;
-          const classes = [
-            "dataRow",
-            i % 2 === 0 ? "rowOdd" : "",
-            id && id === quickSelectedId ? "selected" : "",
-          ]
-            .filter(Boolean)
-            .join(" ");
-          html += `
-          <tr data-row-id="${id}" class="${classes}">
-            <td><span class="pill">${escapeHtml(it.groupName || String(it.group))}</span></td>
-            <td>
-              <div class="itemName">${escapeHtml(it.name || "(unnamed)")}</div>
-              <div class="small mono">${toHex32(id)} → ${toHex32(it.regKey)}</div>
-            </td>
-            <td class="mono colCount"><span class="good">${coalesce(it.safeCount, 0)}</span>/${coalesce(it.totalCount, 0)}</td>
-            <td class="colAction"><button class="primary" data-action="reg" data-id="${id}"><span class="btnLabel">${t(
-              "btn.register",
-              "Register"
-            )}</span></button></td>
-          </tr>`;
-        }
-
-        if (bottomPad > 0) html += `<tr class="spacerRow"><td colspan="4" style="height:${Math.round(bottomPad)}px"></td></tr>`;
-        quickBody.innerHTML = html;
+        const mgr = ensureVirtualTablesManager();
+        if (!mgr) return;
+        mgr.renderQuickVirtual({ force });
       }
 
       function renderRegisteredVirtual({ force = false } = {}) {
-        if (!rootScrollEl || !regBody) return;
-        const active = document.querySelector(".section.active");
-        if (!active || active.id !== "tabRegistered") return;
-
-        const rows = regVirtual.rows || [];
-        const total = rows.length;
-        if (total === 0) {
-          regBody.innerHTML = `<tr><td colspan="3" class="small">${escapeHtml(t("reg.none", "(No registered items)"))}</td></tr>`;
-          regVirtual.lastStart = 0;
-          regVirtual.lastEnd = 0;
-          return;
-        }
-
-        const shouldVirtualize = total > VIRTUAL_MIN_ROWS;
-        if (!shouldVirtualize) {
-          if (!force && regVirtual.lastStart === 0 && regVirtual.lastEnd === total) return;
-          regVirtual.lastStart = 0;
-          regVirtual.lastEnd = total;
-          regVirtual.tbodyTopPx = NaN;
-
-          let html = "";
-          for (let i = 0; i < total; i++) {
-            const it = rows[i] || {};
-            const classes = ["dataRow", i % 2 === 0 ? "rowOdd" : ""].filter(Boolean).join(" ");
-            html += `
-          <tr class="${classes}">
-            <td class="colGroup"><span class="pill">${escapeHtml(it.groupName || String(it.group))}</span></td>
-            <td><span class="itemName">${escapeHtml(it.name || "(unnamed)")}</span></td>
-            <td class="colFormId mono">${toHex32(it.formId)}</td>
-          </tr>`;
-          }
-          regBody.innerHTML = html;
-          return;
-        }
-
-        if (force || !isFinite(regVirtual.tbodyTopPx) || !isFinite(regVirtual.rowHeightPx) || regVirtual.rowHeightPx <= 0) {
-          const uiScale = getCurrentUiScale();
-          regVirtual.rowHeightPx = REG_ROW_BASE_PX * uiScale;
-          regVirtual.tbodyTopPx = getOffsetTopInRoot(rootScrollEl, regBody);
-        }
-
-        const rowHeight = regVirtual.rowHeightPx;
-        const tbodyTop = regVirtual.tbodyTopPx;
-        const viewTop = Number(rootScrollEl.scrollTop || 0);
-        const startRaw = Math.floor((viewTop - tbodyTop) / rowHeight);
-        const approxVisible = Math.ceil(Number(rootScrollEl.clientHeight || 900) / rowHeight) + 2;
-        const start = clamp(startRaw - VIRTUAL_OVERSCAN, 0, Math.max(0, total - 1));
-        const end = clamp(start + approxVisible + VIRTUAL_OVERSCAN * 2, 0, total);
-
-        if (!force && start === regVirtual.lastStart && end === regVirtual.lastEnd) return;
-
-        regVirtual.lastStart = start;
-        regVirtual.lastEnd = end;
-
-        const topPad = start * rowHeight;
-        const bottomPad = (total - end) * rowHeight;
-
-        let html = "";
-        if (topPad > 0) html += `<tr class="spacerRow"><td colspan="3" style="height:${Math.round(topPad)}px"></td></tr>`;
-
-        for (let i = start; i < end; i++) {
-          const it = rows[i] || {};
-          const classes = ["dataRow", i % 2 === 0 ? "rowOdd" : ""].filter(Boolean).join(" ");
-          html += `
-          <tr class="${classes}">
-            <td class="colGroup"><span class="pill">${escapeHtml(it.groupName || String(it.group))}</span></td>
-            <td><span class="itemName">${escapeHtml(it.name || "(unnamed)")}</span></td>
-            <td class="colFormId mono">${toHex32(it.formId)}</td>
-          </tr>`;
-        }
-
-        if (bottomPad > 0) html += `<tr class="spacerRow"><td colspan="3" style="height:${Math.round(bottomPad)}px"></td></tr>`;
-        regBody.innerHTML = html;
+        const mgr = ensureVirtualTablesManager();
+        if (!mgr) return;
+        mgr.renderRegisteredVirtual({ force });
       }
 
       function renderQuick() {
@@ -1842,72 +1692,44 @@
       }
 
       function syncRewardCharacterImageState() {
+        if (rewardOrbitApi && typeof rewardOrbitApi.syncRewardCharacterImageState === "function") {
+          rewardOrbitApi.syncRewardCharacterImageState({
+            characterImgEl: rewardCharacterImgEl,
+            fallbackEl: rewardImageFallbackEl,
+          });
+          return;
+        }
         if (!rewardCharacterImgEl || !rewardImageFallbackEl) return;
         const loaded = !!(rewardCharacterImgEl.complete && rewardCharacterImgEl.naturalWidth > 0);
         rewardCharacterImgEl.style.display = loaded ? "" : "none";
         rewardImageFallbackEl.classList.toggle("show", !loaded);
       }
 
-      function rewardMagnitude(it) {
-        const n = Number(it && it.total);
-        return isFinite(n) ? Math.abs(n) : 0;
-      }
-
-      function getRewardOrbitLayout() {
-        const scale = getCurrentUiScale();
-        const viewportW = Number(window.innerWidth || 0);
-        const compact = scale >= 2.0 || viewportW < 1280;
-        if (compact) {
-          return {
-            positions: REWARD_ORBIT_POSITIONS_COMPACT,
-            nodeWidthPx: 162,
-          };
-        }
-        return {
-          positions: REWARD_ORBIT_POSITIONS_REGULAR,
-          nodeWidthPx: 188,
-        };
-      }
-
       function renderRewardOrbit(rows) {
         if (!rewardOrbitEl) return;
+        if (rewardOrbitApi && typeof rewardOrbitApi.renderRewardOrbit === "function") {
+          rewardOrbitApi.renderRewardOrbit({
+            orbitEl: rewardOrbitEl,
+            rows,
+            scale: getCurrentUiScale(),
+            viewportW: Number(window.innerWidth || 0),
+            escapeHtml,
+            t,
+            tFmt,
+            coalesce,
+            onAfterRender: syncRewardCharacterImageState,
+          });
+          return;
+        }
+
         const srcRows = Array.isArray(rows) ? rows : [];
-        const layout = getRewardOrbitLayout();
-        rewardOrbitEl.style.setProperty("--rewardNodeWidth", `${layout.nodeWidthPx}px`);
+        rewardOrbitEl.style.setProperty("--rewardNodeWidth", "188px");
         if (srcRows.length === 0) {
           rewardOrbitEl.innerHTML = `<div class="rewardOrbitEmpty small">${escapeHtml(t("rewards.none", "(No rewards yet)"))}</div>`;
           syncRewardCharacterImageState();
           return;
         }
-
-        const orbitRows = srcRows
-          .slice()
-          .sort((a, b) => rewardMagnitude(b) - rewardMagnitude(a) || String(a.label || "").localeCompare(String(b.label || "")));
-
-        const maxNodes = layout.positions.length;
-        const visible = orbitRows.slice(0, maxNodes);
-        let html = "";
-        for (let i = 0; i < visible.length; i++) {
-          const it = visible[i] || {};
-          const pos = layout.positions[i % layout.positions.length];
-          html += `
-            <div class="rewardEffectNode" style="left:${pos.x}%;top:${pos.y}%">
-              <div class="rewardEffectBadge">
-                <span class="name">${escapeHtml(it.label || "Unknown")}</span>
-                <span class="value mono">${escapeHtml(it.display || String(coalesce(it.total, 0)))}</span>
-              </div>
-            </div>`;
-        }
-
-        const remain = Math.max(0, orbitRows.length - visible.length);
-        if (remain > 0) {
-          html += `
-            <div class="rewardEffectNode" style="left:50%;top:90%">
-              <div class="rewardEffectBadge rewardMore">${escapeHtml(tFmt("rewards.more", "+{n} more", { n: remain }))}</div>
-            </div>`;
-        }
-
-        rewardOrbitEl.innerHTML = html;
+        rewardOrbitEl.innerHTML = "";
         syncRewardCharacterImageState();
       }
 
@@ -1975,12 +1797,8 @@
       }
 
       // Native callbacks (C++ -> JS)
-      window.copng_setState = (jsonStr) => {
-        try {
-          state = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-        } catch {
-          state = {};
-        }
+      function onNativeState(nextState) {
+        state = nextState || {};
         uiLang = typeof state.language === "string" ? state.language : uiLang;
         document.documentElement.lang = uiLang === "ko" ? "ko" : "en";
         applyI18n();
@@ -1988,59 +1806,29 @@
         renderQuick();
         renderRegistered();
         renderRewards();
-      };
+      }
 
-      window.copng_setInventory = (jsonStr) => {
-        let payload = null;
-        try {
-          payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-        } catch {
-          payload = [];
-        }
-        if (Array.isArray(payload)) {
-          inventoryPage = { page: 0, pageSize: payload.length, total: payload.length, hasMore: false, items: payload };
-        } else if (payload && typeof payload === "object") {
-          inventoryPage = {
-            page: coalesce(payload.page, 0) >>> 0,
-            pageSize: coalesce(payload.pageSize, 200) >>> 0,
-            total: coalesce(payload.total, 0) >>> 0,
-            hasMore: !!payload.hasMore,
-            items: Array.isArray(payload.items) ? payload.items : [],
-          };
-        } else {
-          inventoryPage = { page: 0, pageSize: 200, total: 0, hasMore: false, items: [] };
-        }
+      function onNativeInventory(nextInventoryPage) {
+        inventoryPage = nextInventoryPage;
         resetVirtualWindow(quickVirtual);
         renderQuick();
         schedulePostRefreshVirtualResync();
-      };
+      }
 
-      window.copng_setRegistered = (jsonStr) => {
-        try {
-          registered = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-        } catch {
-          registered = [];
-        }
+      function onNativeRegistered(nextRegistered) {
+        registered = nextRegistered;
         resetVirtualWindow(regVirtual);
         renderRegistered();
         schedulePostRefreshVirtualResync();
-      };
+      }
 
-      window.copng_setRewards = (jsonStr) => {
-        try {
-          rewards = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-        } catch {
-          rewards = { totals: [] };
-        }
+      function onNativeRewards(nextRewards) {
+        rewards = nextRewards && typeof nextRewards === "object" ? nextRewards : { totals: [] };
         renderRewards();
-      };
+      }
 
-      window.copng_setSettings = (jsonStr) => {
-        try {
-          settings = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-        } catch {
-          settings = null;
-        }
+      function onNativeSettings(nextSettings) {
+        settings = nextSettings;
         renderSettings();
 
         // If the user explicitly overrides the language, apply UI i18n immediately
@@ -2051,55 +1839,88 @@
           document.documentElement.lang = uiLang === "ko" ? "ko" : "en";
           applyI18n();
         }
-      };
-
-      window.copng_toast = (jsonStr) => {
-        try {
-          const obj = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-          showToast(obj.level || "info", obj.message || "");
-        } catch {
-          showToast("info", String(jsonStr || ""));
-        }
-      };
-
-      // UI wiring
-      document.querySelectorAll(".tabs button").forEach((btn) => btn.addEventListener("click", () => setTab(btn.dataset.tab)));
-      if (rewardCharacterImgEl) {
-        rewardCharacterImgEl.addEventListener("load", syncRewardCharacterImageState);
-        rewardCharacterImgEl.addEventListener("error", syncRewardCharacterImageState);
-        syncRewardCharacterImageState();
       }
 
-      document.getElementById("btnRefreshState").addEventListener("click", () => {
-        safeCall("copng_requestState", {});
-        safeCall("copng_getSettings", {});
-      });
+      function onNativeToast(toastPayload) {
+        const payload = toastPayload || {};
+        showToast(payload.level || "info", payload.message || "");
+      }
 
-      document.getElementById("btnClose").addEventListener("click", () => safeCall("copng_requestToggle", {}));
+      if (interopBridgeApi && typeof interopBridgeApi.installNativeCallbacks === "function") {
+        interopBridgeApi.installNativeCallbacks({
+          windowObj: window,
+          coalesce,
+          onState: onNativeState,
+          onInventory: onNativeInventory,
+          onRegistered: onNativeRegistered,
+          onRewards: onNativeRewards,
+          onSettings: onNativeSettings,
+          onToast: onNativeToast,
+        });
+      } else {
+        // Fallback when interop module is unavailable.
+        window.copng_setState = (jsonStr) => {
+          let payload = {};
+          try {
+            payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+          } catch {}
+          onNativeState(payload || {});
+        };
+        window.copng_setInventory = (jsonStr) => {
+          let payload = null;
+          try {
+            payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+          } catch {}
+          if (Array.isArray(payload)) {
+            onNativeInventory({ page: 0, pageSize: payload.length, total: payload.length, hasMore: false, items: payload });
+          } else if (payload && typeof payload === "object") {
+            onNativeInventory({
+              page: coalesce(payload.page, 0) >>> 0,
+              pageSize: coalesce(payload.pageSize, 200) >>> 0,
+              total: coalesce(payload.total, 0) >>> 0,
+              hasMore: !!payload.hasMore,
+              items: Array.isArray(payload.items) ? payload.items : [],
+            });
+          } else {
+            onNativeInventory({ page: 0, pageSize: 200, total: 0, hasMore: false, items: [] });
+          }
+        };
+        window.copng_setRegistered = (jsonStr) => {
+          let payload = [];
+          try {
+            payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+          } catch {}
+          onNativeRegistered(Array.isArray(payload) ? payload : []);
+        };
+        window.copng_setRewards = (jsonStr) => {
+          let payload = { totals: [] };
+          try {
+            payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+          } catch {}
+          onNativeRewards(payload);
+        };
+        window.copng_setSettings = (jsonStr) => {
+          let payload = null;
+          try {
+            payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+          } catch {}
+          onNativeSettings(payload);
+        };
+        window.copng_toast = (jsonStr) => {
+          try {
+            const obj = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+            onNativeToast({ level: obj.level || "info", message: obj.message || "" });
+          } catch {
+            onNativeToast({ level: "info", message: String(jsonStr || "") });
+          }
+        };
+      }
 
+      // UI wiring
       function requestInventoryPage(page) {
         const pageSize = coalesce(inventoryPage.pageSize, 200) >>> 0;
         safeCall("copng_requestInventory", { page: page >>> 0, pageSize: pageSize > 0 ? pageSize : 200 });
       }
-
-      document.getElementById("btnRefreshInv").addEventListener("click", () => requestInventoryPage(0));
-      if (invPageSizeEl) {
-        invPageSizeEl.addEventListener("change", () => {
-          const v = parseInt(invPageSizeEl.value, 10);
-          inventoryPage.pageSize = isFinite(v) && v > 0 ? v : coalesce(inventoryPage.pageSize, 200);
-          requestInventoryPage(0);
-        });
-      }
-      if (btnInvPrev) btnInvPrev.addEventListener("click", () => requestInventoryPage(Math.max(0, (inventoryPage.page || 0) - 1)));
-      if (btnInvNext) btnInvNext.addEventListener("click", () => requestInventoryPage((inventoryPage.page || 0) + 1));
-      document.getElementById("btnRefreshReg").addEventListener("click", () => safeCall("copng_requestRegistered", {}));
-      document.getElementById("btnRefreshRewards").addEventListener("click", () => safeCall("copng_requestRewards", {}));
-
-      document.getElementById("btnRefundRewards").addEventListener("click", async () => {
-        const ok = await showConfirm(t("confirm.refund", "Refund rewards? This cannot be undone."));
-        if (!ok) return;
-        safeCall("copng_refundRewards", {});
-      });
 
       let quickRenderTimer = null;
       let regRenderTimer = null;
@@ -2116,17 +1937,6 @@
           regRenderTimer = null;
           renderRegistered();
         }, 70);
-      }
-
-      document.getElementById("quickFilter").addEventListener("input", scheduleRenderQuick);
-      document.getElementById("regFilter").addEventListener("input", scheduleRenderRegistered);
-
-      if (rootScrollEl) {
-        rootScrollEl.addEventListener("scroll", () => scheduleVirtualRender(), { passive: true });
-        window.addEventListener("resize", () => {
-          scheduleVirtualRender({ force: true });
-          renderRewards();
-        });
       }
 
       function setQuickSelected(nextId) {
@@ -2164,7 +1974,7 @@
         else if (rowBottom > viewBottom) rootScrollEl.scrollTop = Math.max(0, rowBottom - Number(rootScrollEl.clientHeight || 900) + 4 * uiScale);
       }
 
-      quickBody.addEventListener("click", (e) => {
+      function onQuickBodyClick(e) {
         // Ultralight/PrismaUI may dispatch clicks with a Text node target; parentElement isn't always available.
         // Walk via parentNode and only read tagName when it's an Element node.
         let node = e.target;
@@ -2190,11 +2000,10 @@
           }
           node = node.parentNode;
         }
-      });
+      }
       // (renderSettings/escapeHtml/native callbacks/wiring moved earlier)
 
-      document.getElementById("btnReloadSettings").addEventListener("click", () => safeCall("copng_getSettings", {}));
-      document.getElementById("btnSaveSettings").addEventListener("click", () => {
+      function saveSettingsFromUi() {
         const keyRaw = (document.getElementById("setToggleKey").value || "").trim();
         let key = KC && KC.parseKeybindInput ? KC.parseKeybindInput(keyRaw) : null;
         if (key == null) {
@@ -2218,83 +2027,6 @@
           allowSkillRewards: document.getElementById("setSkillRewards").checked,
         };
         safeCall("copng_saveSettings", payload);
-      });
-      document.getElementById("btnCloseSettings").addEventListener("click", () => safeCall("copng_requestToggle", {}));
-
-      const toggleKeyInputEl = document.getElementById("setToggleKey");
-      if (toggleKeyInputEl) {
-        toggleKeyInputEl.addEventListener("input", () => updateToggleKeyResolved());
-        toggleKeyInputEl.addEventListener("blur", () => updateToggleKeyResolved());
-      }
-
-      if (btnCaptureToggleKeyEl) {
-        btnCaptureToggleKeyEl.addEventListener("click", () => {
-          captureToggleKey = true;
-          showToast("info", t("toast.bindKey", "Press a key to bind (Esc cancels)."));
-        });
-      }
-
-      if (langBtnEl && langMenuEl && langSelectEl) {
-        syncLangDropdown();
-
-        langBtnEl.addEventListener("click", (e) => {
-          if (e && e.preventDefault) e.preventDefault();
-          if (langMenuOpen) closeLangMenu();
-          else openLangMenu();
-        });
-
-        // Close on outside click before the click normalizer may stop propagation.
-        window.addEventListener(
-          "click",
-          (e) => {
-            if (!langMenuOpen) return;
-            const dd = document.getElementById("langDropdown");
-            if (!dd) return closeLangMenu();
-            const target = e && e.target ? e.target : null;
-            if (target && dd.contains(target)) return;
-            closeLangMenu();
-          },
-          true
-        );
-
-        if (rootScrollEl) {
-          rootScrollEl.addEventListener(
-            "scroll",
-            () => {
-              if (langMenuOpen) closeLangMenu();
-            },
-            { passive: true }
-          );
-        }
-      }
-
-      // UI scale prefs (Auto/Manual)
-      loadUiScalePrefs();
-      syncUiScaleControls();
-      applyUiScaleFromPrefs();
-      syncInputScaleControls();
-      window.addEventListener("resize", scheduleAutoUiScale);
-
-      // Performance mode prefs (Auto/Off/On)
-      if (perfModeEl) {
-        perfModeEl.value = perfMode;
-        perfModeEl.addEventListener("change", () => {
-          const v = String(perfModeEl.value || "");
-          perfMode = v === "on" || v === "off" ? v : "auto";
-          savePerfModePref();
-          applyPerfModeFromPrefs();
-        });
-      }
-
-      if (uiScaleModeEl) {
-        uiScaleModeEl.addEventListener("change", () => {
-          uiScaleMode = uiScaleModeEl.value === "manual" ? "manual" : "auto";
-          if (uiScaleMode === "manual") {
-            uiScaleManual = clamp(getCurrentUiScale(), 1.0, 3.0);
-          }
-          saveUiScalePrefs();
-          applyUiScaleFromPrefs();
-        });
       }
 
       const onManualScaleChange = (raw) => {
@@ -2306,35 +2038,125 @@
         syncUiScaleControls();
       };
 
-      if (uiScaleRangeEl) uiScaleRangeEl.addEventListener("input", () => onManualScaleChange(uiScaleRangeEl.value));
-      if (uiScaleNumberEl) uiScaleNumberEl.addEventListener("input", () => onManualScaleChange(uiScaleNumberEl.value));
-
       // Input scale (click/hitbox correction)
       const onInputScaleChange = (raw, { toast = false } = {}) => {
         setInputScale(raw, { persist: true, toast: toast });
       };
-      if (inputScaleRangeEl) inputScaleRangeEl.addEventListener("input", () => onInputScaleChange(inputScaleRangeEl.value));
-      if (inputScaleNumberEl) inputScaleNumberEl.addEventListener("input", () => onInputScaleChange(inputScaleNumberEl.value));
-      if (inputScalePresetEl) inputScalePresetEl.addEventListener("change", () => onInputScaleChange(inputScalePresetEl.value, { toast: true }));
 
-      // Direct wheel scroll: no JS animation loop. Ultralight's rAF timing is
-      // tied to the game framerate and too inconsistent for smooth JS animation.
-      // Instead we apply the delta immediately and let the virtualRender throttle
-      // handle DOM update frequency.
-      (function installDirectWheelScroll() {
-        const rootEl = document.querySelector(".root");
+      function onPerfModeChanged(raw) {
+        const v = String(raw || "");
+        perfMode = v === "on" || v === "off" ? v : "auto";
+        savePerfModePref();
+        applyPerfModeFromPrefs();
+      }
+
+      function onUiScaleModeChanged(raw) {
+        uiScaleMode = raw === "manual" ? "manual" : "auto";
+        if (uiScaleMode === "manual") {
+          uiScaleManual = clamp(getCurrentUiScale(), 1.0, 3.0);
+        }
+        saveUiScalePrefs();
+        applyUiScaleFromPrefs();
+      }
+
+      if (uiWiringApi && typeof uiWiringApi.installUIWiring === "function") {
+        uiWiringApi.installUIWiring({
+          documentObj: document,
+          windowObj: window,
+          rootScrollEl,
+          quickBody,
+          rewardCharacterImgEl,
+          invPageSizeEl,
+          btnInvPrev,
+          btnInvNext,
+          btnCaptureToggleKeyEl,
+          langBtnEl,
+          langMenuEl,
+          langSelectEl,
+          uiScaleModeEl,
+          uiScaleRangeEl,
+          uiScaleNumberEl,
+          perfModeEl,
+          inputScaleRangeEl,
+          inputScaleNumberEl,
+          inputScalePresetEl,
+          safeCall,
+          setTab,
+          syncRewardCharacterImageState,
+          requestInventoryPage,
+          getInventoryPage: () => inventoryPage,
+          setInventoryPageSize: (next) => {
+            inventoryPage.pageSize = next;
+          },
+          showConfirm,
+          t,
+          scheduleRenderQuick,
+          scheduleRenderRegistered,
+          scheduleVirtualRender,
+          renderRewards,
+          onQuickBodyClick,
+          onSaveSettings: saveSettingsFromUi,
+          updateToggleKeyResolved,
+          setCaptureToggleKey: (next) => {
+            captureToggleKey = !!next;
+          },
+          showToast,
+          closeLangMenu,
+          openLangMenu,
+          syncLangDropdown,
+          isLangMenuOpen: () => langMenuOpen,
+          loadUiScalePrefs,
+          syncUiScaleControls,
+          applyUiScaleFromPrefs,
+          syncInputScaleControls,
+          scheduleAutoUiScale,
+          getPerfMode: () => perfMode,
+          onPerfModeChanged,
+          onUiScaleModeChanged,
+          onManualScaleChange,
+          onInputScaleChange,
+        });
+      }
+
+      function installInputCorrectionFallback() {
+        const rootEl = rootScrollEl;
         if (!rootEl) return;
 
-        let lastWheelTs = 0;
+        const INTERACTIVE_SEL = "button, input, select, textarea, a, [role='button'], [data-action], tr[data-row-id]";
+        const isElementNode = (node) => !!(node && node.nodeType === 1);
+        const pickInteractiveElement = (el) => {
+          if (!isElementNode(el)) return null;
+          if (el.matches && el.matches(INTERACTIVE_SEL)) return el;
+          if (el.closest) return el.closest(INTERACTIVE_SEL);
+          return null;
+        };
+        const makeMouseEventLike = (e, pt) =>
+          new MouseEvent("click", {
+            bubbles: true,
+            cancelable: true,
+            composed: true,
+            view: window,
+            detail: e.detail || 0,
+            screenX: e.screenX || 0,
+            screenY: e.screenY || 0,
+            clientX: pt.x,
+            clientY: pt.y,
+            button: e.button || 0,
+            buttons: e.buttons || 1,
+            ctrlKey: !!e.ctrlKey,
+            shiftKey: !!e.shiftKey,
+            altKey: !!e.altKey,
+            metaKey: !!e.metaKey,
+          });
 
-        function wheelNow(e) {
+        let lastWheelTs = 0;
+        const wheelNow = (e) => {
           const ts = typeof e.timeStamp === "number" && isFinite(e.timeStamp) ? e.timeStamp : 0;
           if (ts > 0) return ts;
           if (typeof performance !== "undefined" && performance.now) return performance.now();
           return Date.now();
-        }
-
-        function normalizeWheelDelta(e, container) {
+        };
+        const normalizeWheelDelta = (e, container) => {
           let dy = Number(e.deltaY || 0);
           if (!isFinite(dy) || dy === 0) return 0;
 
@@ -2344,23 +2166,17 @@
 
           const uiScale = clamp(getCurrentUiScale(), 1.0, 3.0);
           const abs = Math.abs(dy);
-
           const now = wheelNow(e);
           const dt = lastWheelTs > 0 ? now - lastWheelTs : 999;
           lastWheelTs = now;
 
-          // Tiny deltas from Ultralight notched wheel: use a moderate fixed step.
-          if (abs > 0 && abs < 12 && dt > 24) {
-            dy = Math.sign(dy) * 60 * uiScale;
-          } else if (abs < 40) {
-            dy = dy * 1.5 * uiScale;
-          } else {
-            dy = dy * uiScale;
-          }
+          if (abs > 0 && abs < 12 && dt > 24) dy = Math.sign(dy) * 60 * uiScale;
+          else if (abs < 40) dy = dy * 1.5 * uiScale;
+          else dy = dy * uiScale;
 
           const maxStep = Number(container.clientHeight || 800) * 0.45;
           return clamp(dy, -maxStep, maxStep);
-        }
+        };
 
         rootEl.addEventListener(
           "wheel",
@@ -2368,393 +2184,152 @@
             if (!e || e.isTrusted === false) return;
             const maxScroll = Math.max(0, rootEl.scrollHeight - rootEl.clientHeight);
             if (maxScroll <= 0) return;
-
             const deltaPx = normalizeWheelDelta(e, rootEl);
             if (!isFinite(deltaPx) || deltaPx === 0) return;
-
             if (e.preventDefault) e.preventDefault();
             if (e.stopPropagation) e.stopPropagation();
-
             rootEl.scrollTop = clamp(rootEl.scrollTop + deltaPx, 0, maxScroll);
           },
           { passive: false }
         );
-      })();
 
-      // Initial pull
-      safeCall("copng_requestState", {});
-      safeCall("copng_getSettings", {});
-
-      // High DPI input correction: if the native mouse coordinates are scaled (e.g., only part of the UI is clickable),
-      // adjust client coordinates and re-dispatch mouse events to the corrected element.
-      // Also normalizes clicks when Ultralight reports a Text node as target (some events may not bubble correctly).
-      function getEventTargetElement(e) {
-        if (!e) return null;
-        const t = e.target;
-        if (t instanceof Element) return t;
-        if (t && t.parentNode instanceof Element) return t.parentNode;
-        const path = typeof e.composedPath === "function" ? e.composedPath() : null;
-        if (Array.isArray(path)) {
-          for (const p of path) {
-            if (p instanceof Element) return p;
+        let lastMouseupFixed = { t: 0, x: -9999, y: -9999 };
+        const nowMs = () => {
+          try {
+            return Date.now();
+          } catch {
+            return 0;
           }
-        }
-        return null;
-      }
+        };
 
-      const INTERACTIVE_SEL = "button, input, select, textarea, a, [role='button'], [data-action], tr[data-row-id]";
+        document.addEventListener(
+          "mouseup",
+          (e) => {
+            if (!e || e.isTrusted === false) return;
+            if (e.button !== undefined && e.button !== 0) return;
+            if (isElementNode(e.target)) return;
 
-      function pickInteractiveElement(el) {
-        if (!el || !(el instanceof Element)) return null;
-        if (el.matches && el.matches(INTERACTIVE_SEL)) return el;
-        if (el.closest) return el.closest(INTERACTIVE_SEL);
-        return null;
-      }
+            const w = Number(window.innerWidth || 0);
+            const h = Number(window.innerHeight || 0);
+            if (!isFinite(w) || !isFinite(h) || w <= 0 || h <= 0) return;
 
-      function shouldCorrectMouseEvent(e) {
-        if (!e || e.isTrusted === false) return false;
-        if (e.button !== undefined && e.button !== 0) return false; // left click only
-        const needsNormalizeTarget = !(e.target instanceof Element);
-        const needsScale = isFinite(inputScale) && Math.abs(inputScale - 1.0) >= 0.01;
-        return needsNormalizeTarget || needsScale;
-      }
+            const sx = clamp(inputScale, 0.5, 3.0);
+            const needsScale = isFinite(sx) && Math.abs(sx - 1.0) >= 0.01;
+            const cx = Number(e.clientX || 0);
+            const cy = Number(e.clientY || 0);
+            const clampPt = (pt) => ({
+              x: clamp(Math.round(pt.x), 0, Math.max(0, w - 1)),
+              y: clamp(Math.round(pt.y), 0, Math.max(0, h - 1)),
+            });
 
-      function scoreTarget(el, rootEl) {
-        if (!el || !(el instanceof Element)) return -1000000;
-        let score = 0;
-        const tag = (el.tagName || "").toUpperCase();
-        if (tag === "HTML" || tag === "BODY") score -= 5;
-        const inRoot = !!(rootEl && rootEl.contains(el));
-        score += inRoot ? 100 : -100;
-
-        if (el.matches && el.matches(INTERACTIVE_SEL)) score += 60;
-        if (el.closest && el.closest(INTERACTIVE_SEL)) score += 25;
-        if (el.closest && el.closest("tr[data-row-id]")) score += 5;
-        return score;
-      }
-
-      function makeMouseEventLike(e, type, pt) {
-        return new MouseEvent(type, {
-          bubbles: true,
-          cancelable: true,
-          composed: true,
-          view: window,
-          detail: e.detail || 0,
-          screenX: e.screenX || 0,
-          screenY: e.screenY || 0,
-          clientX: pt.x,
-          clientY: pt.y,
-          button: e.button || 0,
-          buttons: e.buttons || 1,
-          ctrlKey: !!e.ctrlKey,
-          shiftKey: !!e.shiftKey,
-          altKey: !!e.altKey,
-          metaKey: !!e.metaKey,
-        });
-      }
-
-      // Fallback: in some Ultralight builds, clicking directly on text can fail to dispatch a usable "click"
-      // to the element listeners. Use mouseup->synthetic click, and suppress the subsequent native click.
-      let lastMouseupFixed = { t: 0, x: -9999, y: -9999 };
-      function nowMs() {
-        try {
-          return Date.now();
-        } catch {
-          return 0;
-        }
-      }
-
-      document.addEventListener(
-        "mouseup",
-        (e) => {
-          if (!e || e.isTrusted === false) return;
-          if (e.button !== undefined && e.button !== 0) return;
-          // Only apply this fallback when Ultralight reports a non-Element target (typically a Text node).
-          if (e.target instanceof Element) return;
-
-          const w = Number(window.innerWidth || 0);
-          const h = Number(window.innerHeight || 0);
-          if (!isFinite(w) || !isFinite(h) || w <= 0 || h <= 0) return;
-
-          const rootEl = document.querySelector(".root");
-          const needsScale = isFinite(inputScale) && Math.abs(inputScale - 1.0) >= 0.01;
-
-          const cx = Number(e.clientX || 0);
-          const cy = Number(e.clientY || 0);
-
-          const clampPt = (pt) => ({
-            x: clamp(Math.round(pt.x), 0, Math.max(0, w - 1)),
-            y: clamp(Math.round(pt.y), 0, Math.max(0, h - 1)),
-          });
-
-          const candidates = [];
-          candidates.push({ label: "identity", pt: clampPt({ x: cx, y: cy }) });
-          if (needsScale) {
-            candidates.push({ label: "origin-mul", pt: clampPt({ x: cx * inputScale, y: cy * inputScale }) });
-            candidates.push({ label: "origin-div", pt: clampPt({ x: cx / inputScale, y: cy / inputScale }) });
-            if (rootEl && rootEl.getBoundingClientRect) {
-              const r = rootEl.getBoundingClientRect();
-              const rx = Number(r.left || 0);
-              const ry = Number(r.top || 0);
-              candidates.push({
-                label: "root-mul",
-                pt: clampPt({ x: rx + (cx - rx) * inputScale, y: ry + (cy - ry) * inputScale }),
-              });
-              candidates.push({
-                label: "root-div",
-                pt: clampPt({ x: rx + (cx - rx) / inputScale, y: ry + (cy - ry) / inputScale }),
-              });
+            const candidates = [{ pt: clampPt({ x: cx, y: cy }) }];
+            if (needsScale) {
+              candidates.push({ pt: clampPt({ x: cx * sx, y: cy * sx }) });
+              candidates.push({ pt: clampPt({ x: cx / sx, y: cy / sx }) });
             }
-          }
 
-          let bestTarget = null;
-          let bestPt = null;
-          let bestScore = -1000000;
-          for (const c of candidates) {
-            const t = document.elementFromPoint(c.pt.x, c.pt.y);
-            const picked = pickInteractiveElement(t);
-            if (!picked) continue;
-            const s = scoreTarget(picked, rootEl);
-            if (s > bestScore) {
-              bestScore = s;
-              bestTarget = picked;
-              bestPt = c.pt;
+            let best = null;
+            for (const c of candidates) {
+              const raw = document.elementFromPoint(c.pt.x, c.pt.y);
+              const picked = pickInteractiveElement(raw);
+              if (!picked) continue;
+              if (!rootEl.contains(picked)) continue;
+              best = { target: picked, pt: c.pt };
+              break;
             }
-          }
+            if (!best) return;
 
-          if (!bestTarget || !(bestTarget instanceof Element) || !bestPt) return;
-          if (rootEl && !rootEl.contains(bestTarget)) return;
+            lastMouseupFixed = { t: nowMs(), x: Math.round(cx), y: Math.round(cy) };
+            best.target.dispatchEvent(makeMouseEventLike(e, best.pt));
+          },
+          true
+        );
 
-          lastMouseupFixed = { t: nowMs(), x: Math.round(cx), y: Math.round(cy) };
-          bestTarget.dispatchEvent(makeMouseEventLike(e, "click", bestPt));
-        },
-        true
-      );
+        document.addEventListener(
+          "click",
+          (e) => {
+            const fixedAge = nowMs() - (lastMouseupFixed.t || 0);
+            if (fixedAge < 0 || fixedAge >= 250) return;
 
-      document.addEventListener(
-        "click",
-        (e) => {
-          if (!shouldCorrectMouseEvent(e)) return;
-
-          const fixedAge = nowMs() - (lastMouseupFixed.t || 0);
-          if (fixedAge >= 0 && fixedAge < 250) {
             const cx0 = Math.round(Number(e.clientX || 0));
             const cy0 = Math.round(Number(e.clientY || 0));
             if (Math.abs(cx0 - lastMouseupFixed.x) <= 1 && Math.abs(cy0 - lastMouseupFixed.y) <= 1) {
               if (e.preventDefault) e.preventDefault();
               if (e.stopImmediatePropagation) e.stopImmediatePropagation();
               else if (e.stopPropagation) e.stopPropagation();
-              return;
             }
-          }
-
-          const w = Number(window.innerWidth || 0);
-          const h = Number(window.innerHeight || 0);
-          if (!isFinite(w) || !isFinite(h) || w <= 0 || h <= 0) return;
-
-          const rootEl = document.querySelector(".root");
-          const needsNormalizeTarget = !(e.target instanceof Element);
-          const needsScale = isFinite(inputScale) && Math.abs(inputScale - 1.0) >= 0.01;
-
-          const origRaw = getEventTargetElement(e);
-          const origTarget = pickInteractiveElement(origRaw);
-          const origScore = scoreTarget(origTarget, rootEl);
-
-          const cx = Number(e.clientX || 0);
-          const cy = Number(e.clientY || 0);
-
-          const clampPt = (pt) => ({
-            x: clamp(Math.round(pt.x), 0, Math.max(0, w - 1)),
-            y: clamp(Math.round(pt.y), 0, Math.max(0, h - 1)),
-          });
-
-          const candidates = [];
-          // Always include identity candidate (needed for Text node targets even when inputScale==1).
-          candidates.push({ label: "identity", pt: clampPt({ x: cx, y: cy }) });
-
-          if (needsScale) {
-            // Origin-relative scale
-            candidates.push({ label: "origin-mul", pt: clampPt({ x: cx * inputScale, y: cy * inputScale }) });
-            candidates.push({ label: "origin-div", pt: clampPt({ x: cx / inputScale, y: cy / inputScale }) });
-
-            // Root-relative scale (handles translations when the UI is centered/padded)
-            if (rootEl && rootEl.getBoundingClientRect) {
-              const r = rootEl.getBoundingClientRect();
-              const rx = Number(r.left || 0);
-              const ry = Number(r.top || 0);
-              candidates.push({
-                label: "root-mul",
-                pt: clampPt({ x: rx + (cx - rx) * inputScale, y: ry + (cy - ry) * inputScale }),
-              });
-              candidates.push({
-                label: "root-div",
-                pt: clampPt({ x: rx + (cx - rx) / inputScale, y: ry + (cy - ry) / inputScale }),
-              });
-            }
-          }
-
-          let bestTarget = null;
-          let bestPt = null;
-          let bestScore = -1000000;
-          for (const c of candidates) {
-            const t = document.elementFromPoint(c.pt.x, c.pt.y);
-            const picked = pickInteractiveElement(t);
-            if (!picked) continue;
-            const s = scoreTarget(picked, rootEl);
-            if (s > bestScore) {
-              bestScore = s;
-              bestTarget = picked;
-              bestPt = c.pt;
-            }
-          }
-
-          if (!bestTarget || !(bestTarget instanceof Element)) {
-            if (needsNormalizeTarget && origTarget instanceof Element) {
-              bestTarget = origTarget;
-              bestPt = clampPt({ x: cx, y: cy });
-            } else {
-              return;
-            }
-          }
-
-          // Only touch events that are inside our UI.
-          if (rootEl && !rootEl.contains(bestTarget) && !(origTarget instanceof Element && rootEl.contains(origTarget))) return;
-
-          if (!needsNormalizeTarget) {
-            if (bestTarget === origTarget) return;
-            if (bestScore <= origScore) return;
-          }
-
-          if (e.preventDefault) e.preventDefault();
-          if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-          else if (e.stopPropagation) e.stopPropagation();
-
-          bestTarget.dispatchEvent(makeMouseEventLike(e, "click", bestPt));
-        },
-        true
-      );
-
-      // Emergency close: when the view has focus, the game's input sink may not receive the toggle key.
-      // Handle common close keys in JS so the user can always regain control.
-      window.addEventListener("keydown", (e) => {
-        const key = e.key || "";
-        const code = e.code || "";
-        const keyCode = e.keyCode || e.which || 0;
-
-        const tag = (e.target && e.target.tagName) || "";
-        const isTyping = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || (e.target && e.target.isContentEditable);
-
-        const isEscape = key === "Escape" || code === "Escape" || keyCode === 27;
-        const isEnter = key === "Enter" || code === "Enter" || keyCode === 13;
-        const isUp = key === "ArrowUp" || code === "ArrowUp" || keyCode === 38;
-        const isDown = key === "ArrowDown" || code === "ArrowDown" || keyCode === 40;
-        const isBracketLeft = key === "[" || code === "BracketLeft";
-        const isBracketRight = key === "]" || code === "BracketRight";
-        const isZero = key === "0" || code === "Digit0";
-        const isCtrlS = (e.ctrlKey || e.metaKey) && (key.toLowerCase() === "s" || code === "KeyS" || keyCode === 83);
-
-      let eventDik = null;
-      if (KC && KC.jsCodeToDik) {
-        eventDik = KC.jsCodeToDik(code);
-        if (eventDik == null) eventDik = KC.jsCodeToDik(key);
-      }
-      if (eventDik == null && KC && KC.jsKeyCodeToDik) {
-        eventDik = KC.jsKeyCodeToDik(keyCode);
-      }
-      if (eventDik == null && KC && KC.parseKeybindInput) {
-        eventDik = KC.parseKeybindInput(key);
-      }
-      const toggleDik = getToggleKeyDik();
-      const toggleName = KC && KC.dikToKeyName ? KC.dikToKeyName(toggleDik) : "";
-      const toggleIsAlnum = /^[A-Z0-9]$/.test(String(toggleName || ""));
-      const isToggle = eventDik != null && ((eventDik >>> 0) & 0xff) === ((toggleDik >>> 0) & 0xff);
-
-      if (captureToggleKey) {
-        if (e.preventDefault) e.preventDefault();
-        if (isEscape) {
-          captureToggleKey = false;
-          showToast("info", t("toast.bindKey", "Press a key to bind (Esc cancels)."));
-          return;
-        }
-        if (eventDik != null) {
-          setToggleKeyInputFromDik(eventDik);
-          captureToggleKey = false;
-          showToast("info", `${t("toast.bindKeySet", "Hotkey set")}: ${formatToggleKeyDisplay(eventDik)}`);
-          return;
-        }
-        showToast("warn", t("toast.bindKeyUnknown", "Unsupported key."));
-        return;
+          },
+          true
+        );
       }
 
-      if (langMenuOpen && isEscape) {
-        if (e.preventDefault) e.preventDefault();
-        closeLangMenu();
-        return;
+      // Initial pull
+      safeCall("copng_requestState", {});
+      safeCall("copng_getSettings", {});
+      // High DPI click correction + direct wheel scrolling are isolated in a
+      // dedicated module to keep this bootstrap script focused on state/render.
+      if (inputCorrectionApi && typeof inputCorrectionApi.installInputCorrection === "function") {
+        inputCorrectionApi.installInputCorrection({
+          documentObj: document,
+          windowObj: window,
+          rootEl: rootScrollEl,
+          clamp,
+          getCurrentUiScale,
+          getInputScale: () => inputScale,
+        });
+      } else {
+        safeCall("copng_log", {
+          level: "warn",
+          message: "input_correction.js unavailable; using fallback input correction",
+        });
+        installInputCorrectionFallback();
       }
 
-        if (isEscape || (isToggle && !(isTyping && toggleIsAlnum))) {
-          if (e.preventDefault) e.preventDefault();
+      // Emergency close + hotkeys/shortcuts live in a separate module to keep index.html maintainable.
+      if (inputShortcutsApi && typeof inputShortcutsApi.installKeydownHandler === "function") {
+        inputShortcutsApi.installKeydownHandler({
+          KC,
+          t,
+          showToast,
+          safeCall,
+          setTab,
+          setInputScale,
+          getInputScale: () => inputScale,
+          getToggleKeyDik,
+          setToggleKeyInputFromDik,
+          formatToggleKeyDisplay,
+          getCaptureToggleKey: () => captureToggleKey,
+          setCaptureToggleKey: (next) => {
+            captureToggleKey = !!next;
+          },
+          isLangMenuOpen: () => langMenuOpen,
+          closeLangMenu,
+          getQuickVisibleIds: () => quickVisibleIds,
+          getQuickSelectedId: () => quickSelectedId,
+          setQuickSelected,
+          scrollQuickIndexIntoView,
+          scheduleVirtualRender,
+          getKeyNavRaf: () => keyNavRaf,
+          setKeyNavRaf: (next) => {
+            keyNavRaf = next;
+          },
+          toHex32,
+          documentObj: document,
+          windowObj: window,
+          requestAnimationFrameFn: requestAnimationFrame,
+        });
+      } else {
+        // Last-resort fallback: keep ESC close available even if module loading fails.
+        window.addEventListener("keydown", (e) => {
+          const key = String((e && e.key) || "");
+          const code = String((e && e.code) || "");
+          const keyCode = Number((e && (e.keyCode || e.which)) || 0) || 0;
+          const isEscape = key === "Escape" || code === "Escape" || keyCode === 27;
+          if (!isEscape) return;
+          if (e && e.preventDefault) e.preventDefault();
           safeCall("copng_requestToggle", {});
-          return;
-        }
-
-        const activeSection = document.querySelector(".section.active");
-        const isQuickTab = activeSection && activeSection.id === "tabQuick";
-
-        if (!isTyping && isCtrlS) {
-          if (e.preventDefault) e.preventDefault();
-          const btn = document.getElementById("btnSaveSettings");
-          if (btn && btn.click) btn.click();
-          return;
-        }
-
-        if (!isTyping && (isBracketLeft || isBracketRight)) {
-          if (e.preventDefault) e.preventDefault();
-          const delta = isBracketRight ? 0.05 : -0.05;
-          setInputScale(inputScale + delta, { persist: true, toast: true });
-          return;
-        }
-
-        if (!isTyping && isZero) {
-          if (e.preventDefault) e.preventDefault();
-          setInputScale(1.0, { persist: true, toast: true });
-          return;
-        }
-
-        if (isTyping) return;
-
-        // Tab shortcuts: 1..4
-        if (key === "1" || code === "Digit1") return setTab("tabQuick");
-        if (key === "2" || code === "Digit2") return setTab("tabRegistered");
-        if (key === "3" || code === "Digit3") return setTab("tabRewards");
-        if (key === "4" || code === "Digit4") return setTab("tabSettings");
-
-        if (!isQuickTab) return;
-
-        if ((isUp || isDown) && quickVisibleIds && quickVisibleIds.length) {
-          if (e.preventDefault) e.preventDefault();
-          if (keyNavRaf) return;
-          const direction = isUp ? -1 : 1;
-          keyNavRaf = requestAnimationFrame(() => {
-            keyNavRaf = 0;
-            const ids = quickVisibleIds;
-            const idx = ids.indexOf(quickSelectedId);
-            const base = idx >= 0 ? idx : 0;
-            const nextIdx = direction < 0 ? (base <= 0 ? ids.length - 1 : base - 1) : (base + 1 >= ids.length ? 0 : base + 1);
-            setQuickSelected(ids[nextIdx]);
-            scrollQuickIndexIntoView(nextIdx);
-            scheduleVirtualRender();
-          });
-          return;
-        }
-
-        if (isEnter && quickSelectedId) {
-          if (e.preventDefault) e.preventDefault();
-          safeCall("copng_log", { level: "info", message: `UI register enter: ${toHex32(quickSelectedId >>> 0)}` });
-          safeCall("copng_registerItem", { formId: quickSelectedId >>> 0 });
-          return;
-        }
-      });
+        });
+      }
 
       safeCall("copng_log", { level: "info", message: "UI loaded" });
     </script>

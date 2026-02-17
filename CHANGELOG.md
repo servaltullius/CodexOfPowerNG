@@ -9,6 +9,20 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+### Added
+- New host regression tests:
+  - `tests/registration_formid_parse.test.cpp` (FormID parse/local-id boundary cases)
+  - `tests/serialization_write_flow.test.cpp` (save-write flow should not short-circuit after earlier failures)
+
+### Changed
+- Internal C++ modules were further decomposed for maintainability with no gameplay/UI behavior change:
+  - Prisma UI payload builders split into `src/PrismaUIPayloadsInventory.cpp` and `src/PrismaUIPayloadsRewards.cpp`.
+  - Registration internals split by concern (`src/RegistrationInternal.cpp`, `src/RegistrationInternalMaps.cpp`, `src/RegistrationInternalTcc.cpp`).
+  - Serialization callbacks split by responsibility:
+    - `src/Serialization.cpp` (install/entrypoint)
+    - `src/SerializationSave.cpp` (save + revert)
+    - `src/SerializationLoad.cpp` (load path)
+
 ## [1.0.5] - 2026-02-12
 
 ### Fixed

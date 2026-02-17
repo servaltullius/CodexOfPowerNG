@@ -23,7 +23,8 @@
 
 **Files:**
 - Create: `src/PrismaUIPayloads.h`
-- Create: `src/PrismaUIPayloads.cpp`
+- Create: `src/PrismaUIPayloadsInventory.cpp`
+- Create: `src/PrismaUIPayloadsRewards.cpp`
 - Modify: `src/PrismaUIManager.cpp`
 
 **Steps:**
@@ -56,3 +57,10 @@
 3. Run Node tests (`tests/keycodes.test.cjs`, `tests/lang_ui.test.cjs`).
 4. Run `cmake --build --preset wsl-release`.
 
+## Status Update (2026-02-17)
+- Task 2 payload split was implemented as two concrete modules:
+  - `src/PrismaUIPayloadsInventory.cpp` (inventory/registered payload builders)
+  - `src/PrismaUIPayloadsRewards.cpp` (reward totals/formatting payload builders)
+- Additional follow-up modularization also landed:
+  - Registration internals: `src/RegistrationInternalMaps.cpp`, `src/RegistrationInternalTcc.cpp`
+  - Serialization flow: `src/SerializationSave.cpp`, `src/SerializationLoad.cpp` with `src/Serialization.cpp` as callback install entrypoint

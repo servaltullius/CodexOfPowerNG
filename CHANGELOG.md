@@ -14,6 +14,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 ### Added
 - Added LOTD/TCC registration gate option (`registration.requireTccDisplayed`) with fail-closed behavior when required TCC lists are unavailable.
 - Added LOTD gate warning UI elements (status pill, toast, settings banner) and related regression coverage.
+- Added Rewards tab character image + orbit visualization.
 - Added host regression tests:
   - `tests/registration_formid_parse.test.cpp` (FormID parse/local-id boundary cases)
   - `tests/serialization_write_flow.test.cpp` (save-write flow should not short-circuit after earlier failures)

@@ -9,13 +9,17 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.6] - 2026-02-17
+
 ### Added
-- New host regression tests:
+- Added LOTD/TCC registration gate option (`registration.requireTccDisplayed`) with fail-closed behavior when required TCC lists are unavailable.
+- Added LOTD gate warning UI elements (status pill, toast, settings banner) and related regression coverage.
+- Added host regression tests:
   - `tests/registration_formid_parse.test.cpp` (FormID parse/local-id boundary cases)
   - `tests/serialization_write_flow.test.cpp` (save-write flow should not short-circuit after earlier failures)
 
 ### Changed
-- Internal C++ modules were further decomposed for maintainability with no gameplay/UI behavior change:
+- Internal C++ modules were decomposed for maintainability with no intended gameplay/UI behavior change:
   - Prisma UI payload builders split into `src/PrismaUIPayloadsInventory.cpp` and `src/PrismaUIPayloadsRewards.cpp`.
   - Registration internals split by concern (`src/RegistrationInternal.cpp`, `src/RegistrationInternalMaps.cpp`, `src/RegistrationInternalTcc.cpp`).
   - Serialization callbacks split by responsibility:
@@ -88,7 +92,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.5...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.6...HEAD
+[1.0.6]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.3...v1.0.4
 [1.0.2]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.1...v1.0.2

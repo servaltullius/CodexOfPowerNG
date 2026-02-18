@@ -3,8 +3,10 @@
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/RewardsResync.h"
+#include "CodexOfPowerNG/RewardsSyncPolicy.h"
 #include "CodexOfPowerNG/State.h"
 #include "CodexOfPowerNG/TaskScheduler.h"
+#include "CodexOfPowerNG/Util.h"
 
 #include "RewardsInternal.h"
 
@@ -16,7 +18,9 @@
 
 #include <atomic>
 #include <cstdint>
+#include <memory>
 #include <string>
+#include <unordered_map>
 #include <utility>
 #include <vector>
 
@@ -24,8 +28,18 @@ namespace CodexOfPowerNG::Rewards
 {
 	namespace
 	{
-		inline constexpr std::uint32_t kRewardSyncPassCount = 12;
+		inline constexpr std::uint32_t kRewardSyncPassCount = 180;
+		inline constexpr std::uint32_t kRewardSyncMinMissingStreak = 3;
+		inline constexpr std::uint64_t kRewardSyncStuckMs = 15000;
+
 		std::atomic_bool g_rewardSyncScheduled{ false };
+		std::atomic_bool g_rewardSyncRerunRequested{ false };
+		std::atomic<std::uint64_t> g_rewardSyncScheduledSinceMs{ 0 };
+
+		struct RewardSyncPassState
+		{
+			std::unordered_map<RE::ActorValue, std::uint32_t, ActorValueHash> missingStreaks;
+		};
 
 		[[nodiscard]] std::vector<std::pair<RE::ActorValue, float>> SnapshotRewardTotals() noexcept
 		{
@@ -41,7 +55,7 @@ namespace CodexOfPowerNG::Rewards
 			return totals;
 		}
 
-		[[nodiscard]] std::size_t ApplyRewardSyncPass() noexcept
+		[[nodiscard]] std::size_t ApplyRewardSyncPass(RewardSyncPassState& passState) noexcept
 		{
 			auto* player = RE::PlayerCharacter::GetSingleton();
 			if (!player) {
@@ -71,9 +85,13 @@ namespace CodexOfPowerNG::Rewards
 					permanent,
 					permanentModifier,
 					total);
-				if (delta == 0.0f) {
+				auto& streak = passState.missingStreaks[av];
+				streak = NextMissingStreak(delta, streak);
+
+				if (!ShouldApplyAfterStreak(delta, streak, kRewardSyncMinMissingStreak)) {
 					continue;
 				}
+				streak = 0;
 
 				// Keep shout cooldown in sane range even if load-time state diverges.
 				if (av == RE::ActorValue::kShoutRecoveryMult) {
@@ -108,24 +126,36 @@ namespace CodexOfPowerNG::Rewards
 			return corrected;
 		}
 
-		void RunRewardSyncPasses(std::uint32_t remainingPasses) noexcept
+		void RunRewardSyncPasses(std::shared_ptr<RewardSyncPassState> passState, std::uint32_t remainingPasses) noexcept
 		{
-			(void)ApplyRewardSyncPass();
+			(void)ApplyRewardSyncPass(*passState);
 
 			if (remainingPasses <= 1) {
+				if (g_rewardSyncRerunRequested.exchange(false, std::memory_order_acq_rel)) {
+					g_rewardSyncScheduledSinceMs.store(NowMs(), std::memory_order_release);
+					auto rerunPassState = std::make_shared<RewardSyncPassState>();
+					if (QueueMainTask([rerunPassState]() { RunRewardSyncPasses(rerunPassState, kRewardSyncPassCount); })) {
+						return;
+					}
+					RunRewardSyncPasses(rerunPassState, kRewardSyncPassCount);
+					return;
+				}
+
 				g_rewardSyncScheduled.store(false, std::memory_order_release);
+				g_rewardSyncScheduledSinceMs.store(0, std::memory_order_release);
 				return;
 			}
 
-			if (QueueMainTask([remainingPasses]() { RunRewardSyncPasses(remainingPasses - 1); })) {
+			if (QueueMainTask([passState, remainingPasses]() { RunRewardSyncPasses(passState, remainingPasses - 1); })) {
 				return;
 			}
 
 			// Fallback when task interface is unavailable: finish synchronously.
 			for (std::uint32_t i = 1; i < remainingPasses; ++i) {
-				(void)ApplyRewardSyncPass();
+				(void)ApplyRewardSyncPass(*passState);
 			}
 			g_rewardSyncScheduled.store(false, std::memory_order_release);
+			g_rewardSyncScheduledSinceMs.store(0, std::memory_order_release);
 		}
 	}
 
@@ -154,15 +184,37 @@ namespace CodexOfPowerNG::Rewards
 
 	void SyncRewardTotalsToPlayer() noexcept
 	{
+		const auto nowMs = NowMs();
+		const auto action = DecideSyncRequestAction(
+			g_rewardSyncScheduled.load(std::memory_order_acquire),
+			g_rewardSyncScheduledSinceMs.load(std::memory_order_acquire),
+			nowMs,
+			kRewardSyncStuckMs);
+
+		if (action == SyncRequestAction::kMarkRerun) {
+			g_rewardSyncRerunRequested.store(true, std::memory_order_release);
+			return;
+		}
+
+		if (action == SyncRequestAction::kForceRestartAndStart) {
+			SKSE::log::warn("Reward sync watchdog: force restarting stale sync worker");
+			g_rewardSyncScheduled.store(false, std::memory_order_release);
+			g_rewardSyncRerunRequested.store(false, std::memory_order_release);
+		}
+
 		if (g_rewardSyncScheduled.exchange(true, std::memory_order_acq_rel)) {
+			g_rewardSyncRerunRequested.store(true, std::memory_order_release);
 			return;
 		}
 
-		if (QueueMainTask([]() { RunRewardSyncPasses(kRewardSyncPassCount); })) {
+		g_rewardSyncScheduledSinceMs.store(nowMs, std::memory_order_release);
+		auto passState = std::make_shared<RewardSyncPassState>();
+
+		if (QueueMainTask([passState]() { RunRewardSyncPasses(passState, kRewardSyncPassCount); })) {
 			return;
 		}
 
-		RunRewardSyncPasses(kRewardSyncPassCount);
+		RunRewardSyncPasses(passState, kRewardSyncPassCount);
 	}
 
 	std::size_t RefundRewards() noexcept

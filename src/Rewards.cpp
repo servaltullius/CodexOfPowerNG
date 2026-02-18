@@ -14,6 +14,7 @@
 
 #include <SKSE/Logger.h>
 
+#include <atomic>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -23,6 +24,9 @@ namespace CodexOfPowerNG::Rewards
 {
 	namespace
 	{
+		inline constexpr std::uint32_t kRewardSyncPassCount = 12;
+		std::atomic_bool g_rewardSyncScheduled{ false };
+
 		[[nodiscard]] std::vector<std::pair<RE::ActorValue, float>> SnapshotRewardTotals() noexcept
 		{
 			std::vector<std::pair<RE::ActorValue, float>> totals;
@@ -57,8 +61,16 @@ namespace CodexOfPowerNG::Rewards
 			for (const auto& [av, total] : totals) {
 				const float base = avOwner->GetBaseActorValue(av);
 				const float cur = avOwner->GetActorValue(av);
+				const float permanent = avOwner->GetPermanentActorValue(av);
+				const float permanentModifier =
+					player->GetActorValueModifier(RE::ACTOR_VALUE_MODIFIER::kPermanent, av);
 
-				float delta = ComputeRewardSyncDelta(base, cur, total);
+				float delta = ComputeRewardSyncDeltaFromSnapshot(
+					base,
+					cur,
+					permanent,
+					permanentModifier,
+					total);
 				if (delta == 0.0f) {
 					continue;
 				}
@@ -95,6 +107,26 @@ namespace CodexOfPowerNG::Rewards
 
 			return corrected;
 		}
+
+		void RunRewardSyncPasses(std::uint32_t remainingPasses) noexcept
+		{
+			(void)ApplyRewardSyncPass();
+
+			if (remainingPasses <= 1) {
+				g_rewardSyncScheduled.store(false, std::memory_order_release);
+				return;
+			}
+
+			if (QueueMainTask([remainingPasses]() { RunRewardSyncPasses(remainingPasses - 1); })) {
+				return;
+			}
+
+			// Fallback when task interface is unavailable: finish synchronously.
+			for (std::uint32_t i = 1; i < remainingPasses; ++i) {
+				(void)ApplyRewardSyncPass();
+			}
+			g_rewardSyncScheduled.store(false, std::memory_order_release);
+		}
 	}
 
 	void MaybeGrantRegistrationReward(std::uint32_t group, std::int32_t totalRegistered) noexcept
@@ -122,17 +154,15 @@ namespace CodexOfPowerNG::Rewards
 
 	void SyncRewardTotalsToPlayer() noexcept
 	{
-		auto syncTask = []() noexcept {
-			(void)ApplyRewardSyncPass();
-			// Some actor value stacks settle one frame later after load.
-			(void)QueueMainTask([]() { (void)ApplyRewardSyncPass(); });
-		};
-
-		if (QueueMainTask(syncTask)) {
+		if (g_rewardSyncScheduled.exchange(true, std::memory_order_acq_rel)) {
 			return;
 		}
 
-		syncTask();
+		if (QueueMainTask([]() { RunRewardSyncPasses(kRewardSyncPassCount); })) {
+			return;
+		}
+
+		RunRewardSyncPasses(kRewardSyncPassCount);
 	}
 
 	std::size_t RefundRewards() noexcept

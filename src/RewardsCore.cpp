@@ -2,12 +2,16 @@
 
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/L10n.h"
+#include "CodexOfPowerNG/RewardCaps.h"
 #include "CodexOfPowerNG/State.h"
 
 #include <RE/Skyrim.h>
 
 #include <RE/M/Misc.h>
 
+#include <SKSE/Logger.h>
+
+#include <cmath>
 #include <random>
 #include <string>
 
@@ -35,11 +39,19 @@ namespace CodexOfPowerNG::Rewards::Internal
 		return mult;
 	}
 
-	void RecordRewardDelta(RE::ActorValue av, float delta) noexcept
+	float RecordRewardDelta(RE::ActorValue av, float delta) noexcept
 	{
+		if (std::abs(delta) <= kRewardCapEpsilon) {
+			return 0.0f;
+		}
+
 		auto& state = GetState();
 		std::scoped_lock lock(state.mutex);
-		state.rewardTotals[av] += delta;
+		auto& total = state.rewardTotals[av];
+		const float clampedTotal = ClampRewardTotal(av, total + delta);
+		const float appliedDelta = clampedTotal - total;
+		total = clampedTotal;
+		return (std::abs(appliedDelta) <= kRewardCapEpsilon) ? 0.0f : appliedDelta;
 	}
 
 	void GrantReward(
@@ -75,12 +87,36 @@ namespace CodexOfPowerNG::Rewards::Internal
 			}
 		}
 
-		if (applied == 0.0f) {
+		if (std::abs(applied) <= kRewardCapEpsilon) {
+			return;
+		}
+
+		const float requested = applied;
+		applied = RecordRewardDelta(av, applied);
+		if (std::abs(applied) <= kRewardCapEpsilon) {
+			float cap = 0.0f;
+			if (requested > 0.0f && TryGetRewardCap(av, cap)) {
+				SKSE::log::info(
+					"Reward grant skipped by cap: AV {} request {:.4f} (cap {:.2f})",
+					static_cast<std::uint32_t>(av),
+					requested,
+					cap);
+			}
 			return;
 		}
 
 		avOwner->ModActorValue(av, applied);
-		RecordRewardDelta(av, applied);
+		if (std::abs(applied - requested) > kRewardCapEpsilon) {
+			float cap = 0.0f;
+			if (TryGetRewardCap(av, cap)) {
+				SKSE::log::info(
+					"Reward cap applied: AV {} request {:.4f} -> applied {:.4f} (cap {:.2f})",
+					static_cast<std::uint32_t>(av),
+					requested,
+					applied,
+					cap);
+			}
+		}
 
 		const auto label = L10n::T(labelKey, fallbackLabel);
 		const auto msg = L10n::T("msg.rewardPrefix", "Collection reward: ") + label;

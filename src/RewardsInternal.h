@@ -10,7 +10,7 @@ namespace CodexOfPowerNG::Rewards::Internal
 	[[nodiscard]] int   RandomInt(int minInclusive, int maxInclusive) noexcept;
 	[[nodiscard]] float RewardMult() noexcept;
 
-	void RecordRewardDelta(RE::ActorValue av, float delta) noexcept;
+	[[nodiscard]] float RecordRewardDelta(RE::ActorValue av, float delta) noexcept;
 	void GrantReward(
 		RE::ActorValue av,
 		float amount,

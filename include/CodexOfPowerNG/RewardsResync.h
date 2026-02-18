@@ -76,4 +76,23 @@ namespace CodexOfPowerNG::Rewards
 			permanentModifier);
 		return ComputeRewardSyncDelta(observed, expectedTotal, epsilon);
 	}
+
+	[[nodiscard]] inline float ComputeCapNormalizationDeltaFromSnapshot(
+		float baseValue,
+		float currentValue,
+		float permanentValue,
+		float permanentModifier,
+		float cappedExpectedTotal,
+		float epsilon = 0.001f) noexcept
+	{
+		const float observedFromCurrent = currentValue - baseValue;
+		const float observedFromPermanent = permanentValue - baseValue;
+		const float observed = SelectObservedRewardTotal(
+			cappedExpectedTotal,
+			observedFromCurrent,
+			observedFromPermanent,
+			permanentModifier);
+		const float delta = cappedExpectedTotal - observed;
+		return (delta < -epsilon) ? delta : 0.0f;
+	}
 }

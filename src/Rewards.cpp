@@ -2,6 +2,7 @@
 
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/L10n.h"
+#include "CodexOfPowerNG/RewardCaps.h"
 #include "CodexOfPowerNG/RewardsResync.h"
 #include "CodexOfPowerNG/RewardsSyncPolicy.h"
 #include "CodexOfPowerNG/State.h"
@@ -17,6 +18,7 @@
 #include <SKSE/Logger.h>
 
 #include <atomic>
+#include <cmath>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -39,7 +41,91 @@ namespace CodexOfPowerNG::Rewards
 		struct RewardSyncPassState
 		{
 			std::unordered_map<RE::ActorValue, std::uint32_t, ActorValueHash> missingStreaks;
+			bool normalizeCapsOnFirstPass{ true };
 		};
+
+		struct RewardCapAdjustment
+		{
+			RE::ActorValue av;
+			float          before;
+			float          after;
+		};
+
+		[[nodiscard]] std::vector<RewardCapAdjustment> ClampRewardTotalsInState() noexcept
+		{
+			std::vector<RewardCapAdjustment> adjustments;
+			auto& state = GetState();
+			std::scoped_lock lock(state.mutex);
+			adjustments.reserve(state.rewardTotals.size());
+			for (auto& [av, total] : state.rewardTotals) {
+				const float clamped = ClampRewardTotal(av, total);
+				if (std::abs(clamped - total) <= kRewardCapEpsilon) {
+					continue;
+				}
+
+				adjustments.push_back(RewardCapAdjustment{ av, total, clamped });
+				total = clamped;
+			}
+			return adjustments;
+		}
+
+		void ApplyRewardCapAdjustmentsToPlayer(const std::vector<RewardCapAdjustment>& adjustments) noexcept
+		{
+			if (adjustments.empty()) {
+				return;
+			}
+
+			auto* player = RE::PlayerCharacter::GetSingleton();
+			if (!player) {
+				return;
+			}
+			auto* avOwner = player->AsActorValueOwner();
+			if (!avOwner) {
+				return;
+			}
+
+			std::size_t appliedCount = 0;
+			for (const auto& entry : adjustments) {
+				const float base = avOwner->GetBaseActorValue(entry.av);
+				const float cur = avOwner->GetActorValue(entry.av);
+				const float permanent = avOwner->GetPermanentActorValue(entry.av);
+				const float permanentModifier =
+					player->GetActorValueModifier(RE::ACTOR_VALUE_MODIFIER::kPermanent, entry.av);
+
+				const float delta = ComputeCapNormalizationDeltaFromSnapshot(
+					base,
+					cur,
+					permanent,
+					permanentModifier,
+					entry.after,
+					kRewardCapEpsilon);
+				if (delta >= -kRewardCapEpsilon) {
+					continue;
+				}
+
+				avOwner->ModActorValue(entry.av, delta);
+				++appliedCount;
+
+				float cap = 0.0f;
+				if (TryGetRewardCap(entry.av, cap)) {
+					SKSE::log::warn(
+						"Reward cap normalize: AV {} total {:.4f} -> {:.4f} (cap {:.2f}, base {:.4f}, current {:.4f}, permanent {:.4f}, permMod {:.4f}, actor delta {:.4f})",
+						static_cast<std::uint32_t>(entry.av),
+						entry.before,
+						entry.after,
+						cap,
+						base,
+						cur,
+						permanent,
+						permanentModifier,
+						delta);
+				}
+			}
+
+			if (appliedCount > 0) {
+				SKSE::log::warn("Reward cap normalize: adjusted {} actor value entries", appliedCount);
+			}
+		}
 
 		[[nodiscard]] std::vector<std::pair<RE::ActorValue, float>> SnapshotRewardTotals() noexcept
 		{
@@ -48,8 +134,9 @@ namespace CodexOfPowerNG::Rewards
 			std::scoped_lock lock(state.mutex);
 			totals.reserve(state.rewardTotals.size());
 			for (const auto& [av, total] : state.rewardTotals) {
-				if (total != 0.0f) {
-					totals.emplace_back(av, total);
+				const float clamped = ClampRewardTotal(av, total);
+				if (std::abs(clamped) > kRewardCapEpsilon) {
+					totals.emplace_back(av, clamped);
 				}
 			}
 			return totals;
@@ -87,6 +174,17 @@ namespace CodexOfPowerNG::Rewards
 					total);
 				auto& streak = passState.missingStreaks[av];
 				streak = NextMissingStreak(delta, streak);
+				if (av == RE::ActorValue::kCarryWeight && std::abs(delta) > kRewardCapEpsilon && streak <= kRewardSyncMinMissingStreak) {
+					SKSE::log::info(
+						"Reward sync (carry weight): expected {:.4f}, base {:.4f}, current {:.4f}, permanent {:.4f}, permMod {:.4f}, delta {:.4f}, streak {}",
+						total,
+						base,
+						cur,
+						permanent,
+						permanentModifier,
+						delta,
+						streak);
+				}
 
 				if (!ShouldApplyAfterStreak(delta, streak, kRewardSyncMinMissingStreak)) {
 					continue;
@@ -110,6 +208,13 @@ namespace CodexOfPowerNG::Rewards
 
 				avOwner->ModActorValue(av, delta);
 				++corrected;
+				if (av == RE::ActorValue::kCarryWeight) {
+					SKSE::log::info(
+						"Reward sync (carry weight): applied {:.4f} (expected {:.4f}, current {:.4f})",
+						delta,
+						total,
+						cur);
+				}
 				SKSE::log::info(
 					"Reward sync: AV {} adjusted by {:.4f} (base {:.4f}, current {:.4f}, expectedTotal {:.4f})",
 					static_cast<std::uint32_t>(av),
@@ -128,6 +233,12 @@ namespace CodexOfPowerNG::Rewards
 
 		void RunRewardSyncPasses(std::shared_ptr<RewardSyncPassState> passState, std::uint32_t remainingPasses) noexcept
 		{
+			if (passState->normalizeCapsOnFirstPass) {
+				passState->normalizeCapsOnFirstPass = false;
+				const auto capAdjustments = ClampRewardTotalsInState();
+				ApplyRewardCapAdjustmentsToPlayer(capAdjustments);
+			}
+
 			(void)ApplyRewardSyncPass(*passState);
 
 			if (remainingPasses <= 1) {
@@ -227,6 +338,9 @@ namespace CodexOfPowerNG::Rewards
 		if (!avOwner) {
 			return 0;
 		}
+
+		const auto capAdjustments = ClampRewardTotalsInState();
+		ApplyRewardCapAdjustmentsToPlayer(capAdjustments);
 
 		auto totals = SnapshotRewardTotals();
 		{

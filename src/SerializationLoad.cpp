@@ -40,6 +40,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 			state.blockedItems.clear();
 			state.notifiedItems.clear();
 			state.rewardTotals.clear();
+			state.carryWeightRecoveryUsed = false;
 		}
 
 		std::uint32_t type{};
@@ -191,6 +192,22 @@ namespace CodexOfPowerNG::Serialization::Internal
 				if (remaining > 0) {
 					Skip(a_intfc, remaining);
 				}
+				break;
+			}
+			case kRecordRewardFlags: {
+				std::uint32_t flags{};
+				if (length < sizeof(flags) || a_intfc->ReadRecordData(flags) != sizeof(flags)) {
+					SKSE::log::error("Failed to read reward flags");
+					return;
+				}
+
+				auto remaining = length - static_cast<std::uint32_t>(sizeof(flags));
+				if (remaining > 0) {
+					Skip(a_intfc, remaining);
+				}
+
+				std::scoped_lock lock(state.mutex);
+				state.carryWeightRecoveryUsed = (flags & 0x1u) != 0;
 				break;
 			}
 			default:

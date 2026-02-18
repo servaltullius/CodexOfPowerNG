@@ -56,6 +56,7 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
     "btnRefreshInv",
     "btnRefreshReg",
     "btnRefreshRewards",
+    "btnRecoverCarryWeight",
     "btnRefundRewards",
     "btnReloadSettings",
     "btnSaveSettings",
@@ -281,6 +282,11 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   await Promise.resolve();
   const refundCall = safeCalls.find((it) => it.name === "copng_refundRewards");
   assert.ok(refundCall, "Refund action should call copng_refundRewards");
+
+  map.get("btnRecoverCarryWeight").fire("click");
+  await Promise.resolve();
+  const recoverCall = safeCalls.find((it) => it.name === "copng_recoverCarryWeight");
+  assert.ok(recoverCall, "Recover action should call copng_recoverCarryWeight");
 
   assert.equal(syncRewardImageCount, 1);
   assert.equal(syncLangDropdownCount, 1);

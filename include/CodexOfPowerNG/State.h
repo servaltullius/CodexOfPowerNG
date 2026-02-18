@@ -26,6 +26,7 @@ namespace CodexOfPowerNG
 		std::unordered_set<RE::FormID> blockedItems;
 		std::unordered_set<RE::FormID> notifiedItems;
 		std::unordered_map<RE::ActorValue, float, ActorValueHash> rewardTotals;
+		bool carryWeightRecoveryUsed{ false };
 	};
 
 	[[nodiscard]] RuntimeState& GetState() noexcept;

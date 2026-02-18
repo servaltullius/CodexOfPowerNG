@@ -151,6 +151,16 @@
       if (!ok) return;
       safeCall("copng_refundRewards", {});
     });
+    addListener(byId(doc, "btnRecoverCarryWeight"), "click", async function () {
+      const ok = await showConfirm(
+        t(
+          "confirm.recoverCarryWeight",
+          "Apply one-time carry recovery (+5)? Use this only if older rewards were not recorded."
+        )
+      );
+      if (!ok) return;
+      safeCall("copng_recoverCarryWeight", {});
+    });
 
     addListener(byId(doc, "quickFilter"), "input", scheduleRenderQuick);
     addListener(byId(doc, "regFilter"), "input", scheduleRenderRegistered);

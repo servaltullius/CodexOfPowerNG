@@ -210,6 +210,39 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		QueueSendRewards();
 	}
 
+	void HandleRecoverCarryWeightRequest() noexcept
+	{
+		auto handleResult = [](Rewards::CarryWeightRecoveryResult result) {
+			switch (result.status) {
+			case Rewards::CarryWeightRecoveryStatus::kApplied:
+				ShowToast("info", "Carry recovery applied (+" + std::to_string(static_cast<int>(result.appliedDelta)) + ")");
+				break;
+			case Rewards::CarryWeightRecoveryStatus::kAlreadyUsed:
+				ShowToast("warn", "Carry recovery already used for this save");
+				break;
+			case Rewards::CarryWeightRecoveryStatus::kAlreadyRecorded:
+				ShowToast("info", "Carry reward is already recorded");
+				break;
+			case Rewards::CarryWeightRecoveryStatus::kUnavailable:
+			default:
+				ShowToast("error", "Carry recovery unavailable right now");
+				break;
+			}
+			SendStateToUI();
+			QueueSendRewards();
+		};
+
+		if (QueueMainTask([handleResult]() {
+				const auto result = Rewards::RecoverCarryWeightRewardOneTime();
+				(void)QueueUITask([handleResult, result]() { handleResult(result); });
+			})) {
+			return;
+		}
+
+		const auto result = Rewards::RecoverCarryWeightRewardOneTime();
+		handleResult(result);
+	}
+
 	void HandleRegisterItemRequest(const char* argument) noexcept
 	{
 		json payload;

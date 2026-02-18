@@ -22,5 +22,6 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 	void QueueSendRewards() noexcept;
 
 	void HandleRefundRewardsRequest() noexcept;
+	void HandleRecoverCarryWeightRequest() noexcept;
 	void HandleRegisterItemRequest(const char* argument) noexcept;
 }

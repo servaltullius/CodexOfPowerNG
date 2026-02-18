@@ -35,6 +35,7 @@ namespace CodexOfPowerNG::Rewards
 		inline constexpr std::uint64_t kRewardSyncStuckMs = 15000;
 		inline constexpr std::uint32_t kCarryWeightQuickResyncMaxAttempts = 3;
 		inline constexpr std::uint64_t kCarryWeightQuickResyncStuckMs = 3000;
+		inline constexpr float kCarryWeightRecoveryDelta = 5.0f;
 
 		std::atomic_bool g_rewardSyncScheduled{ false };
 		std::atomic_bool g_rewardSyncRerunRequested{ false };
@@ -522,6 +523,55 @@ namespace CodexOfPowerNG::Rewards
 		}
 
 		RunCarryWeightQuickResync(state);
+	}
+
+	CarryWeightRecoveryResult RecoverCarryWeightRewardOneTime() noexcept
+	{
+		auto* player = RE::PlayerCharacter::GetSingleton();
+		if (!player) {
+			return { CarryWeightRecoveryStatus::kUnavailable, 0.0f };
+		}
+		auto* avOwner = player->AsActorValueOwner();
+		if (!avOwner) {
+			return { CarryWeightRecoveryStatus::kUnavailable, 0.0f };
+		}
+
+		float appliedDelta = 0.0f;
+		{
+			auto& state = GetState();
+			std::scoped_lock lock(state.mutex);
+
+			if (state.carryWeightRecoveryUsed) {
+				return { CarryWeightRecoveryStatus::kAlreadyUsed, 0.0f };
+			}
+
+			const auto it = state.rewardTotals.find(RE::ActorValue::kCarryWeight);
+			const float existingTotal = (it != state.rewardTotals.end())
+				? ClampRewardTotal(RE::ActorValue::kCarryWeight, it->second)
+				: 0.0f;
+			if (std::abs(existingTotal) > kRewardCapEpsilon) {
+				return { CarryWeightRecoveryStatus::kAlreadyRecorded, 0.0f };
+			}
+
+			const float nextTotal = ClampRewardTotal(
+				RE::ActorValue::kCarryWeight,
+				existingTotal + kCarryWeightRecoveryDelta);
+			appliedDelta = nextTotal - existingTotal;
+			if (std::abs(appliedDelta) <= kRewardCapEpsilon) {
+				return { CarryWeightRecoveryStatus::kAlreadyRecorded, 0.0f };
+			}
+
+			state.rewardTotals.insert_or_assign(RE::ActorValue::kCarryWeight, nextTotal);
+			state.carryWeightRecoveryUsed = true;
+		}
+
+		avOwner->ModActorValue(RE::ActorValue::kCarryWeight, appliedDelta);
+		ScheduleCarryWeightQuickResync();
+		SKSE::log::info(
+			"Carry weight one-time recovery applied: delta {:.4f}",
+			appliedDelta);
+
+		return { CarryWeightRecoveryStatus::kApplied, appliedDelta };
 	}
 
 	std::size_t RefundRewards() noexcept

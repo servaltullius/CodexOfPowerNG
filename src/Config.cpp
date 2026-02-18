@@ -30,7 +30,7 @@ namespace CodexOfPowerNG
 
 			// Reward settings
 			if (settings.rewardEvery <= 0) {
-				settings.rewardEvery = 10;
+				settings.rewardEvery = 5;
 			}
 
 			// UI input correction scale (JS side)

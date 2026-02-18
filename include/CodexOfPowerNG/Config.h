@@ -30,7 +30,7 @@ namespace CodexOfPowerNG
 
 		// Rewards
 		bool enableRewards{ true };
-		std::int32_t rewardEvery{ 10 };
+		std::int32_t rewardEvery{ 5 };
 		double rewardMultiplier{ 1.0 };
 		bool allowSkillRewards{ false };
 	};

@@ -83,7 +83,7 @@ Payload (all fields optional; omitted fields keep current value):
   "protectFavorites": true,
   "enableLootNotify": true,
   "enableRewards": true,
-  "rewardEvery": 10,
+  "rewardEvery": 5,
   "rewardMultiplier": 1.0,
   "allowSkillRewards": false
 }
@@ -160,7 +160,7 @@ Example:
 ```json
 {
   "registeredCount": 30,
-  "rewardEvery": 10,
+  "rewardEvery": 5,
   "rewardMultiplier": 1.0,
   "rolls": 3,
   "totals": [

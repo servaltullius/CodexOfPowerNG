@@ -1857,7 +1857,7 @@
         document.getElementById("setProtectFav").checked = !!settings.protectFavorites;
         document.getElementById("setLootNotify").checked = !!settings.enableLootNotify;
         document.getElementById("setRewardsEnabled").checked = !!settings.enableRewards;
-        document.getElementById("setRewardEvery").value = coalesce(settings.rewardEvery, 10);
+        document.getElementById("setRewardEvery").value = coalesce(settings.rewardEvery, 5);
         document.getElementById("setRewardMult").value = coalesce(settings.rewardMultiplier, 1.0);
         document.getElementById("setSkillRewards").checked = !!settings.allowSkillRewards;
 
@@ -2111,7 +2111,7 @@
           protectFavorites: document.getElementById("setProtectFav").checked,
           enableLootNotify: document.getElementById("setLootNotify").checked,
           enableRewards: document.getElementById("setRewardsEnabled").checked,
-          rewardEvery: parseInt(document.getElementById("setRewardEvery").value, 10) || 10,
+          rewardEvery: parseInt(document.getElementById("setRewardEvery").value, 10) || 5,
           rewardMultiplier: parseFloat(document.getElementById("setRewardMult").value) || 1.0,
           allowSkillRewards: document.getElementById("setSkillRewards").checked,
         };

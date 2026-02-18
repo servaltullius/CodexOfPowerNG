@@ -9,6 +9,17 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.7-rc.11] - 2026-02-19 (Pre-release)
+
+### Changed
+- Default reward roll cadence was adjusted from `every: 10` to `every: 5` for new/default settings paths.
+- Settings UI fallback for `rewardEvery` now defaults to `5` (instead of `10`) when no valid value exists.
+- Prisma UI API contract examples were updated to reflect the new default reward cadence.
+
+### Notes
+- Existing users keep their configured `settings.user.json` value if already set.
+- This pre-release focuses on reward default tuning only; no new runtime dependency was added.
+
 ## [1.0.7-rc.10] - 2026-02-18 (Pre-release)
 
 ### Changed
@@ -104,6 +115,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
 [Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.6...HEAD
+[1.0.7-rc.11]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.11
 [1.0.7-rc.10]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.10
 [1.0.6]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.4...v1.0.5

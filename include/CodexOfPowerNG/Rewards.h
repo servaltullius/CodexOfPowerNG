@@ -11,6 +11,9 @@ namespace CodexOfPowerNG::Rewards
 	// After loading a save, re-sync reward totals to runtime AV state if any bonus is missing.
 	void SyncRewardTotalsToPlayer() noexcept;
 
+	// Lightweight carry-weight-only resync used right after carry reward grants.
+	void ScheduleCarryWeightQuickResync() noexcept;
+
 	// Refunds recorded rewards (does not restore consumed items, does not clear registrations).
 	// Returns number of actor values refunded.
 	[[nodiscard]] std::size_t RefundRewards() noexcept;

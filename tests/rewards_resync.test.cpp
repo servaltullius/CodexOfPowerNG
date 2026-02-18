@@ -51,5 +51,25 @@ int main()
 			20.0f),  // expected reward total
 		8.0f);
 
+	// Carry-weight style noise: prefer stable candidate, avoid over-correction.
+	AssertNear(
+		ComputeRewardSyncDeltaFromSnapshot(
+			300.0f,  // base
+			320.0f,  // current (external +20)
+			305.0f,  // permanent (reward +5)
+			25.0f,   // permanent mod (noisy)
+			5.0f),   // expected reward total
+		0.0f);
+
+	// Carry-weight missing reward recovery under current-value noise.
+	AssertNear(
+		ComputeRewardSyncDeltaFromSnapshot(
+			300.0f,  // base
+			330.0f,  // current (noisy temp buffs)
+			303.0f,  // permanent (only +3 reflected)
+			3.0f,    // permanent mod
+			8.0f),   // expected reward total
+		5.0f);
+
 	return 0;
 }

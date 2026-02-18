@@ -3,6 +3,7 @@
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/RewardCaps.h"
+#include "CodexOfPowerNG/Rewards.h"
 #include "CodexOfPowerNG/State.h"
 
 #include <RE/Skyrim.h>
@@ -106,6 +107,12 @@ namespace CodexOfPowerNG::Rewards::Internal
 		}
 
 		avOwner->ModActorValue(av, applied);
+		if (av == RE::ActorValue::kCarryWeight) {
+			// Carry weight desync reports are high-impact in gameplay feel.
+			// Schedule carry-only quick resync so missed application
+			// (load/order side effects) is recovered without full sync cost.
+			Rewards::ScheduleCarryWeightQuickResync();
+		}
 		if (std::abs(applied - requested) > kRewardCapEpsilon) {
 			float cap = 0.0f;
 			if (TryGetRewardCap(av, cap)) {

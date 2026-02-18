@@ -4,6 +4,7 @@
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/PrismaUIManager.h"
 #include "CodexOfPowerNG/Registration.h"
+#include "CodexOfPowerNG/Rewards.h"
 #include "CodexOfPowerNG/Serialization.h"
 #include "CodexOfPowerNG/TaskScheduler.h"
 
@@ -223,6 +224,7 @@ namespace CodexOfPowerNG
 			PrismaUIManager::OnGameLoaded();
 			Events::Install();
 			Events::OnGameLoaded();
+			Rewards::SyncRewardTotalsToPlayer();
 			NotifyLegacyResidueIfNeeded();
 			break;
 		default:

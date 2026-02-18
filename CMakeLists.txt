@@ -63,6 +63,7 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     include/CodexOfPowerNG/RegistrationRules.h
     include/CodexOfPowerNG/RegistrationStateStore.h
     include/CodexOfPowerNG/Rewards.h
+    include/CodexOfPowerNG/RewardsResync.h
     include/CodexOfPowerNG/Serialization.h
     include/CodexOfPowerNG/SerializationWriteFlow.h
     include/CodexOfPowerNG/State.h

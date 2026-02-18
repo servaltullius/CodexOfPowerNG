@@ -1,6 +1,7 @@
 #include "SerializationInternal.h"
 
 #include "CodexOfPowerNG/Constants.h"
+#include "CodexOfPowerNG/RewardCaps.h"
 #include "CodexOfPowerNG/Rewards.h"
 #include "CodexOfPowerNG/State.h"
 
@@ -9,6 +10,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <cstddef>
 
 namespace CodexOfPowerNG::Serialization::Internal
@@ -174,7 +176,16 @@ namespace CodexOfPowerNG::Serialization::Internal
 						return;
 					}
 					remaining -= entrySize;
-					state.rewardTotals.emplace(static_cast<RE::ActorValue>(avRaw), total);
+					const auto av = static_cast<RE::ActorValue>(avRaw);
+					const float clamped = Rewards::ClampRewardTotal(av, total);
+					if (std::abs(clamped - total) > Rewards::kRewardCapEpsilon) {
+						SKSE::log::warn(
+							"Serialization load: clamped reward total for AV {} from {:.4f} to {:.4f}",
+							avRaw,
+							total,
+							clamped);
+					}
+					state.rewardTotals.insert_or_assign(av, clamped);
 				}
 
 				if (remaining > 0) {

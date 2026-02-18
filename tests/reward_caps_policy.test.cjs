@@ -37,8 +37,10 @@ test("sync/refund paths normalize over-capped totals and include carry-weight di
   assert.match(src, /normalizeCapsOnFirstPass/);
   assert.match(src, /Reward cap normalize:/);
   assert.match(src, /Reward sync \(carry weight\):/);
+  assert.match(src, /ComputeRewardSyncDeltaFromCurrent\(/);
   assert.match(src, /ComputeRewardSyncDeltaFromSnapshot\(/);
   assert.match(src, /kCarryWeightQuickResyncMaxAttempts = 3/);
+  assert.match(src, /kCarryWeightQuickResyncStuckMs = 3000/);
   assert.match(src, /ScheduleCarryWeightQuickResync\(\)/);
 });
 
@@ -46,4 +48,10 @@ test("carry weight reward schedules quick resync after grant", () => {
   const src = read(corePath);
   assert.match(src, /if \(av == RE::ActorValue::kCarryWeight\)[\s\S]*ScheduleCarryWeightQuickResync\(\)/);
   assert.doesNotMatch(src, /if \(av == RE::ActorValue::kCarryWeight\)[\s\S]*SyncRewardTotalsToPlayer\(\)/);
+});
+
+test("serialization load clamps over-capped reward totals", () => {
+  const src = read(path.join(__dirname, "..", "src", "SerializationLoad.cpp"));
+  assert.match(src, /ClampRewardTotal\(av,\s*total\)/);
+  assert.match(src, /insert_or_assign\(av,\s*clamped\)/);
 });

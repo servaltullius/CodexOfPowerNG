@@ -77,6 +77,16 @@ namespace CodexOfPowerNG::Rewards
 		return ComputeRewardSyncDelta(observed, expectedTotal, epsilon);
 	}
 
+	[[nodiscard]] inline float ComputeRewardSyncDeltaFromCurrent(
+		float baseValue,
+		float currentValue,
+		float expectedTotal,
+		float epsilon = 0.001f) noexcept
+	{
+		const float observedFromCurrent = currentValue - baseValue;
+		return ComputeRewardSyncDelta(observedFromCurrent, expectedTotal, epsilon);
+	}
+
 	[[nodiscard]] inline float ComputeCapNormalizationDeltaFromSnapshot(
 		float baseValue,
 		float currentValue,

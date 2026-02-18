@@ -35,11 +35,13 @@ namespace CodexOfPowerNG::Rewards
 		inline constexpr std::uint64_t kRewardSyncStuckMs = 15000;
 		inline constexpr std::uint32_t kCarryWeightQuickResyncMaxAttempts = 3;
 		inline constexpr std::uint64_t kCarryWeightQuickResyncIntervalMs = 200;
+		inline constexpr std::uint64_t kCarryWeightQuickResyncStuckMs = 3000;
 
 		std::atomic_bool g_rewardSyncScheduled{ false };
 		std::atomic_bool g_rewardSyncRerunRequested{ false };
 		std::atomic<std::uint64_t> g_rewardSyncScheduledSinceMs{ 0 };
 		std::atomic_bool g_carryWeightQuickResyncScheduled{ false };
+		std::atomic<std::uint64_t> g_carryWeightQuickResyncScheduledSinceMs{ 0 };
 
 		struct RewardSyncPassState
 		{
@@ -106,6 +108,7 @@ namespace CodexOfPowerNG::Rewards
 		void CompleteCarryWeightQuickResync() noexcept
 		{
 			g_carryWeightQuickResyncScheduled.store(false, std::memory_order_release);
+			g_carryWeightQuickResyncScheduledSinceMs.store(0, std::memory_order_release);
 		}
 
 		[[nodiscard]] bool TryCarryWeightQuickResyncAttempt(std::uint32_t attempt) noexcept
@@ -125,7 +128,11 @@ namespace CodexOfPowerNG::Rewards
 			}
 
 			auto snapshot = CaptureRewardActorSnapshot(player, avOwner, RE::ActorValue::kCarryWeight, total);
-			if (std::abs(snapshot.delta) <= kRewardCapEpsilon) {
+			const float deltaFromCurrent = ComputeRewardSyncDeltaFromCurrent(
+				snapshot.base,
+				snapshot.current,
+				total);
+			if (std::abs(deltaFromCurrent) <= kRewardCapEpsilon) {
 				SKSE::log::info(
 					"Reward sync (carry weight quick): attempt {} already aligned (expected {:.4f}, current {:.4f})",
 					attempt + 1,
@@ -134,13 +141,17 @@ namespace CodexOfPowerNG::Rewards
 				return true;
 			}
 
-			avOwner->ModActorValue(RE::ActorValue::kCarryWeight, snapshot.delta);
+			avOwner->ModActorValue(RE::ActorValue::kCarryWeight, deltaFromCurrent);
 			const auto postSnapshot = CaptureRewardActorSnapshot(player, avOwner, RE::ActorValue::kCarryWeight, total);
-			if (std::abs(postSnapshot.delta) <= kRewardCapEpsilon) {
+			const float postDeltaFromCurrent = ComputeRewardSyncDeltaFromCurrent(
+				postSnapshot.base,
+				postSnapshot.current,
+				total);
+			if (std::abs(postDeltaFromCurrent) <= kRewardCapEpsilon) {
 				SKSE::log::info(
 					"Reward sync (carry weight quick): attempt {} applied {:.4f} (expected {:.4f}, current {:.4f})",
 					attempt + 1,
-					snapshot.delta,
+					deltaFromCurrent,
 					total,
 					snapshot.current);
 				return true;
@@ -150,8 +161,8 @@ namespace CodexOfPowerNG::Rewards
 				"Reward sync (carry weight quick): attempt {} pending (expected {:.4f}, delta {:.4f}, postDelta {:.4f})",
 				attempt + 1,
 				total,
-				snapshot.delta,
-				postSnapshot.delta);
+				deltaFromCurrent,
+				postDeltaFromCurrent);
 			return false;
 		}
 
@@ -319,7 +330,9 @@ namespace CodexOfPowerNG::Rewards
 				const float cur = snapshot.current;
 				const float permanent = snapshot.permanent;
 				const float permanentModifier = snapshot.permanentModifier;
-				float delta = snapshot.delta;
+				float delta = (av == RE::ActorValue::kCarryWeight)
+					? ComputeRewardSyncDeltaFromCurrent(base, cur, total)
+					: snapshot.delta;
 				auto& streak = passState.missingStreaks[av];
 				streak = NextMissingStreak(delta, streak);
 				if (av == RE::ActorValue::kCarryWeight && std::abs(delta) > kRewardCapEpsilon && streak <= kRewardSyncMinMissingStreak) {
@@ -478,9 +491,23 @@ namespace CodexOfPowerNG::Rewards
 
 	void ScheduleCarryWeightQuickResync() noexcept
 	{
+		const auto nowMs = NowMs();
+		const auto action = DecideSyncRequestAction(
+			g_carryWeightQuickResyncScheduled.load(std::memory_order_acquire),
+			g_carryWeightQuickResyncScheduledSinceMs.load(std::memory_order_acquire),
+			nowMs,
+			kCarryWeightQuickResyncStuckMs);
+
+		if (action == SyncRequestAction::kForceRestartAndStart) {
+			SKSE::log::warn("Reward sync (carry weight quick) watchdog: force restarting stale worker");
+			g_carryWeightQuickResyncScheduled.store(false, std::memory_order_release);
+			g_carryWeightQuickResyncScheduledSinceMs.store(0, std::memory_order_release);
+		}
+
 		if (g_carryWeightQuickResyncScheduled.exchange(true, std::memory_order_acq_rel)) {
 			return;
 		}
+		g_carryWeightQuickResyncScheduledSinceMs.store(nowMs, std::memory_order_release);
 
 		auto state = std::make_shared<CarryWeightQuickResyncState>();
 		if (QueueMainTask([state]() { RunCarryWeightQuickResync(state); })) {

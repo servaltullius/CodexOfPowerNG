@@ -14,6 +14,7 @@ namespace
 int main()
 {
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDelta;
+	using CodexOfPowerNG::Rewards::ComputeRewardSyncDeltaFromCurrent;
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDeltaFromSnapshot;
 	using CodexOfPowerNG::Rewards::SelectObservedRewardTotal;
 
@@ -70,6 +71,20 @@ int main()
 			3.0f,    // permanent mod
 			8.0f),   // expected reward total
 		5.0f);
+
+	// Current-based sync is preferred for carry weight gameplay consistency.
+	AssertNear(
+		ComputeRewardSyncDeltaFromCurrent(
+			300.0f,
+			300.0f,  // current reward not reflected
+			5.0f),
+		5.0f);
+	AssertNear(
+		ComputeRewardSyncDeltaFromCurrent(
+			300.0f,
+			307.0f,  // external bonus above expected
+			5.0f),
+		0.0f);
 
 	return 0;
 }

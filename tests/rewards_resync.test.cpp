@@ -14,8 +14,10 @@ namespace
 int main()
 {
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDelta;
+	using CodexOfPowerNG::Rewards::ComputeCarryWeightSyncDelta;
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDeltaFromCurrent;
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDeltaFromSnapshot;
+	using CodexOfPowerNG::Rewards::MergeRewardSyncDeltaCandidates;
 	using CodexOfPowerNG::Rewards::SelectObservedRewardTotal;
 
 	// Positive reward already reflected.
@@ -83,6 +85,28 @@ int main()
 		ComputeRewardSyncDeltaFromCurrent(
 			300.0f,
 			307.0f,  // external bonus above expected
+			5.0f),
+		0.0f);
+
+	// Merge helper: for positive expected values, choose stronger positive correction.
+	AssertNear(MergeRewardSyncDeltaCandidates(5.0f, 0.0f, 2.0f), 2.0f);
+	AssertNear(MergeRewardSyncDeltaCandidates(5.0f, 3.0f, 1.0f), 3.0f);
+
+	// Carry helper combines current/snapshot signals.
+	AssertNear(
+		ComputeCarryWeightSyncDelta(
+			300.0f,  // base
+			300.0f,  // current missing
+			305.0f,  // permanent reflects reward
+			5.0f,    // perm mod
+			5.0f),   // expected
+		5.0f);
+	AssertNear(
+		ComputeCarryWeightSyncDelta(
+			300.0f,
+			307.0f,  // current already above expected
+			307.0f,
+			7.0f,
 			5.0f),
 		0.0f);
 

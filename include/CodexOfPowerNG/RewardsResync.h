@@ -1,5 +1,6 @@
 #pragma once
 
+#include <algorithm>
 #include <array>
 #include <cmath>
 
@@ -85,6 +86,50 @@ namespace CodexOfPowerNG::Rewards
 	{
 		const float observedFromCurrent = currentValue - baseValue;
 		return ComputeRewardSyncDelta(observedFromCurrent, expectedTotal, epsilon);
+	}
+
+	[[nodiscard]] inline float MergeRewardSyncDeltaCandidates(
+		float expectedTotal,
+		float deltaFromCurrent,
+		float deltaFromSnapshot,
+		float epsilon = 0.001f) noexcept
+	{
+		if (std::abs(expectedTotal) <= epsilon) {
+			return 0.0f;
+		}
+
+		if (expectedTotal > 0.0f) {
+			return (std::max)(0.0f, (std::max)(deltaFromCurrent, deltaFromSnapshot));
+		}
+
+		return (std::min)(0.0f, (std::min)(deltaFromCurrent, deltaFromSnapshot));
+	}
+
+	[[nodiscard]] inline float ComputeCarryWeightSyncDelta(
+		float baseValue,
+		float currentValue,
+		float permanentValue,
+		float permanentModifier,
+		float expectedTotal,
+		float epsilon = 0.001f) noexcept
+	{
+		const float deltaFromCurrent = ComputeRewardSyncDeltaFromCurrent(
+			baseValue,
+			currentValue,
+			expectedTotal,
+			epsilon);
+		const float deltaFromSnapshot = ComputeRewardSyncDeltaFromSnapshot(
+			baseValue,
+			currentValue,
+			permanentValue,
+			permanentModifier,
+			expectedTotal,
+			epsilon);
+		return MergeRewardSyncDeltaCandidates(
+			expectedTotal,
+			deltaFromCurrent,
+			deltaFromSnapshot,
+			epsilon);
 	}
 
 	[[nodiscard]] inline float ComputeCapNormalizationDeltaFromSnapshot(

@@ -9,6 +9,16 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.7-rc.10] - 2026-02-18 (Pre-release)
+
+### Changed
+- Reward sync stabilization was iterated through `v1.0.7-rc.1` ~ `v1.0.7-rc.10` with focus on carry-weight reflection timing, cap normalization safety, and sync watchdog behavior.
+- The temporary one-time carry recovery UI flow introduced in `v1.0.7-rc.9` was removed in `v1.0.7-rc.10` to keep runtime behavior simpler and avoid misleading recovery semantics.
+
+### Notes
+- Detailed per-RC notes are tracked in `docs/releases/v1.0.7-rc.*.md`.
+- Latest pre-release in this track: `v1.0.7-rc.10`.
+
 ## [1.0.6] - 2026-02-17
 
 ### Added
@@ -94,6 +104,7 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
 [Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.6...HEAD
+[1.0.7-rc.10]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.10
 [1.0.6]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.3...v1.0.4

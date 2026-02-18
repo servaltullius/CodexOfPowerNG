@@ -60,11 +60,6 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			HandleRefundRewardsRequest();
 		}
 
-		void OnJsRecoverCarryWeight(const char* /*argument*/) noexcept
-		{
-			HandleRecoverCarryWeightRequest();
-		}
-
 		void OnJsRegisterItem(const char* argument) noexcept
 		{
 			HandleRegisterItemRequest(argument);
@@ -85,7 +80,6 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		api->RegisterJSListener(view, "copng_requestRewards", OnJsRequestRewards);
 		api->RegisterJSListener(view, "copng_getSettings", OnJsGetSettings);
 		api->RegisterJSListener(view, "copng_refundRewards", OnJsRefundRewards);
-		api->RegisterJSListener(view, "copng_recoverCarryWeight", OnJsRecoverCarryWeight);
 		api->RegisterJSListener(view, "copng_registerItem", OnJsRegisterItem);
 	}
 }

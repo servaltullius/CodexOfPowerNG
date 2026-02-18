@@ -90,23 +90,6 @@ namespace CodexOfPowerNG::Serialization::Internal
 				}
 			}
 		}
-
-		void WriteRewardFlagsRecord(SKSE::SerializationInterface* a_intfc, const RuntimeState& state) noexcept
-		{
-			if (!a_intfc->OpenRecord(kRecordRewardFlags, kSerializationVersion)) {
-				SKSE::log::error("Failed to open co-save record RFLG");
-				return;
-			}
-
-			std::uint32_t flags = 0;
-			if (state.carryWeightRecoveryUsed) {
-				flags |= 0x1u;
-			}
-
-			if (!a_intfc->WriteRecordData(flags)) {
-				SKSE::log::error("Failed to write reward flags");
-			}
-		}
 	}
 
 	void Revert(SKSE::SerializationInterface* /*a_intfc*/) noexcept
@@ -117,7 +100,6 @@ namespace CodexOfPowerNG::Serialization::Internal
 		state.blockedItems.clear();
 		state.notifiedItems.clear();
 		state.rewardTotals.clear();
-		state.carryWeightRecoveryUsed = false;
 	}
 
 	void Save(SKSE::SerializationInterface* a_intfc) noexcept
@@ -129,7 +111,6 @@ namespace CodexOfPowerNG::Serialization::Internal
 			[&]() { WriteRegisteredRecord(a_intfc, state); },
 			[&]() { WriteBlockedRecord(a_intfc, state); },
 			[&]() { WriteNotifiedRecord(a_intfc, state); },
-			[&]() { WriteRewardsRecord(a_intfc, state); },
-			[&]() { WriteRewardFlagsRecord(a_intfc, state); });
+			[&]() { WriteRewardsRecord(a_intfc, state); });
 	}
 }

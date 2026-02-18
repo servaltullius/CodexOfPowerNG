@@ -26,7 +26,6 @@ namespace CodexOfPowerNG
 	inline constexpr std::uint32_t kRecordBlockedItems = 'BLCK';
 	inline constexpr std::uint32_t kRecordNotifiedItems = 'NTFY';
 	inline constexpr std::uint32_t kRecordRewards = 'RWDS';
-	inline constexpr std::uint32_t kRecordRewardFlags = 'RFLG';
 
 	// Default: F4 (DIK_F4 = 0x3E)
 	inline constexpr std::uint32_t kToggleKeyCode = 0x3E;

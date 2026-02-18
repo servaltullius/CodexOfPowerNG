@@ -6,7 +6,7 @@
 
 int main()
 {
-	std::array<int, 5> order{ 0, 0, 0, 0, 0 };
+	std::array<int, 4> order{ 0, 0, 0, 0 };
 	int                idx = 0;
 	bool               firstFailed = false;
 
@@ -18,12 +18,11 @@ int main()
 		},
 		[&]() { order[idx++] = 2; },
 		[&]() { order[idx++] = 3; },
-		[&]() { order[idx++] = 4; },
-		[&]() { order[idx++] = 5; });
+		[&]() { order[idx++] = 4; });
 
 	assert(firstFailed);
-	assert(idx == 5);
-	assert(std::equal(order.begin(), order.end(), std::array<int, 5>{ 1, 2, 3, 4, 5 }.begin()));
+	assert(idx == 4);
+	assert(std::equal(order.begin(), order.end(), std::array<int, 4>{ 1, 2, 3, 4 }.begin()));
 
 	return 0;
 }

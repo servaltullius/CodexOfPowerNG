@@ -69,7 +69,10 @@ Payload:
 ```
 
 ### `window.copng_saveSettings(payloadJson)`
-Saves settings to `Data/SKSE/Plugins/CodexOfPowerNG/settings.json` and reloads localization.
+Saves settings to `Data/SKSE/Plugins/CodexOfPowerNG/settings.user.json` and reloads localization.
+On load, NG applies settings in this order:
+1. `settings.json` (distributed defaults/template)
+2. `settings.user.json` (user override)
 
 Payload (all fields optional; omitted fields keep current value):
 ```json

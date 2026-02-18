@@ -9,7 +9,10 @@ namespace CodexOfPowerNG
 
 	// Paths are relative to the game runtime directory (SkyrimSE.exe).
 	inline constexpr auto kPluginDataDir = "Data/SKSE/Plugins/CodexOfPowerNG";
+	// Distributed defaults/template (can be replaced by mod updates).
 	inline constexpr auto kSettingsPath = "Data/SKSE/Plugins/CodexOfPowerNG/settings.json";
+	// User override (written by runtime; intended to survive mod updates/reinstalls).
+	inline constexpr auto kSettingsUserPath = "Data/SKSE/Plugins/CodexOfPowerNG/settings.user.json";
 	inline constexpr auto kLangDir = "Data/SKSE/Plugins/CodexOfPowerNG/lang";
 	inline constexpr auto kExcludeMapPath = "Data/SKSE/Plugins/CodexOfPowerNG/exclude_map.json";
 	inline constexpr auto kExcludeUserPath = "Data/SKSE/Plugins/CodexOfPowerNG/exclude_user.json";

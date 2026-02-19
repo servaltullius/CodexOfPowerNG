@@ -11,6 +11,10 @@ namespace CodexOfPowerNG::Rewards
 	// After loading a save, re-sync reward totals to runtime AV state if any bonus is missing.
 	void SyncRewardTotalsToPlayer() noexcept;
 
+	// Clears in-flight reward sync workers at the load boundary.
+	// Call from kPreLoadGame before serialization callbacks run.
+	void ResetSyncSchedulersForLoad() noexcept;
+
 	// Lightweight carry-weight-only resync used right after carry reward grants.
 	void ScheduleCarryWeightQuickResync() noexcept;
 

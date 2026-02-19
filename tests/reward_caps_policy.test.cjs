@@ -62,11 +62,26 @@ test("serialization load clamps over-capped reward totals", () => {
   const src = read(path.join(__dirname, "..", "src", "SerializationLoad.cpp"));
   assert.match(src, /ClampRewardTotal\(av,\s*total\)/);
   assert.match(src, /insert_or_assign\(av,\s*clamped\)/);
+  assert.doesNotMatch(src, /SyncRewardTotalsToPlayer\(\)/);
 });
 
 test("post-load/new-game path schedules full + carry-weight quick reward resync", () => {
   const src = read(mainPath);
+  assert.match(src, /case SKSE::MessagingInterface::kPreLoadGame:[\s\S]*Rewards::ResetSyncSchedulersForLoad\(\)/);
   assert.match(src, /case SKSE::MessagingInterface::kPostLoadGame:[\s\S]*case SKSE::MessagingInterface::kNewGame:/);
+  assert.match(src, /if \(message->type == SKSE::MessagingInterface::kNewGame\)[\s\S]*Rewards::ResetSyncSchedulersForLoad\(\)/);
   assert.match(src, /Rewards::SyncRewardTotalsToPlayer\(\);/);
   assert.match(src, /Rewards::ScheduleCarryWeightQuickResync\(\);/);
+});
+
+test("reward sync runtime protects load boundary and readiness retries", () => {
+  const src = read(rewardsPath);
+  assert.match(src, /void ResetSyncSchedulersForLoad\(\) noexcept/);
+  assert.match(src, /BumpSyncGenerationAndClearSchedulers\(\)/);
+  assert.match(src, /g_rewardSyncGeneration\.fetch_add/);
+  assert.match(src, /IsCurrentSyncGeneration\(passState->generation\)/);
+  assert.match(src, /kRewardSyncReadinessTimeoutMs = 20000/);
+  assert.match(src, /kCarryWeightQuickResyncReadinessTimeoutMs = 10000/);
+  assert.match(src, /if \(!IsRewardSyncEnvironmentReady\(\)\)/);
+  assert.match(src, /watchdog: force restarting stale sync worker \(generation \{\}\)/);
 });

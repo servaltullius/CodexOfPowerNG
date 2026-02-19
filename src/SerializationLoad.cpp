@@ -199,7 +199,5 @@ namespace CodexOfPowerNG::Serialization::Internal
 				break;
 			}
 		}
-
-		Rewards::SyncRewardTotalsToPlayer();
 	}
 }

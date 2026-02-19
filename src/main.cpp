@@ -213,6 +213,7 @@ namespace CodexOfPowerNG
 			RegisterInputSink();
 			break;
 		case SKSE::MessagingInterface::kPreLoadGame:
+			Rewards::ResetSyncSchedulersForLoad();
 			PrismaUIManager::OnPreLoadGame();
 			break;
 		case SKSE::MessagingInterface::kDataLoaded:
@@ -220,6 +221,11 @@ namespace CodexOfPowerNG
 			break;
 		case SKSE::MessagingInterface::kPostLoadGame:
 		case SKSE::MessagingInterface::kNewGame:
+			// New-game flow may not emit kPreLoadGame.
+			// Ensure old sync workers never leak into a fresh run.
+			if (message->type == SKSE::MessagingInterface::kNewGame) {
+				Rewards::ResetSyncSchedulersForLoad();
+			}
 			// Avoid doing UI work at the main menu. Create the view lazily on hotkey.
 			PrismaUIManager::OnGameLoaded();
 			Events::Install();

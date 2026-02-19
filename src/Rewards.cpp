@@ -36,6 +36,8 @@ namespace CodexOfPowerNG::Rewards
 		inline constexpr std::uint64_t kRewardSyncStuckMs = 15000;
 		inline constexpr std::uint32_t kCarryWeightQuickResyncMaxAttempts = 3;
 		inline constexpr std::uint64_t kCarryWeightQuickResyncStuckMs = 3000;
+		inline constexpr std::uint64_t kRewardSyncReadinessTimeoutMs = 20000;
+		inline constexpr std::uint64_t kCarryWeightQuickResyncReadinessTimeoutMs = 10000;
 
 		std::atomic_bool g_rewardSyncScheduled{ false };
 		std::atomic_bool g_rewardSyncRerunRequested{ false };
@@ -43,17 +45,29 @@ namespace CodexOfPowerNG::Rewards
 		std::atomic_bool g_carryWeightQuickResyncScheduled{ false };
 		std::atomic_bool g_carryWeightQuickResyncRerunRequested{ false };
 		std::atomic<std::uint64_t> g_carryWeightQuickResyncScheduledSinceMs{ 0 };
+		std::atomic<std::uint64_t> g_rewardSyncGeneration{ 1 };
 
 		struct RewardSyncPassState
 		{
 			std::unordered_map<RE::ActorValue, std::uint32_t, ActorValueHash> missingStreaks;
 			std::unordered_set<RE::ActorValue, ActorValueHash>                nonConvergingActorValues;
 			bool normalizeCapsOnFirstPass{ true };
+			std::uint64_t generation{ 0 };
+			std::uint64_t readinessDeadlineMs{ 0 };
 		};
 
 		struct CarryWeightQuickResyncState
 		{
 			std::uint32_t attempt{ 0 };
+			std::uint64_t generation{ 0 };
+			std::uint64_t readinessDeadlineMs{ 0 };
+		};
+
+		enum class CarryWeightQuickResyncAttemptResult : std::uint8_t
+		{
+			kDone,
+			kRetryWithoutAttemptConsume,
+			kRetryWithAttemptConsume
 		};
 
 		struct RewardActorSnapshot
@@ -73,6 +87,50 @@ namespace CodexOfPowerNG::Rewards
 		};
 
 		void RunCarryWeightQuickResync(std::shared_ptr<CarryWeightQuickResyncState> state) noexcept;
+
+		[[nodiscard]] std::uint64_t CurrentSyncGeneration() noexcept
+		{
+			return g_rewardSyncGeneration.load(std::memory_order_acquire);
+		}
+
+		[[nodiscard]] std::uint64_t BumpSyncGenerationAndClearSchedulers() noexcept
+		{
+			const auto generation = g_rewardSyncGeneration.fetch_add(1, std::memory_order_acq_rel) + 1;
+			g_rewardSyncScheduled.store(false, std::memory_order_release);
+			g_rewardSyncRerunRequested.store(false, std::memory_order_release);
+			g_rewardSyncScheduledSinceMs.store(0, std::memory_order_release);
+			g_carryWeightQuickResyncScheduled.store(false, std::memory_order_release);
+			g_carryWeightQuickResyncRerunRequested.store(false, std::memory_order_release);
+			g_carryWeightQuickResyncScheduledSinceMs.store(0, std::memory_order_release);
+			return generation;
+		}
+
+		[[nodiscard]] bool IsCurrentSyncGeneration(std::uint64_t generation) noexcept
+		{
+			return generation == CurrentSyncGeneration();
+		}
+
+		[[nodiscard]] bool IsRewardSyncEnvironmentReady() noexcept
+		{
+			if (!RE::PlayerCharacter::GetSingleton()) {
+				return false;
+			}
+			const auto* main = RE::Main::GetSingleton();
+			if (!main) {
+				return false;
+			}
+			return main->gameActive;
+		}
+
+		void CompleteRewardSyncRun(std::uint64_t generation) noexcept
+		{
+			if (!IsCurrentSyncGeneration(generation)) {
+				return;
+			}
+			g_rewardSyncScheduled.store(false, std::memory_order_release);
+			g_rewardSyncRerunRequested.store(false, std::memory_order_release);
+			g_rewardSyncScheduledSinceMs.store(0, std::memory_order_release);
+		}
 
 		[[nodiscard]] float SnapshotRewardTotalForActorValue(RE::ActorValue av) noexcept
 		{
@@ -108,11 +166,16 @@ namespace CodexOfPowerNG::Rewards
 			return snapshot;
 		}
 
-		void CompleteCarryWeightQuickResync() noexcept
+		void CompleteCarryWeightQuickResync(std::uint64_t generation) noexcept
 		{
+			if (!IsCurrentSyncGeneration(generation)) {
+				return;
+			}
+
 			if (g_carryWeightQuickResyncRerunRequested.exchange(false, std::memory_order_acq_rel)) {
 				g_carryWeightQuickResyncScheduledSinceMs.store(NowMs(), std::memory_order_release);
 				auto rerunState = std::make_shared<CarryWeightQuickResyncState>();
+				rerunState->generation = generation;
 				if (QueueMainTask([rerunState]() { RunCarryWeightQuickResync(rerunState); })) {
 					return;
 				}
@@ -124,20 +187,24 @@ namespace CodexOfPowerNG::Rewards
 			g_carryWeightQuickResyncScheduledSinceMs.store(0, std::memory_order_release);
 		}
 
-		[[nodiscard]] bool TryCarryWeightQuickResyncAttempt(std::uint32_t attempt) noexcept
+		[[nodiscard]] CarryWeightQuickResyncAttemptResult TryCarryWeightQuickResyncAttempt(std::uint32_t attempt) noexcept
 		{
+			if (!IsRewardSyncEnvironmentReady()) {
+				return CarryWeightQuickResyncAttemptResult::kRetryWithoutAttemptConsume;
+			}
+
 			auto* player = RE::PlayerCharacter::GetSingleton();
 			if (!player) {
-				return false;
+				return CarryWeightQuickResyncAttemptResult::kRetryWithoutAttemptConsume;
 			}
 			auto* avOwner = player->AsActorValueOwner();
 			if (!avOwner) {
-				return false;
+				return CarryWeightQuickResyncAttemptResult::kRetryWithoutAttemptConsume;
 			}
 
 			const float total = SnapshotRewardTotalForActorValue(RE::ActorValue::kCarryWeight);
 			if (std::abs(total) <= kRewardCapEpsilon) {
-				return true;
+				return CarryWeightQuickResyncAttemptResult::kDone;
 			}
 
 			auto snapshot = CaptureRewardActorSnapshot(player, avOwner, RE::ActorValue::kCarryWeight, total);
@@ -153,7 +220,7 @@ namespace CodexOfPowerNG::Rewards
 					attempt + 1,
 					total,
 					snapshot.current);
-				return true;
+				return CarryWeightQuickResyncAttemptResult::kDone;
 			}
 
 			avOwner->ModActorValue(RE::ActorValue::kCarryWeight, delta);
@@ -171,7 +238,7 @@ namespace CodexOfPowerNG::Rewards
 					delta,
 					total,
 					snapshot.current);
-				return true;
+				return CarryWeightQuickResyncAttemptResult::kDone;
 			}
 
 			SKSE::log::info(
@@ -180,18 +247,42 @@ namespace CodexOfPowerNG::Rewards
 				total,
 				delta,
 				postDelta);
-			return false;
+			return CarryWeightQuickResyncAttemptResult::kRetryWithAttemptConsume;
 		}
 
 		void RunCarryWeightQuickResync(std::shared_ptr<CarryWeightQuickResyncState> state) noexcept
 		{
 			if (!state) {
-				CompleteCarryWeightQuickResync();
+				return;
+			}
+			if (!IsCurrentSyncGeneration(state->generation)) {
 				return;
 			}
 
-			if (TryCarryWeightQuickResyncAttempt(state->attempt)) {
-				CompleteCarryWeightQuickResync();
+			const auto result = TryCarryWeightQuickResyncAttempt(state->attempt);
+			if (result == CarryWeightQuickResyncAttemptResult::kDone) {
+				CompleteCarryWeightQuickResync(state->generation);
+				return;
+			}
+
+			if (result == CarryWeightQuickResyncAttemptResult::kRetryWithoutAttemptConsume) {
+				const auto nowMs = NowMs();
+				if (state->readinessDeadlineMs == 0) {
+					state->readinessDeadlineMs = nowMs + kCarryWeightQuickResyncReadinessTimeoutMs;
+				}
+				if (nowMs >= state->readinessDeadlineMs) {
+					SKSE::log::warn(
+						"Reward sync (carry weight quick): skipped after waiting {} ms for load readiness",
+						kCarryWeightQuickResyncReadinessTimeoutMs);
+					CompleteCarryWeightQuickResync(state->generation);
+					return;
+				}
+				if (QueueMainTask([state]() { RunCarryWeightQuickResync(state); })) {
+					return;
+				}
+
+				SKSE::log::warn("Reward sync (carry weight quick): scheduler unavailable while waiting for load readiness");
+				CompleteCarryWeightQuickResync(state->generation);
 				return;
 			}
 
@@ -200,7 +291,7 @@ namespace CodexOfPowerNG::Rewards
 				SKSE::log::warn(
 					"Reward sync (carry weight quick): unresolved after {} attempts",
 					kCarryWeightQuickResyncMaxAttempts);
-				CompleteCarryWeightQuickResync();
+				CompleteCarryWeightQuickResync(state->generation);
 				return;
 			}
 
@@ -209,18 +300,29 @@ namespace CodexOfPowerNG::Rewards
 			}
 
 			// Fallback when task interface is unavailable: finish synchronously.
-			while (state->attempt < kCarryWeightQuickResyncMaxAttempts) {
-				if (TryCarryWeightQuickResyncAttempt(state->attempt)) {
-					CompleteCarryWeightQuickResync();
+			bool abortedForReadiness = false;
+			while (state->attempt < kCarryWeightQuickResyncMaxAttempts && IsCurrentSyncGeneration(state->generation)) {
+				const auto fallbackResult = TryCarryWeightQuickResyncAttempt(state->attempt);
+				if (fallbackResult == CarryWeightQuickResyncAttemptResult::kDone) {
+					CompleteCarryWeightQuickResync(state->generation);
 					return;
 				}
+				if (fallbackResult == CarryWeightQuickResyncAttemptResult::kRetryWithoutAttemptConsume) {
+					SKSE::log::warn("Reward sync (carry weight quick): not ready during fallback; aborting this quick pass");
+					abortedForReadiness = true;
+					break;
+				}
 				++state->attempt;
+			}
+			if (abortedForReadiness) {
+				CompleteCarryWeightQuickResync(state->generation);
+				return;
 			}
 
 			SKSE::log::warn(
 				"Reward sync (carry weight quick): unresolved after {} attempts",
 				kCarryWeightQuickResyncMaxAttempts);
-			CompleteCarryWeightQuickResync();
+			CompleteCarryWeightQuickResync(state->generation);
 		}
 
 		[[nodiscard]] std::vector<RewardCapAdjustment> ClampRewardTotalsInState() noexcept
@@ -468,6 +570,34 @@ namespace CodexOfPowerNG::Rewards
 
 		void RunRewardSyncPasses(std::shared_ptr<RewardSyncPassState> passState, std::uint32_t remainingPasses) noexcept
 		{
+			if (!passState) {
+				return;
+			}
+			if (!IsCurrentSyncGeneration(passState->generation)) {
+				return;
+			}
+
+			if (!IsRewardSyncEnvironmentReady()) {
+				const auto nowMs = NowMs();
+				if (passState->readinessDeadlineMs == 0) {
+					passState->readinessDeadlineMs = nowMs + kRewardSyncReadinessTimeoutMs;
+				}
+				if (nowMs >= passState->readinessDeadlineMs) {
+					SKSE::log::warn(
+						"Reward sync: skipped after waiting {} ms for load readiness",
+						kRewardSyncReadinessTimeoutMs);
+					CompleteRewardSyncRun(passState->generation);
+					return;
+				}
+				if (QueueMainTask([passState, remainingPasses]() { RunRewardSyncPasses(passState, remainingPasses); })) {
+					return;
+				}
+
+				SKSE::log::warn("Reward sync: scheduler unavailable while waiting for load readiness");
+				CompleteRewardSyncRun(passState->generation);
+				return;
+			}
+
 			if (passState->normalizeCapsOnFirstPass) {
 				passState->normalizeCapsOnFirstPass = false;
 				const auto capAdjustments = ClampRewardTotalsInState();
@@ -480,6 +610,7 @@ namespace CodexOfPowerNG::Rewards
 				if (g_rewardSyncRerunRequested.exchange(false, std::memory_order_acq_rel)) {
 					g_rewardSyncScheduledSinceMs.store(NowMs(), std::memory_order_release);
 					auto rerunPassState = std::make_shared<RewardSyncPassState>();
+					rerunPassState->generation = passState->generation;
 					if (QueueMainTask([rerunPassState]() { RunRewardSyncPasses(rerunPassState, kRewardSyncPassCount); })) {
 						return;
 					}
@@ -487,8 +618,7 @@ namespace CodexOfPowerNG::Rewards
 					return;
 				}
 
-				g_rewardSyncScheduled.store(false, std::memory_order_release);
-				g_rewardSyncScheduledSinceMs.store(0, std::memory_order_release);
+				CompleteRewardSyncRun(passState->generation);
 				return;
 			}
 
@@ -498,10 +628,17 @@ namespace CodexOfPowerNG::Rewards
 
 			// Fallback when task interface is unavailable: finish synchronously.
 			for (std::uint32_t i = 1; i < remainingPasses; ++i) {
+				if (!IsCurrentSyncGeneration(passState->generation)) {
+					return;
+				}
+				if (!IsRewardSyncEnvironmentReady()) {
+					SKSE::log::warn("Reward sync: fallback pass stopped because game is not ready");
+					CompleteRewardSyncRun(passState->generation);
+					return;
+				}
 				(void)ApplyRewardSyncPass(*passState);
 			}
-			g_rewardSyncScheduled.store(false, std::memory_order_release);
-			g_rewardSyncScheduledSinceMs.store(0, std::memory_order_release);
+			CompleteRewardSyncRun(passState->generation);
 		}
 	}
 
@@ -530,6 +667,7 @@ namespace CodexOfPowerNG::Rewards
 
 	void SyncRewardTotalsToPlayer() noexcept
 	{
+		auto generation = CurrentSyncGeneration();
 		const auto nowMs = NowMs();
 		const auto action = DecideSyncRequestAction(
 			g_rewardSyncScheduled.load(std::memory_order_acquire),
@@ -543,9 +681,8 @@ namespace CodexOfPowerNG::Rewards
 		}
 
 		if (action == SyncRequestAction::kForceRestartAndStart) {
-			SKSE::log::warn("Reward sync watchdog: force restarting stale sync worker");
-			g_rewardSyncScheduled.store(false, std::memory_order_release);
-			g_rewardSyncRerunRequested.store(false, std::memory_order_release);
+			generation = BumpSyncGenerationAndClearSchedulers();
+			SKSE::log::warn("Reward sync watchdog: force restarting stale sync worker (generation {})", generation);
 		}
 
 		if (g_rewardSyncScheduled.exchange(true, std::memory_order_acq_rel)) {
@@ -555,6 +692,7 @@ namespace CodexOfPowerNG::Rewards
 
 		g_rewardSyncScheduledSinceMs.store(nowMs, std::memory_order_release);
 		auto passState = std::make_shared<RewardSyncPassState>();
+		passState->generation = generation;
 
 		if (QueueMainTask([passState]() { RunRewardSyncPasses(passState, kRewardSyncPassCount); })) {
 			return;
@@ -563,8 +701,15 @@ namespace CodexOfPowerNG::Rewards
 		RunRewardSyncPasses(passState, kRewardSyncPassCount);
 	}
 
+	void ResetSyncSchedulersForLoad() noexcept
+	{
+		const auto generation = BumpSyncGenerationAndClearSchedulers();
+		SKSE::log::info("Reward sync schedulers reset for load boundary (generation {})", generation);
+	}
+
 	void ScheduleCarryWeightQuickResync() noexcept
 	{
+		auto generation = CurrentSyncGeneration();
 		const auto nowMs = NowMs();
 		const auto action = DecideSyncRequestAction(
 			g_carryWeightQuickResyncScheduled.load(std::memory_order_acquire),
@@ -573,10 +718,10 @@ namespace CodexOfPowerNG::Rewards
 			kCarryWeightQuickResyncStuckMs);
 
 		if (action == SyncRequestAction::kForceRestartAndStart) {
-			SKSE::log::warn("Reward sync (carry weight quick) watchdog: force restarting stale worker");
-			g_carryWeightQuickResyncScheduled.store(false, std::memory_order_release);
-			g_carryWeightQuickResyncRerunRequested.store(false, std::memory_order_release);
-			g_carryWeightQuickResyncScheduledSinceMs.store(0, std::memory_order_release);
+			generation = BumpSyncGenerationAndClearSchedulers();
+			SKSE::log::warn(
+				"Reward sync (carry weight quick) watchdog: force restarting stale worker (generation {})",
+				generation);
 		}
 
 		if (g_carryWeightQuickResyncScheduled.exchange(true, std::memory_order_acq_rel)) {
@@ -586,6 +731,7 @@ namespace CodexOfPowerNG::Rewards
 		g_carryWeightQuickResyncScheduledSinceMs.store(nowMs, std::memory_order_release);
 
 		auto state = std::make_shared<CarryWeightQuickResyncState>();
+		state->generation = generation;
 		if (QueueMainTask([state]() { RunCarryWeightQuickResync(state); })) {
 			return;
 		}

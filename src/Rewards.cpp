@@ -23,6 +23,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -46,6 +47,7 @@ namespace CodexOfPowerNG::Rewards
 		struct RewardSyncPassState
 		{
 			std::unordered_map<RE::ActorValue, std::uint32_t, ActorValueHash> missingStreaks;
+			std::unordered_set<RE::ActorValue, ActorValueHash>                nonConvergingActorValues;
 			bool normalizeCapsOnFirstPass{ true };
 		};
 
@@ -330,6 +332,9 @@ namespace CodexOfPowerNG::Rewards
 
 			std::size_t corrected = 0;
 			for (const auto& [av, total] : totals) {
+				if (passState.nonConvergingActorValues.contains(av)) {
+					continue;
+				}
 				const auto snapshot = CaptureRewardActorSnapshot(player, avOwner, av, total);
 				const float base = snapshot.base;
 				const float cur = snapshot.current;
@@ -403,6 +408,41 @@ namespace CodexOfPowerNG::Rewards
 
 				avOwner->ModActorValue(av, delta);
 				++corrected;
+
+				const auto postSnapshot = CaptureRewardActorSnapshot(player, avOwner, av, total);
+				float postDelta = 0.0f;
+				if (av == RE::ActorValue::kCarryWeight) {
+					postDelta = ComputeCarryWeightSyncDelta(
+						postSnapshot.base,
+						postSnapshot.current,
+						postSnapshot.permanent,
+						postSnapshot.permanentModifier,
+						total);
+				} else if (hasRewardCap) {
+					postDelta = ComputeCappedRewardSyncDeltaFromSnapshot(
+						postSnapshot.base,
+						postSnapshot.current,
+						postSnapshot.permanent,
+						postSnapshot.permanentModifier,
+						total,
+						cap,
+						kRewardCapEpsilon);
+				} else {
+					postDelta = postSnapshot.delta;
+				}
+
+				// Some AVs (e.g. multiplicative channels) can report no observable convergence
+				// even after ModActorValue succeeds, which would cause repeated re-application
+				// across this pass loop. Stop re-applying that AV within the same run.
+				if (std::abs(postDelta) > kRewardCapEpsilon &&
+				    std::abs(postDelta - delta) <= kRewardCapEpsilon) {
+					passState.nonConvergingActorValues.insert(av);
+					SKSE::log::warn(
+						"Reward sync guard: AV {} appears non-converging (delta {:.4f}, postDelta {:.4f}); skipping further applies this run",
+						static_cast<std::uint32_t>(av),
+						delta,
+						postDelta);
+				}
 				if (av == RE::ActorValue::kCarryWeight) {
 					SKSE::log::info(
 						"Reward sync (carry weight): applied {:.4f} (expected {:.4f}, current {:.4f})",

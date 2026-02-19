@@ -14,6 +14,7 @@ function read(p) {
 
 test("reward cap table defines vanilla-safe thresholds", () => {
   const src = read(capsPath);
+  assert.match(src, /kAttackDamageMult[\s\S]*outCap = 1\.0f/);
   assert.match(src, /kCriticalChance[\s\S]*outCap = 50\.0f/);
   assert.match(src, /kResistShock[\s\S]*outCap = 85\.0f/);
   assert.match(src, /kAbsorbChance[\s\S]*outCap = 80\.0f/);
@@ -47,6 +48,8 @@ test("sync/refund paths normalize over-capped totals and include carry-weight di
   assert.match(src, /g_carryWeightQuickResyncRerunRequested/);
   assert.match(src, /ScheduleCarryWeightQuickResync\(\)/);
   assert.match(src, /if \(av == RE::ActorValue::kCarryWeight\)[\s\S]*forceImmediate = std::abs\(delta\) > kRewardCapEpsilon;/);
+  assert.match(src, /nonConvergingActorValues/);
+  assert.match(src, /Reward sync guard: AV/);
 });
 
 test("carry weight reward schedules quick resync after grant", () => {

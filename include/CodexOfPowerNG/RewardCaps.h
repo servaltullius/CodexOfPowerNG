@@ -11,6 +11,9 @@ namespace CodexOfPowerNG::Rewards
 	[[nodiscard]] inline bool TryGetRewardCap(RE::ActorValue av, float& outCap) noexcept
 	{
 		switch (av) {
+		case RE::ActorValue::kAttackDamageMult:
+			outCap = 1.0f;
+			return true;
 		case RE::ActorValue::kCriticalChance:
 			outCap = 50.0f;
 			return true;

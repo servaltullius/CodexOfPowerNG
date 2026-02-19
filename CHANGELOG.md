@@ -9,6 +9,17 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.7-rc.14] - 2026-02-19 (Pre-release)
+
+### Fixed
+- Added a reward cap for `AttackDamageMult` to prevent runaway physical damage scaling from reward accumulation.
+- Added a non-converging sync guard in reward resync passes to stop repeated re-application on AV channels that do not reflect expected convergence after `ModActorValue`.
+- Reduced risk of extreme early-game damage spikes caused by repeated sync deltas on multiplicative damage channels.
+
+### Notes
+- This pre-release focuses on addressing reported “damage spike / inflated hit numbers” behavior.
+- Save compatibility policy remains unchanged: Codex of Power / SVCollection is not compatible.
+
 ## [1.0.7-rc.13] - 2026-02-19 (Pre-release)
 
 ### Fixed
@@ -144,7 +155,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.7-rc.13...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.7-rc.14...HEAD
+[1.0.7-rc.14]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.14
 [1.0.7-rc.13]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.13
 [1.0.7-rc.12]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.12
 [1.0.7-rc.11]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.11

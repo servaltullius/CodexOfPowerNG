@@ -169,6 +169,67 @@ namespace CodexOfPowerNG::Rewards
 			RefreshEquippedWeaponAbilityForHand(player, true);
 		}
 
+		void MigrateLegacyAttackDamageMultReward(RewardSyncPassState& passState) noexcept
+		{
+			float legacyTotal = 0.0f;
+			{
+				auto& state = GetState();
+				std::scoped_lock lock(state.mutex);
+				const auto it = state.rewardTotals.find(RE::ActorValue::kAttackDamageMult);
+				if (it == state.rewardTotals.end()) {
+					return;
+				}
+				legacyTotal = it->second;
+				state.rewardTotals.erase(it);
+			}
+
+			if (std::abs(legacyTotal) <= kRewardCapEpsilon) {
+				return;
+			}
+
+			auto* player = RE::PlayerCharacter::GetSingleton();
+			if (!player) {
+				SKSE::log::warn(
+					"Legacy reward migration: cleared AttackDamageMult total {:.4f} from state (player unavailable)",
+					legacyTotal);
+				return;
+			}
+			auto* avOwner = player->AsActorValueOwner();
+			if (!avOwner) {
+				SKSE::log::warn(
+					"Legacy reward migration: cleared AttackDamageMult total {:.4f} from state (AV owner unavailable)",
+					legacyTotal);
+				return;
+			}
+
+			const float base = avOwner->GetBaseActorValue(RE::ActorValue::kAttackDamageMult);
+			const float cur = avOwner->GetActorValue(RE::ActorValue::kAttackDamageMult);
+			const float permanent = avOwner->GetPermanentActorValue(RE::ActorValue::kAttackDamageMult);
+			const float permanentModifier =
+				player->GetActorValueModifier(RE::ACTOR_VALUE_MODIFIER::kPermanent, RE::ActorValue::kAttackDamageMult);
+
+			const float observed = SelectObservedRewardTotal(
+				legacyTotal,
+				cur - base,
+				permanent - base,
+				permanentModifier);
+			const float removable = (std::clamp)(observed, 0.0f, legacyTotal);
+
+			if (removable > kRewardCapEpsilon) {
+				avOwner->ModActorValue(RE::ActorValue::kAttackDamageMult, -removable);
+				passState.weaponAbilityRefreshRequested = true;
+				SKSE::log::warn(
+					"Legacy reward migration: removed AttackDamageMult {:.4f} (stored {:.4f}, observed {:.4f})",
+					removable,
+					legacyTotal,
+					observed);
+			} else {
+				SKSE::log::warn(
+					"Legacy reward migration: cleared AttackDamageMult total {:.4f} (no observable actor delta)",
+					legacyTotal);
+			}
+		}
+
 		void CompleteRewardSyncRun(std::uint64_t generation) noexcept
 		{
 			if (!IsCurrentSyncGeneration(generation)) {
@@ -667,6 +728,7 @@ namespace CodexOfPowerNG::Rewards
 
 			if (passState->normalizeCapsOnFirstPass) {
 				passState->normalizeCapsOnFirstPass = false;
+				MigrateLegacyAttackDamageMultReward(*passState);
 				const auto capAdjustments = ClampRewardTotalsInState();
 				ApplyRewardCapAdjustmentsToPlayer(capAdjustments);
 			}

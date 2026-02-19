@@ -6,6 +6,7 @@ const path = require("node:path");
 const capsPath = path.join(__dirname, "..", "include", "CodexOfPowerNG", "RewardCaps.h");
 const corePath = path.join(__dirname, "..", "src", "RewardsCore.cpp");
 const rewardsPath = path.join(__dirname, "..", "src", "Rewards.cpp");
+const randomTablesPath = path.join(__dirname, "..", "src", "RewardsRandomTables.cpp");
 const mainPath = path.join(__dirname, "..", "src", "main.cpp");
 
 function read(p) {
@@ -31,6 +32,14 @@ test("grant path clamps totals against AV caps before applying reward", () => {
   assert.match(src, /const float clampedTotal = ClampRewardTotal\(av, total \+ delta\);/);
   assert.match(src, /Reward cap applied:/);
   assert.match(src, /Reward grant skipped by cap:/);
+});
+
+test("weapon reward table avoids AttackDamageMult percent grants", () => {
+  const src = read(randomTablesPath);
+  assert.doesNotMatch(src, /GrantReward\(RE::ActorValue::kAttackDamageMult,/);
+  assert.match(src, /GrantReward\(RE::ActorValue::kOneHanded,/);
+  assert.match(src, /GrantReward\(RE::ActorValue::kTwoHanded,/);
+  assert.match(src, /GrantReward\(RE::ActorValue::kArchery,/);
 });
 
 test("sync/refund paths normalize over-capped totals and include carry-weight diagnostics", () => {
@@ -87,4 +96,7 @@ test("reward sync runtime protects load boundary and readiness retries", () => {
   assert.match(src, /weaponAbilityRefreshRequested/);
   assert.match(src, /UpdateWeaponAbility\(/);
   assert.match(src, /RefreshEquippedWeaponAbilities\(\)/);
+  assert.match(src, /MigrateLegacyAttackDamageMultReward/);
+  assert.match(src, /state\.rewardTotals\.erase\(it\)/);
+  assert.match(src, /ModActorValue\(RE::ActorValue::kAttackDamageMult,\s*-removable\)/);
 });

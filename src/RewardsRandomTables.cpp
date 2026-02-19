@@ -8,10 +8,17 @@ namespace CodexOfPowerNG::Rewards::Internal
 	{
 		void GrantWeaponReward(int roll, const Settings& settings) noexcept
 		{
-			// Weapons: damage-feel without touching skill levels (perk mod friendly)
-			// Note: we intentionally avoid "MeleeDamage" to prevent melee-only bias.
+			// Weapons: avoid AttackDamageMult (% multiplier channel) to reduce
+			// load-time cache sensitivity. Use fixed skill gains instead.
 			if (roll <= 35) {
-				GrantReward(RE::ActorValue::kAttackDamageMult, 0.015f, "av.attackDamageMult", "Attack damage (physical)");
+				const int skillRoll = RandomInt(1, 3);
+				if (skillRoll == 1) {
+					GrantReward(RE::ActorValue::kOneHanded, 0.10f, "skill.oneHanded", "Skill (One-Handed)");
+				} else if (skillRoll == 2) {
+					GrantReward(RE::ActorValue::kTwoHanded, 0.10f, "skill.twoHanded", "Skill (Two-Handed)");
+				} else {
+					GrantReward(RE::ActorValue::kArchery, 0.10f, "skill.marksman", "Skill (Archery)");
+				}
 			} else if (roll <= 60) {
 				GrantReward(RE::ActorValue::kCriticalChance, 1.0f, "av.critChance", "Critical chance");
 			} else if (roll <= 70) {
@@ -26,7 +33,7 @@ namespace CodexOfPowerNG::Rewards::Internal
 				GrantReward(RE::ActorValue::kCarryWeight, 5.0f, "av.carryWeight", "Carry weight");
 			}
 
-			// Optional: allow tiny skill bumps (OFF by default)
+			// Optional: allow tiny extra skill bumps (OFF by default)
 			if (settings.allowSkillRewards) {
 				const int extra = RandomInt(1, 3);
 				if (extra == 1) {

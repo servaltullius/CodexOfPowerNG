@@ -2099,6 +2099,8 @@
           setToggleKeyInputFromDik(key);
           showToast("warn", `${t("toast.bindKeyUnknown", "Unsupported key.")}`);
         }
+        const rewardEveryInput = parseInt(document.getElementById("setRewardEvery").value, 10);
+        const rewardMultInput = parseFloat(document.getElementById("setRewardMult").value);
         const payload = {
           toggleKeyCode: (key >>> 0) & 0xff,
           languageOverride: document.getElementById("setLang").value,
@@ -2111,8 +2113,8 @@
           protectFavorites: document.getElementById("setProtectFav").checked,
           enableLootNotify: document.getElementById("setLootNotify").checked,
           enableRewards: document.getElementById("setRewardsEnabled").checked,
-          rewardEvery: parseInt(document.getElementById("setRewardEvery").value, 10) || 5,
-          rewardMultiplier: parseFloat(document.getElementById("setRewardMult").value) || 1.0,
+          rewardEvery: Number.isFinite(rewardEveryInput) && rewardEveryInput > 0 ? rewardEveryInput : 5,
+          rewardMultiplier: Number.isFinite(rewardMultInput) ? rewardMultInput : 1.0,
           allowSkillRewards: document.getElementById("setSkillRewards").checked,
         };
         safeCall("copng_saveSettings", payload);

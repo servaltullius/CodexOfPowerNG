@@ -335,9 +335,25 @@ namespace CodexOfPowerNG::Rewards
 				const float cur = snapshot.current;
 				const float permanent = snapshot.permanent;
 				const float permanentModifier = snapshot.permanentModifier;
-				float delta = (av == RE::ActorValue::kCarryWeight)
-					? ComputeCarryWeightSyncDelta(base, cur, permanent, permanentModifier, total)
-					: snapshot.delta;
+				float delta = 0.0f;
+				float cap = 0.0f;
+				const bool hasRewardCap = TryGetRewardCap(av, cap);
+				bool forceImmediate = false;
+				if (av == RE::ActorValue::kCarryWeight) {
+					delta = ComputeCarryWeightSyncDelta(base, cur, permanent, permanentModifier, total);
+				} else if (hasRewardCap) {
+					delta = ComputeCappedRewardSyncDeltaFromSnapshot(
+						base,
+						cur,
+						permanent,
+						permanentModifier,
+						total,
+						cap,
+						kRewardCapEpsilon);
+					forceImmediate = cur > (base + cap + kRewardCapEpsilon);
+				} else {
+					delta = snapshot.delta;
+				}
 				auto& streak = passState.missingStreaks[av];
 				streak = NextMissingStreak(delta, streak);
 				if (av == RE::ActorValue::kCarryWeight && std::abs(delta) > kRewardCapEpsilon && streak <= kRewardSyncMinMissingStreak) {
@@ -352,10 +368,20 @@ namespace CodexOfPowerNG::Rewards
 						streak);
 				}
 
-				if (!ShouldApplyAfterStreak(delta, streak, kRewardSyncMinMissingStreak)) {
+				if (!forceImmediate && !ShouldApplyAfterStreak(delta, streak, kRewardSyncMinMissingStreak)) {
 					continue;
 				}
 				streak = 0;
+
+				if (forceImmediate) {
+					SKSE::log::warn(
+						"Reward sync cap guard: AV {} above cap (base {:.4f}, current {:.4f}, cap {:.2f}); applying {:.4f}",
+						static_cast<std::uint32_t>(av),
+						base,
+						cur,
+						cap,
+						delta);
+				}
 
 				// Keep shout cooldown in sane range even if load-time state diverges.
 				if (av == RE::ActorValue::kShoutRecoveryMult) {
@@ -368,7 +394,7 @@ namespace CodexOfPowerNG::Rewards
 					}
 				}
 
-				if (delta == 0.0f) {
+				if (std::abs(delta) <= kRewardCapEpsilon) {
 					continue;
 				}
 

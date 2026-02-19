@@ -132,6 +132,52 @@ namespace CodexOfPowerNG::Rewards
 			epsilon);
 	}
 
+	// Conservative correction policy for capped AVs:
+	// 1) If current value is above hard cap, correct downward immediately.
+	// 2) For positive expected totals, only apply a positive delta when both
+	//    current-based and snapshot-based views agree that reward is missing.
+	[[nodiscard]] inline float ComputeCappedRewardSyncDeltaFromSnapshot(
+		float baseValue,
+		float currentValue,
+		float permanentValue,
+		float permanentModifier,
+		float expectedTotal,
+		float hardCapTotal,
+		float epsilon = 0.001f) noexcept
+	{
+		const float cappedExpectedTotal = (std::min)(expectedTotal, hardCapTotal);
+		const float hardCapCurrent = baseValue + hardCapTotal;
+		if (currentValue > (hardCapCurrent + epsilon)) {
+			return hardCapCurrent - currentValue;
+		}
+
+		const float deltaFromCurrent = ComputeRewardSyncDeltaFromCurrent(
+			baseValue,
+			currentValue,
+			cappedExpectedTotal,
+			epsilon);
+		const float deltaFromSnapshot = ComputeRewardSyncDeltaFromSnapshot(
+			baseValue,
+			currentValue,
+			permanentValue,
+			permanentModifier,
+			cappedExpectedTotal,
+			epsilon);
+
+		if (cappedExpectedTotal > 0.0f) {
+			if (deltaFromCurrent <= epsilon || deltaFromSnapshot <= epsilon) {
+				return 0.0f;
+			}
+			return (std::min)(deltaFromCurrent, deltaFromSnapshot);
+		}
+
+		return MergeRewardSyncDeltaCandidates(
+			cappedExpectedTotal,
+			deltaFromCurrent,
+			deltaFromSnapshot,
+			epsilon);
+	}
+
 	[[nodiscard]] inline float ComputeCapNormalizationDeltaFromSnapshot(
 		float baseValue,
 		float currentValue,

@@ -36,6 +36,8 @@ test("sync/refund paths normalize over-capped totals and include carry-weight di
   assert.match(src, /ClampRewardTotalsInState\(\)/);
   assert.match(src, /normalizeCapsOnFirstPass/);
   assert.match(src, /Reward cap normalize:/);
+  assert.match(src, /ComputeCappedRewardSyncDeltaFromSnapshot\(/);
+  assert.match(src, /Reward sync cap guard:/);
   assert.match(src, /Reward sync \(carry weight\):/);
   assert.match(src, /ComputeCarryWeightSyncDelta\(/);
   assert.match(src, /ComputeRewardSyncDeltaFromSnapshot\(/);

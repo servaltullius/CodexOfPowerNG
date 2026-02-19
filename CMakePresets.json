@@ -35,7 +35,8 @@
       "displayName": "Windows Debug",
       "inherits": "windows-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "COPNG_BUILD_CPP_TEST_TARGETS": "ON"
       }
     },
     {
@@ -43,7 +44,8 @@
       "displayName": "Windows Release",
       "inherits": "windows-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "COPNG_BUILD_CPP_TEST_TARGETS": "OFF"
       }
     }
     ,
@@ -52,7 +54,8 @@
       "displayName": "WSL Cross (Debug)",
       "inherits": "wsl-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
+        "CMAKE_BUILD_TYPE": "Debug",
+        "COPNG_BUILD_CPP_TEST_TARGETS": "ON"
       }
     },
     {
@@ -60,7 +63,8 @@
       "displayName": "WSL Cross (Release)",
       "inherits": "wsl-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
+        "CMAKE_BUILD_TYPE": "Release",
+        "COPNG_BUILD_CPP_TEST_TARGETS": "OFF"
       }
     }
   ],

@@ -15,6 +15,7 @@ int main()
 {
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDelta;
 	using CodexOfPowerNG::Rewards::ComputeCarryWeightSyncDelta;
+	using CodexOfPowerNG::Rewards::ComputeCappedRewardSyncDeltaFromSnapshot;
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDeltaFromCurrent;
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDeltaFromSnapshot;
 	using CodexOfPowerNG::Rewards::MergeRewardSyncDeltaCandidates;
@@ -109,6 +110,41 @@ int main()
 			7.0f,
 			5.0f),
 		0.0f);
+
+	// Capped AV conservative policy:
+	// when current already exceeds hard cap, force immediate downward correction.
+	AssertNear(
+		ComputeCappedRewardSyncDeltaFromSnapshot(
+			100.0f,  // base
+			220.0f,  // current (+120; above cap)
+			100.0f,  // permanent
+			0.0f,    // permanent mod
+			50.0f,   // expected reward total
+			50.0f),  // hard cap total
+		-70.0f);
+
+	// If current-based view says no missing reward, do not apply positive sync
+	// even when another snapshot source under-reports.
+	AssertNear(
+		ComputeCappedRewardSyncDeltaFromSnapshot(
+			100.0f,  // base
+			150.0f,  // current (+50; aligned to cap)
+			100.0f,  // permanent
+			0.0f,    // permanent mod
+			50.0f,   // expected reward total
+			50.0f),  // hard cap total
+		0.0f);
+
+	// Missing capped reward can still recover when both signals agree.
+	AssertNear(
+		ComputeCappedRewardSyncDeltaFromSnapshot(
+			100.0f,  // base
+			120.0f,  // current (+20)
+			120.0f,  // permanent (+20)
+			20.0f,   // permanent mod (+20)
+			50.0f,   // expected reward total
+			50.0f),  // hard cap total
+		30.0f);
 
 	return 0;
 }

@@ -36,14 +36,27 @@ set(_winsdk_inc_ucrt "${_WINSDK_ROOT}/Include/${_winsdk_ver}/ucrt")
 set(_winsdk_lib_um "${_WINSDK_ROOT}/Lib/${_winsdk_ver}/um/x64")
 set(_winsdk_lib_ucrt "${_WINSDK_ROOT}/Lib/${_winsdk_ver}/ucrt/x64")
 
-set(ENV{INCLUDE} "${_msvc_include};${_winsdk_inc_um};${_winsdk_inc_shared};${_winsdk_inc_ucrt}")
+set(_copng_include_dirs
+  "${_msvc_include}"
+  "${_winsdk_inc_um}"
+  "${_winsdk_inc_shared}"
+  "${_winsdk_inc_ucrt}"
+)
+
+# Some clang-cl builds routed through WSL require the multiarch include root
+# so glibc split headers (e.g. bits/libc-header-start.h) can be resolved.
+if(EXISTS "/usr/include/x86_64-linux-gnu")
+  list(APPEND _copng_include_dirs "/usr/include/x86_64-linux-gnu")
+endif()
+
+set(ENV{INCLUDE} "${_copng_include_dirs}")
 set(ENV{LIB} "${_msvc_lib};${_winsdk_lib_um};${_winsdk_lib_ucrt}")
 
 # `set(ENV{INCLUDE}/LIB)` applies to the CMake configure process (and any child processes like vcpkg),
 # but subsequent `cmake --build` invocations run in a new process environment.
 # Bake the include/lib paths into the generated compile/link commands so builds remain reproducible.
 set(_copng_imsvc_flags "")
-foreach(_inc IN LISTS _msvc_include _winsdk_inc_um _winsdk_inc_shared _winsdk_inc_ucrt)
+foreach(_inc IN LISTS _copng_include_dirs)
   string(APPEND _copng_imsvc_flags " /imsvc\"${_inc}\"")
 endforeach()
 set(CMAKE_C_FLAGS_INIT "${CMAKE_C_FLAGS_INIT}${_copng_imsvc_flags}")

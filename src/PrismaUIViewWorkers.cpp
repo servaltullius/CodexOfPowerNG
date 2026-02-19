@@ -20,6 +20,7 @@ extern "C" __declspec(dllimport) void* __stdcall GetProcAddress(void* hModule, c
 #include <SKSE/Logger.h>
 
 #include <chrono>
+#include <exception>
 #include <future>
 #include <memory>
 #include <thread>
@@ -66,11 +67,12 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		void QueueCloseRetry(PrismaView view, bool destroyOnClose) noexcept
 		{
 			constexpr std::uint32_t kMaxAttempts = 20;
+			constexpr auto          kCloseTaskTimeout = std::chrono::milliseconds(500);
 
 			{
 				std::scoped_lock lock(State::workerMutex);
 				State::JoinIfJoinable(State::closeRetryThread);
-				State::closeRetryThread = std::thread([view, destroyOnClose, kMaxAttempts]() {
+					State::closeRetryThread = std::thread([view, destroyOnClose, kMaxAttempts, kCloseTaskTimeout]() {
 					for (std::uint32_t attempt = 1; attempt <= kMaxAttempts; ++attempt) {
 						std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
@@ -117,13 +119,46 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 								}
 								promise->set_value(CloseResult::kDone);
 							})) {
-							return;
+							if (attempt == 1 || (attempt % 5) == 0 || attempt == kMaxAttempts) {
+								SKSE::log::warn(
+									"Close: failed to queue UI task (attempt {}/{})",
+									attempt,
+									kMaxAttempts);
+							}
+							QueueForceHideFocusMenu();
+							QueueHideSkyrimCursor();
+							continue;
 						}
 
-						// Block until UI task completes (no spin-wait)
-						const auto result = future.get();
-						if (result == CloseResult::kDone) {
-							return;
+						const auto status = future.wait_for(kCloseTaskTimeout);
+						if (status == std::future_status::timeout) {
+							if (attempt == 1 || (attempt % 5) == 0 || attempt == kMaxAttempts) {
+								SKSE::log::warn(
+									"Close: UI task timeout after {}ms (attempt {}/{})",
+									kCloseTaskTimeout.count(),
+									attempt,
+									kMaxAttempts);
+							}
+							QueueForceHideFocusMenu();
+							QueueHideSkyrimCursor();
+							continue;
+						}
+
+						try {
+							const auto result = future.get();
+							if (result == CloseResult::kDone) {
+								return;
+							}
+						} catch (const std::future_error& e) {
+							SKSE::log::error("Close: future error while waiting for UI task: {}", e.what());
+							QueueForceHideFocusMenu();
+							QueueHideSkyrimCursor();
+							continue;
+						} catch (const std::exception& e) {
+							SKSE::log::error("Close: unexpected exception while waiting for UI task: {}", e.what());
+							QueueForceHideFocusMenu();
+							QueueHideSkyrimCursor();
+							continue;
 						}
 						// kRetry -> loop continues
 					}

@@ -14,6 +14,7 @@
 #include <charconv>
 #include <chrono>
 #include <cstdint>
+#include <exception>
 #include <string>
 #include <utility>
 #include <vector>
@@ -26,7 +27,14 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		json payload;
 		try {
 			payload = json::parse(argument ? argument : "{}");
-		} catch (...) {
+		} catch (const json::parse_error& e) {
+			SKSE::log::warn("Inventory request JSON parse error: {}", e.what());
+			return out;
+		} catch (const json::exception& e) {
+			SKSE::log::warn("Inventory request JSON exception: {}", e.what());
+			return out;
+		} catch (const std::exception& e) {
+			SKSE::log::warn("Inventory request unexpected exception: {}", e.what());
 			return out;
 		}
 
@@ -40,7 +48,10 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 				const auto clamped = std::clamp<std::int64_t>(v, 1, 500);
 				out.pageSize = static_cast<std::uint32_t>(clamped);
 			}
-		} catch (...) {
+		} catch (const json::exception& e) {
+			SKSE::log::warn("Inventory request field parse error: {}", e.what());
+		} catch (const std::exception& e) {
+			SKSE::log::warn("Inventory request field parse exception: {}", e.what());
 		}
 
 		return out;
@@ -76,7 +87,10 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 				}
 				return static_cast<RE::FormID>(value);
 			}
-		} catch (...) {
+		} catch (const json::exception& e) {
+			SKSE::log::warn("formId parse error: {}", e.what());
+		} catch (const std::exception& e) {
+			SKSE::log::warn("formId parse exception: {}", e.what());
 		}
 
 		return std::nullopt;
@@ -215,7 +229,16 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		json payload;
 		try {
 			payload = json::parse(argument ? argument : "{}");
-		} catch (...) {
+		} catch (const json::parse_error& e) {
+			SKSE::log::warn("Register item payload parse error: {}", e.what());
+			ShowToast("error", "Invalid JSON");
+			return;
+		} catch (const json::exception& e) {
+			SKSE::log::warn("Register item payload JSON exception: {}", e.what());
+			ShowToast("error", "Invalid JSON");
+			return;
+		} catch (const std::exception& e) {
+			SKSE::log::warn("Register item payload unexpected exception: {}", e.what());
 			ShowToast("error", "Invalid JSON");
 			return;
 		}

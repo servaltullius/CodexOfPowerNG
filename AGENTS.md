@@ -109,8 +109,10 @@ Expected outputs:
     - 인벤토리 목록은 **페이지네이션(기본 200개/페이지)** 으로 전송/렌더링합니다(대량 테이블 DOM 생성으로 인한 “10초 멈춤” 방지).
       - UI: Quick Register 탭의 페이지 크기(`100/200/300/400`) 선택 + `Prev/Next/Refresh` 버튼으로 페이지 이동
         - 행 클릭으로 선택 → `Enter`로 등록(또는 Register 버튼 클릭)하여 “클릭 타겟이 작다”는 체감을 완화합니다.
-      - C++: `player->GetInventory()`(비싼 맵 복사) 대신 `InventoryChanges->entryList` 순회로 목록을 구성합니다(루프에서 `GetItemCount()` 대신 `entry->countDelta` 사용).
-        - 전체 스캔으로 정확한 `total`을 계산하지 않고, **요청 페이지(offset 이후 pageSize)** 만 구성 + `hasMore` 플래그로 다음 페이지 존재 여부를 판단합니다(메인 스레드 스톨 완화). 따라서 `total`은 unknown(0)일 수 있습니다.
+      - C++: `player->GetInventory()`(비싼 맵 복사) 대신 `InventoryChanges->entryList`를 순회해 후보를 수집합니다.
+        - 각 후보의 표시/보호 로직은 `GetItemCount()` 기반 라이브 카운트를 사용합니다.
+        - 페이지 순서를 안정적으로 유지하기 위해 eligible 전체를 수집+정렬한 뒤 페이지를 잘라 반환합니다.
+        - 따라서 `total`은 현재 eligible 전체 개수를 정확히 제공합니다.
       - 요청 파라미터 `pageSize`는 1..500 범위로 클램프합니다.
     - UI가 열려있는 동안 커서/호버가 끊기는 느낌이 있으면:
       - Quick Register / Registered 테이블은 **가상 스크롤(virtualization)** 로 렌더링합니다(보이는 행만 DOM에 유지).
@@ -146,4 +148,47 @@ This section is generated. Re-run pinning to update.
 - (none matched this repo)
 <!-- skills-scout:end -->
 
+
+## Planning mode policy
+- 모든 작업은 시작 전에 반드시 Plan Mode에서 계획을 수립한다.
+- 구현/수정/실행(변경을 유발하는 작업)은 사용자가 명시적으로 "플랜 종료" 또는 "실행"을 지시한 후에만 진행한다.
+- 하나의 플랜이 완료되어도 자동 전환하지 않고, 다음 작업도 기본적으로 Plan Mode에서 시작한다.
+- 상위 시스템/플랫폼 정책이 강제하는 경우에는 해당 정책을 우선 적용한다.
+
+## Experimental Features (Codex)
+
+- Experimental toggles in `config.toml` control feature availability.
+- If enabled, the agent may use these features when relevant even if not explicitly listed in this repo file.
+- Usage policy still follows user request + AGENTS policy precedence.
+- `use_linux_sandbox_bwrap`: prefer on Linux for safer command isolation.
+- `multi_agent`: use only for independent parallel tasks (no shared state/conflicting edits).
+- `apps`: use only when installed/connected; prefer explicit user intent (for example `$AppName`).
+
 </INSTRUCTIONS>
+
+## Multi-agent Practical Ops (Recommended)
+
+<IMPORTANT>
+This section defines operational defaults so `multi_agent` is used aggressively where it helps, and avoided where it hurts.
+
+Decision rule:
+- Use multi-agent when there are 2+ independent tasks with no shared state, no file ownership conflict, and no strict ordering dependency.
+- Use single-agent when tasks are tightly coupled, touch the same files, or require sequential architecture decisions.
+
+Execution playbook:
+1) Triage first: split work into independent domains and identify shared-risk areas.
+2) Dispatch in parallel for exploration/investigation tasks.
+3) Dispatch in parallel for implementation only when modules are independent and ownership is explicit.
+4) Integrate under one owner agent to resolve conflicts and keep design consistency.
+5) Final verification stays single-owner: run full tests/lint/typecheck/build once after integration.
+
+Default operating stance:
+- Exploration/analysis phase: aggressively use multi-agent.
+- Implementation phase: use multi-agent only for independent modules.
+- Integration/verification phase: one owner agent finalizes.
+
+Guardrails:
+- Prefer a small number of focused agents over many broad agents.
+- If overlap is discovered mid-run, stop parallel edits and switch to single-owner integration.
+- Report per-agent outcomes and a single merged verification summary.
+</IMPORTANT>

@@ -9,6 +9,25 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.7-rc.12] - 2026-02-19 (Pre-release)
+
+### Fixed
+- Reward sync for capped ActorValues was hardened to avoid over-cap drift and over-correction after load/reload.
+- Added immediate cap-guard correction path when current value is detected above hard cap during sync.
+- Fixed settings payload/UI save handling so `rewardMultiplier = 0` is preserved (no unintended fallback to `1.0`).
+- Improved Prisma UI close retry behavior to continue cleanup/retry when UI task enqueue fails.
+- Resolved WSL cross-build include path issue by ensuring multiarch glibc headers are available in generated clang-cl flags.
+
+### Changed
+- Added conservative capped sync helper and expanded carry-weight/capped sync test coverage.
+- Split C++ test target build from release builds via `COPNG_BUILD_CPP_TEST_TARGETS` preset control.
+- Updated runtime docs to match actual quick-register pagination/counting behavior.
+- Added stricter JSON parse diagnostics in settings/request payload handlers.
+
+### Notes
+- This pre-release focuses on sync/cap correctness and build/release reliability.
+- Save compatibility policy remains unchanged: Codex of Power / SVCollection is not compatible.
+
 ## [1.0.7-rc.11] - 2026-02-19 (Pre-release)
 
 ### Changed
@@ -114,7 +133,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.6...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.7-rc.12...HEAD
+[1.0.7-rc.12]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.12
 [1.0.7-rc.11]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.11
 [1.0.7-rc.10]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.10
 [1.0.6]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.5...v1.0.6

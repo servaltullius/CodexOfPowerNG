@@ -1,6 +1,10 @@
 #include "PrismaUISettingsInternal.h"
 
+#include <RE/Skyrim.h>
+#include <SKSE/Logger.h>
+
 #include <cmath>
+#include <exception>
 
 namespace CodexOfPowerNG::PrismaUIManager::Internal
 {
@@ -56,7 +60,10 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 				if (auto it = j.find("allowSkillRewards"); it != j.end() && it->is_boolean()) {
 					base.allowSkillRewards = it->get<bool>();
 				}
-			} catch (...) {
+			} catch (const json::exception& e) {
+				SKSE::log::warn("Settings payload field parse error: {}", e.what());
+			} catch (const std::exception& e) {
+				SKSE::log::warn("Settings payload field parse exception: {}", e.what());
 			}
 			return base;
 		}
@@ -85,7 +92,14 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		json payload;
 		try {
 			payload = json::parse(argument ? argument : "{}");
-		} catch (...) {
+		} catch (const json::parse_error& e) {
+			SKSE::log::warn("Settings payload JSON parse error: {}", e.what());
+			return std::nullopt;
+		} catch (const json::exception& e) {
+			SKSE::log::warn("Settings payload JSON exception: {}", e.what());
+			return std::nullopt;
+		} catch (const std::exception& e) {
+			SKSE::log::warn("Settings payload unexpected exception: {}", e.what());
 			return std::nullopt;
 		}
 

@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+option(COPNG_BUILD_CPP_TEST_TARGETS "Build standalone C++ test executables for ctest" OFF)
+
 if(MSVC)
   add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
   add_compile_options(/permissive- /Zc:__cplusplus /EHsc)
@@ -93,3 +95,37 @@ install(
   DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/PrismaUI/views/codexofpowerng"
   DESTINATION "PrismaUI/views"
 )
+
+if(COPNG_BUILD_CPP_TEST_TARGETS)
+  enable_testing()
+  file(GLOB COPNG_CPP_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp")
+
+  foreach(test_src IN LISTS COPNG_CPP_TEST_SOURCES)
+    get_filename_component(test_name "${test_src}" NAME_WE)
+    string(REGEX REPLACE "[^A-Za-z0-9_]" "_" test_target_suffix "${test_name}")
+    set(test_target "${PROJECT_NAME}_${test_target_suffix}")
+
+    add_executable("${test_target}" "${test_src}")
+    target_include_directories("${test_target}"
+      PRIVATE
+        "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    )
+
+    if(MSVC)
+      target_compile_definitions("${test_target}" PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
+      target_compile_options("${test_target}" PRIVATE /permissive- /Zc:__cplusplus /EHsc)
+    endif()
+
+    if(CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
+      find_program(WINE_EXECUTABLE wine)
+      if(WINE_EXECUTABLE)
+        add_test(NAME "${test_name}" COMMAND "${WINE_EXECUTABLE}" "$<TARGET_FILE:${test_target}>")
+      else()
+        message(WARNING "wine not found; running ${test_name} directly may fail in cross-compile environments")
+        add_test(NAME "${test_name}" COMMAND "$<TARGET_FILE:${test_target}>")
+      endif()
+    else()
+      add_test(NAME "${test_name}" COMMAND "$<TARGET_FILE:${test_target}>")
+    endif()
+  endforeach()
+endif()

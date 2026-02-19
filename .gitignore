@@ -11,3 +11,9 @@ worktrees/
 .idea/
 .idea.backup*/
 releases/*.zip
+
+# vibe-kit
+.vibe/db/
+.vibe/reports/
+.vibe/locks/
+.vibe/context/LATEST_CONTEXT.md

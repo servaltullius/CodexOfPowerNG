@@ -9,6 +9,17 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.7-rc.13] - 2026-02-19 (Pre-release)
+
+### Fixed
+- Carry weight reward sync now applies immediately when a non-trivial carry delta is detected during load-time sync passes.
+- Added post-load/new-game carry-weight quick resync scheduling to reduce timing-sensitive load desync cases.
+- Added regression coverage for the load scenario where state contains carry bonus but actor snapshots still report base values.
+
+### Notes
+- This pre-release specifically targets the reported “carry weight bonus not reflected after loading save” symptom.
+- Save compatibility policy is unchanged: Codex of Power / SVCollection is not compatible.
+
 ## [1.0.7-rc.12] - 2026-02-19 (Pre-release)
 
 ### Fixed
@@ -133,7 +144,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.7-rc.12...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.7-rc.13...HEAD
+[1.0.7-rc.13]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.13
 [1.0.7-rc.12]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.12
 [1.0.7-rc.11]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.11
 [1.0.7-rc.10]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.10

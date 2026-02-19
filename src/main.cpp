@@ -225,6 +225,7 @@ namespace CodexOfPowerNG
 			Events::Install();
 			Events::OnGameLoaded();
 			Rewards::SyncRewardTotalsToPlayer();
+			Rewards::ScheduleCarryWeightQuickResync();
 			NotifyLegacyResidueIfNeeded();
 			break;
 		default:

@@ -341,6 +341,9 @@ namespace CodexOfPowerNG::Rewards
 				bool forceImmediate = false;
 				if (av == RE::ActorValue::kCarryWeight) {
 					delta = ComputeCarryWeightSyncDelta(base, cur, permanent, permanentModifier, total);
+					// Carry weight desync on load is high-impact in gameplay.
+					// Apply immediately when a non-trivial delta is observed.
+					forceImmediate = std::abs(delta) > kRewardCapEpsilon;
 				} else if (hasRewardCap) {
 					delta = ComputeCappedRewardSyncDeltaFromSnapshot(
 						base,

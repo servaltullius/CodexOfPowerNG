@@ -110,6 +110,15 @@ int main()
 			7.0f,
 			5.0f),
 		0.0f);
+	// Load-time regression: state has +5 but actor snapshots all still at base.
+	AssertNear(
+		ComputeCarryWeightSyncDelta(
+			300.0f,  // base
+			300.0f,  // current
+			300.0f,  // permanent
+			0.0f,    // permanent mod
+			5.0f),   // expected reward total
+		5.0f);
 
 	// Capped AV conservative policy:
 	// when current already exceeds hard cap, force immediate downward correction.

@@ -14,6 +14,7 @@
 #include <RE/Skyrim.h>
 
 #include <RE/M/Misc.h>
+#include <RE/T/TESObjectWEAP.h>
 
 #include <SKSE/Logger.h>
 
@@ -52,6 +53,7 @@ namespace CodexOfPowerNG::Rewards
 			std::unordered_map<RE::ActorValue, std::uint32_t, ActorValueHash> missingStreaks;
 			std::unordered_set<RE::ActorValue, ActorValueHash>                nonConvergingActorValues;
 			bool normalizeCapsOnFirstPass{ true };
+			bool weaponAbilityRefreshRequested{ false };
 			std::uint64_t generation{ 0 };
 			std::uint64_t readinessDeadlineMs{ 0 };
 		};
@@ -122,6 +124,51 @@ namespace CodexOfPowerNG::Rewards
 			return main->gameActive;
 		}
 
+		[[nodiscard]] RE::ExtraDataList* PickFirstExtraDataList(RE::InventoryEntryData* entry) noexcept
+		{
+			if (!entry || !entry->extraLists) {
+				return nullptr;
+			}
+
+			for (auto* extraData : *entry->extraLists) {
+				if (extraData) {
+					return extraData;
+				}
+			}
+
+			return nullptr;
+		}
+
+		void RefreshEquippedWeaponAbilityForHand(RE::Actor* actor, bool leftHand) noexcept
+		{
+			if (!actor) {
+				return;
+			}
+
+			auto* equippedForm = actor->GetEquippedObject(leftHand);
+			if (!equippedForm) {
+				return;
+			}
+			if (!equippedForm->As<RE::TESObjectWEAP>()) {
+				return;
+			}
+
+			auto* entry = actor->GetEquippedEntryData(leftHand);
+			auto* extraData = PickFirstExtraDataList(entry);
+			actor->UpdateWeaponAbility(equippedForm, extraData, leftHand);
+		}
+
+		void RefreshEquippedWeaponAbilities() noexcept
+		{
+			auto* player = RE::PlayerCharacter::GetSingleton();
+			if (!player) {
+				return;
+			}
+
+			RefreshEquippedWeaponAbilityForHand(player, false);
+			RefreshEquippedWeaponAbilityForHand(player, true);
+		}
+
 		void CompleteRewardSyncRun(std::uint64_t generation) noexcept
 		{
 			if (!IsCurrentSyncGeneration(generation)) {
@@ -130,6 +177,23 @@ namespace CodexOfPowerNG::Rewards
 			g_rewardSyncScheduled.store(false, std::memory_order_release);
 			g_rewardSyncRerunRequested.store(false, std::memory_order_release);
 			g_rewardSyncScheduledSinceMs.store(0, std::memory_order_release);
+		}
+
+		void FinalizeRewardSyncRun(std::shared_ptr<RewardSyncPassState> passState) noexcept
+		{
+			if (!passState) {
+				return;
+			}
+			if (!IsCurrentSyncGeneration(passState->generation)) {
+				return;
+			}
+
+			if (passState->weaponAbilityRefreshRequested) {
+				RefreshEquippedWeaponAbilities();
+				SKSE::log::info("Reward sync: refreshed equipped weapon ability after attack damage sync");
+			}
+
+			CompleteRewardSyncRun(passState->generation);
 		}
 
 		[[nodiscard]] float SnapshotRewardTotalForActorValue(RE::ActorValue av) noexcept
@@ -510,6 +574,9 @@ namespace CodexOfPowerNG::Rewards
 
 				avOwner->ModActorValue(av, delta);
 				++corrected;
+				if (av == RE::ActorValue::kAttackDamageMult) {
+					passState.weaponAbilityRefreshRequested = true;
+				}
 
 				const auto postSnapshot = CaptureRewardActorSnapshot(player, avOwner, av, total);
 				float postDelta = 0.0f;
@@ -610,6 +677,7 @@ namespace CodexOfPowerNG::Rewards
 				if (g_rewardSyncRerunRequested.exchange(false, std::memory_order_acq_rel)) {
 					g_rewardSyncScheduledSinceMs.store(NowMs(), std::memory_order_release);
 					auto rerunPassState = std::make_shared<RewardSyncPassState>();
+					rerunPassState->weaponAbilityRefreshRequested = passState->weaponAbilityRefreshRequested;
 					rerunPassState->generation = passState->generation;
 					if (QueueMainTask([rerunPassState]() { RunRewardSyncPasses(rerunPassState, kRewardSyncPassCount); })) {
 						return;
@@ -618,7 +686,7 @@ namespace CodexOfPowerNG::Rewards
 					return;
 				}
 
-				CompleteRewardSyncRun(passState->generation);
+				FinalizeRewardSyncRun(passState);
 				return;
 			}
 
@@ -638,9 +706,9 @@ namespace CodexOfPowerNG::Rewards
 				}
 				(void)ApplyRewardSyncPass(*passState);
 			}
-			CompleteRewardSyncRun(passState->generation);
+			FinalizeRewardSyncRun(passState);
 		}
-	}
+		}
 
 	void MaybeGrantRegistrationReward(std::uint32_t group, std::int32_t totalRegistered) noexcept
 	{
@@ -693,6 +761,8 @@ namespace CodexOfPowerNG::Rewards
 		g_rewardSyncScheduledSinceMs.store(nowMs, std::memory_order_release);
 		auto passState = std::make_shared<RewardSyncPassState>();
 		passState->generation = generation;
+		passState->weaponAbilityRefreshRequested =
+			std::abs(SnapshotRewardTotalForActorValue(RE::ActorValue::kAttackDamageMult)) > kRewardCapEpsilon;
 
 		if (QueueMainTask([passState]() { RunRewardSyncPasses(passState, kRewardSyncPassCount); })) {
 			return;

@@ -84,4 +84,7 @@ test("reward sync runtime protects load boundary and readiness retries", () => {
   assert.match(src, /kCarryWeightQuickResyncReadinessTimeoutMs = 10000/);
   assert.match(src, /if \(!IsRewardSyncEnvironmentReady\(\)\)/);
   assert.match(src, /watchdog: force restarting stale sync worker \(generation \{\}\)/);
+  assert.match(src, /weaponAbilityRefreshRequested/);
+  assert.match(src, /UpdateWeaponAbility\(/);
+  assert.match(src, /RefreshEquippedWeaponAbilities\(\)/);
 });

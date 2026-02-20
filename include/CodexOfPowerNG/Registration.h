@@ -1,5 +1,7 @@
 #pragma once
 
+#include "CodexOfPowerNG/RegistrationUndoTypes.h"
+
 #include <RE/Skyrim.h>
 
 #include <cstdint>
@@ -37,6 +39,26 @@ namespace CodexOfPowerNG::Registration
 		std::size_t     totalRegistered{ 0 };
 	};
 
+	struct UndoListItem
+	{
+		std::uint64_t actionId{ 0 };
+		RE::FormID    formId{ 0 };
+		RE::FormID    regKey{ 0 };
+		std::uint32_t group{ 255 };
+		bool          canUndo{ false };
+		bool          hasRewardDelta{ false };
+		std::string   name;
+	};
+
+	struct UndoResult
+	{
+		bool            success{ false };
+		std::string     message;
+		std::uint64_t   actionId{ 0 };
+		RE::FormID      regKey{ 0 };
+		std::size_t     totalRegistered{ 0 };
+	};
+
 	[[nodiscard]] std::uint32_t GetDiscoveryGroup(const RE::TESForm* item) noexcept;
 	[[nodiscard]] std::string   GetDiscoveryGroupName(std::uint32_t group);
 
@@ -60,6 +82,13 @@ namespace CodexOfPowerNG::Registration
 
 	// Registers an inventory item (consumes 1) and updates co-save state.
 	[[nodiscard]] RegisterResult TryRegisterItem(RE::FormID formId);
+
+	// Returns recent registration actions (newest first).
+	[[nodiscard]] std::vector<UndoListItem> BuildRecentUndoList(std::size_t limit = kUndoHistoryLimit);
+
+	// Undoes the latest registration action by actionId.
+	// Safety policy: only the newest action can be undone.
+	[[nodiscard]] UndoResult TryUndoRegistration(std::uint64_t actionId);
 
 	// Whether TCC LOTD tracking lists (dbmMaster/dbmDisp) are currently available.
 	[[nodiscard]] bool IsTccDisplayedListsAvailable() noexcept;

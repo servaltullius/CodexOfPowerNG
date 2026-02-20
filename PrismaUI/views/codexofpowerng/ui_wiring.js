@@ -42,9 +42,11 @@
     });
     const scheduleRenderQuick = asFn(options.scheduleRenderQuick, noop);
     const scheduleRenderRegistered = asFn(options.scheduleRenderRegistered, noop);
+    const renderUndo = asFn(options.renderUndo, noop);
     const scheduleVirtualRender = asFn(options.scheduleVirtualRender, noop);
     const renderRewards = asFn(options.renderRewards, noop);
     const onQuickBodyClick = asFn(options.onQuickBodyClick, noop);
+    const onUndoBodyClick = asFn(options.onUndoBodyClick, noop);
     const onSaveSettings = asFn(options.onSaveSettings, noop);
     const updateToggleKeyResolved = asFn(options.updateToggleKeyResolved, noop);
     const setCaptureToggleKey = asFn(options.setCaptureToggleKey, noop);
@@ -70,6 +72,7 @@
 
     const rootScrollEl = options.rootScrollEl || byId(doc, "root");
     const quickBody = options.quickBody || byId(doc, "quickBody");
+    const undoBody = options.undoBody || byId(doc, "undoBody");
     const rewardCharacterImgEl = options.rewardCharacterImgEl || byId(doc, "rewardCharacterImg");
     const invPageSizeEl = options.invPageSizeEl || byId(doc, "invPageSize");
     const btnInvPrev = options.btnInvPrev || byId(doc, "btnInvPrev");
@@ -142,6 +145,10 @@
     addListener(byId(doc, "btnRefreshReg"), "click", function () {
       safeCall("copng_requestRegistered", {});
     });
+    addListener(byId(doc, "btnRefreshUndo"), "click", function () {
+      safeCall("copng_requestUndoList", {});
+      renderUndo();
+    });
     addListener(byId(doc, "btnRefreshRewards"), "click", function () {
       safeCall("copng_requestRewards", {});
     });
@@ -178,6 +185,9 @@
 
     if (quickBody) {
       addListener(quickBody, "click", onQuickBodyClick);
+    }
+    if (undoBody) {
+      addListener(undoBody, "click", onUndoBodyClick);
     }
 
     addListener(byId(doc, "btnReloadSettings"), "click", function () {

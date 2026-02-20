@@ -125,3 +125,20 @@ test("arrow down cycles quick selection and schedules virtual render", () => {
   assert.equal(scheduled, 1);
   assert.equal(keyNavRaf, 0);
 });
+
+test("numeric shortcuts switch tabs including undo tab", () => {
+  const tabs = [];
+  const handler = mod.createKeydownHandler({
+    KC: {},
+    setTab: (tabId) => tabs.push(tabId),
+    documentObj: { querySelector: () => ({ id: "tabQuick" }), getElementById: () => null },
+  });
+
+  handler({ key: "1", code: "Digit1", keyCode: 49, target: { tagName: "DIV", isContentEditable: false } });
+  handler({ key: "2", code: "Digit2", keyCode: 50, target: { tagName: "DIV", isContentEditable: false } });
+  handler({ key: "3", code: "Digit3", keyCode: 51, target: { tagName: "DIV", isContentEditable: false } });
+  handler({ key: "4", code: "Digit4", keyCode: 52, target: { tagName: "DIV", isContentEditable: false } });
+  handler({ key: "5", code: "Digit5", keyCode: 53, target: { tagName: "DIV", isContentEditable: false } });
+
+  assert.deepEqual(tabs, ["tabQuick", "tabRegistered", "tabUndo", "tabRewards", "tabSettings"]);
+});

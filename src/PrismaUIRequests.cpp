@@ -49,6 +49,12 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			QueueSendRewards();
 		}
 
+		void OnJsRequestUndoList(const char* /*argument*/) noexcept
+		{
+			SKSE::log::info("JS requested undo list");
+			QueueSendUndoList();
+		}
+
 		void OnJsGetSettings(const char* /*argument*/) noexcept
 		{
 			SKSE::log::info("JS requested settings");
@@ -64,6 +70,11 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		{
 			HandleRegisterItemRequest(argument);
 		}
+
+		void OnJsUndoRegisterItem(const char* argument) noexcept
+		{
+			HandleUndoRegisterRequest(argument);
+		}
 	}
 
 	void RegisterCoreJSListeners(PRISMA_UI_API::IVPrismaUI1* api, std::uint64_t view) noexcept
@@ -78,8 +89,10 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		api->RegisterJSListener(view, "copng_requestInventory", OnJsRequestInventory);
 		api->RegisterJSListener(view, "copng_requestRegistered", OnJsRequestRegistered);
 		api->RegisterJSListener(view, "copng_requestRewards", OnJsRequestRewards);
+		api->RegisterJSListener(view, "copng_requestUndoList", OnJsRequestUndoList);
 		api->RegisterJSListener(view, "copng_getSettings", OnJsGetSettings);
 		api->RegisterJSListener(view, "copng_refundRewards", OnJsRefundRewards);
 		api->RegisterJSListener(view, "copng_registerItem", OnJsRegisterItem);
+		api->RegisterJSListener(view, "copng_undoRegisterItem", OnJsUndoRegisterItem);
 	}
 }

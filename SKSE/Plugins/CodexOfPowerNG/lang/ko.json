@@ -74,7 +74,13 @@
     "totalPrefix": "총 ",
     "totalSuffix": "개",
     "registerLotdNotDisplayed": "힘의 도감: 등록 불가(LOTD 전시 미완료)",
-    "registerLotdGateUnavailable": "힘의 도감: 등록 불가(LOTD 게이트 확인 불가 - TCC 설치/로드순서 확인)"
+    "registerLotdGateUnavailable": "힘의 도감: 등록 불가(LOTD 게이트 확인 불가 - TCC 설치/로드순서 확인)",
+    "undoOkPrefix": "되돌림: ",
+    "undoOnlyLatest": "힘의 도감: 되돌리기는 최신 등록 1건만 가능합니다",
+    "undoMissingRegistration": "힘의 도감: 되돌리기 실패(등록 기록 없음)",
+    "undoPlayerUnavailable": "힘의 도감: 되돌리기 실패(플레이어 없음)",
+    "undoItemMissing": "힘의 도감: 되돌리기 실패(아이템 폼 없음)",
+    "undoRestoreFailed": "힘의 도감: 되돌리기 실패(아이템 복구 불가)"
   },
   "av": {
     "health": "체력",

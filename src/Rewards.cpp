@@ -906,4 +906,68 @@ namespace CodexOfPowerNG::Rewards
 
 		return cleared;
 	}
+
+	std::size_t RollbackRewardDeltas(const std::vector<Registration::RewardDelta>& deltas) noexcept
+	{
+		if (deltas.empty()) {
+			return 0;
+		}
+
+		auto* player = RE::PlayerCharacter::GetSingleton();
+		if (!player) {
+			return 0;
+		}
+		auto* avOwner = player->AsActorValueOwner();
+		if (!avOwner) {
+			return 0;
+		}
+
+		std::vector<Registration::RewardDelta> actorAdjustments;
+		actorAdjustments.reserve(deltas.size());
+
+		{
+			auto& state = GetState();
+			std::scoped_lock lock(state.mutex);
+
+			for (const auto& deltaEntry : deltas) {
+				const auto av = deltaEntry.av;
+				const auto delta = deltaEntry.delta;
+				if (std::abs(delta) <= kRewardCapEpsilon) {
+					continue;
+				}
+
+				const auto it = state.rewardTotals.find(av);
+				if (it == state.rewardTotals.end()) {
+					continue;
+				}
+
+				const float previousTotal = it->second;
+				const float next = ClampRewardTotal(av, previousTotal - delta);
+				const float appliedActorDelta = next - previousTotal;
+				if (std::abs(next) <= kRewardCapEpsilon) {
+					state.rewardTotals.erase(it);
+				} else {
+					it->second = next;
+				}
+
+				if (std::abs(appliedActorDelta) > kRewardCapEpsilon) {
+					actorAdjustments.push_back(Registration::RewardDelta{ av, appliedActorDelta });
+				}
+			}
+		}
+
+		bool carryWeightTouched = false;
+		for (const auto& adjustment : actorAdjustments) {
+			avOwner->ModActorValue(adjustment.av, adjustment.delta);
+			if (adjustment.av == RE::ActorValue::kCarryWeight) {
+				carryWeightTouched = true;
+			}
+		}
+
+		if (carryWeightTouched) {
+			ScheduleCarryWeightQuickResync();
+		}
+
+		return actorAdjustments.size();
+	}
 }

@@ -24,6 +24,9 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 	[[nodiscard]] json BuildRegisteredPayload(
 		const std::vector<Registration::ListItem>& items) noexcept;
 
+	[[nodiscard]] json BuildUndoPayload(
+		const std::vector<Registration::UndoListItem>& items) noexcept;
+
 	[[nodiscard]] json BuildRewardTotalsArray(
 		const std::vector<std::pair<RE::ActorValue, float>>& totals,
 		bool useL10n) noexcept;

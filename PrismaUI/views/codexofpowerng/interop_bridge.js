@@ -75,6 +75,7 @@
     const onInventory = asFn(options.onInventory, noop);
     const onRegistered = asFn(options.onRegistered, noop);
     const onRewards = asFn(options.onRewards, noop);
+    const onUndoList = asFn(options.onUndoList, noop);
     const onSettings = asFn(options.onSettings, noop);
     const onToast = asFn(options.onToast, noop);
 
@@ -83,6 +84,7 @@
       setInventory: win.copng_setInventory,
       setRegistered: win.copng_setRegistered,
       setRewards: win.copng_setRewards,
+      setUndoList: win.copng_setUndoList,
       setSettings: win.copng_setSettings,
       toast: win.copng_toast,
     };
@@ -105,6 +107,11 @@
       onRewards(parseJsonPayload(jsonStr, { totals: [] }));
     };
 
+    win.copng_setUndoList = (jsonStr) => {
+      const payload = parseJsonPayload(jsonStr, []);
+      onUndoList(normalizeArrayPayload(payload));
+    };
+
     win.copng_setSettings = (jsonStr) => {
       onSettings(parseJsonPayload(jsonStr, null));
     };
@@ -118,6 +125,7 @@
       win.copng_setInventory = prev.setInventory;
       win.copng_setRegistered = prev.setRegistered;
       win.copng_setRewards = prev.setRewards;
+      win.copng_setUndoList = prev.setUndoList;
       win.copng_setSettings = prev.setSettings;
       win.copng_toast = prev.toast;
     };

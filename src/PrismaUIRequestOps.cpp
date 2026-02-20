@@ -96,6 +96,39 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		return std::nullopt;
 	}
 
+	std::optional<std::uint64_t> ParseActionIdFromJson(const json& j) noexcept
+	{
+		try {
+			if (j.is_number_unsigned()) {
+				return j.get<std::uint64_t>();
+			}
+			if (j.is_number_integer()) {
+				const auto v = j.get<std::int64_t>();
+				if (v < 0) {
+					return std::nullopt;
+				}
+				return static_cast<std::uint64_t>(v);
+			}
+			if (j.is_string()) {
+				const auto s = j.get<std::string>();
+				std::uint64_t value{};
+				const auto* begin = s.data();
+				const auto* end = s.data() + s.size();
+				auto [ptr, ec] = std::from_chars(begin, end, value, 10);
+				if (ec != std::errc{} || ptr != end) {
+					return std::nullopt;
+				}
+				return value;
+			}
+		} catch (const json::exception& e) {
+			SKSE::log::warn("actionId parse error: {}", e.what());
+		} catch (const std::exception& e) {
+			SKSE::log::warn("actionId parse exception: {}", e.what());
+		}
+
+		return std::nullopt;
+	}
+
 	void QueueSendInventory(InventoryRequest req) noexcept
 	{
 		if (QueueMainTask([req]() {
@@ -205,6 +238,21 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		SendJS("copng_setRewards", buildRewardsJson(registeredCount, totals, false));
 	}
 
+	void QueueSendUndoList() noexcept
+	{
+		if (QueueMainTask([]() {
+				auto items = Registration::BuildRecentUndoList();
+				(void)QueueUITask([items = std::move(items)]() mutable {
+					SendJS("copng_setUndoList", PrismaUIPayloads::BuildUndoPayload(items));
+				});
+			})) {
+			return;
+		}
+
+		auto items = Registration::BuildRecentUndoList();
+		SendJS("copng_setUndoList", PrismaUIPayloads::BuildUndoPayload(items));
+	}
+
 	void HandleRefundRewardsRequest() noexcept
 	{
 		if (QueueMainTask([]() {
@@ -273,6 +321,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 					QueueSendInventory(InventoryRequest{});
 					QueueSendRegistered();
 					QueueSendRewards();
+					QueueSendUndoList();
 				});
 			})) {
 			return;
@@ -291,5 +340,77 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		QueueSendInventory(InventoryRequest{});
 		QueueSendRegistered();
 		QueueSendRewards();
+		QueueSendUndoList();
+	}
+
+	void HandleUndoRegisterRequest(const char* argument) noexcept
+	{
+		json payload;
+		try {
+			payload = json::parse(argument ? argument : "{}");
+		} catch (const json::parse_error& e) {
+			SKSE::log::warn("Undo payload parse error: {}", e.what());
+			ShowToast("error", "Invalid JSON");
+			return;
+		} catch (const json::exception& e) {
+			SKSE::log::warn("Undo payload JSON exception: {}", e.what());
+			ShowToast("error", "Invalid JSON");
+			return;
+		} catch (const std::exception& e) {
+			SKSE::log::warn("Undo payload unexpected exception: {}", e.what());
+			ShowToast("error", "Invalid JSON");
+			return;
+		}
+
+		const auto actionIdIt = payload.find("actionId");
+		if (actionIdIt == payload.end()) {
+			ShowToast("error", "Missing actionId");
+			return;
+		}
+
+		const auto actionIdOpt = ParseActionIdFromJson(*actionIdIt);
+		if (!actionIdOpt) {
+			ShowToast("error", "Invalid actionId");
+			return;
+		}
+
+		const auto actionId = *actionIdOpt;
+		SKSE::log::info("JS requested undo register item (actionId: {})", actionId);
+
+		if (QueueMainTask([actionId]() {
+				const auto res = Registration::TryUndoRegistration(actionId);
+				(void)QueueUITask([res]() {
+					SKSE::log::info(
+						"Undo register result: success={} actionId={} regKey=0x{:08X} total={} msg='{}'",
+						res.success,
+						res.actionId,
+						static_cast<std::uint32_t>(res.regKey),
+						res.totalRegistered,
+						res.message);
+					ShowToast(res.success ? "info" : "error", res.message);
+					SendStateToUI();
+					QueueSendInventory(InventoryRequest{});
+					QueueSendRegistered();
+					QueueSendRewards();
+					QueueSendUndoList();
+				});
+			})) {
+			return;
+		}
+
+		const auto res = Registration::TryUndoRegistration(actionId);
+		SKSE::log::info(
+			"Undo register result (sync): success={} actionId={} regKey=0x{:08X} total={} msg='{}'",
+			res.success,
+			res.actionId,
+			static_cast<std::uint32_t>(res.regKey),
+			res.totalRegistered,
+			res.message);
+		ShowToast(res.success ? "info" : "error", res.message);
+		SendStateToUI();
+		QueueSendInventory(InventoryRequest{});
+		QueueSendRegistered();
+		QueueSendRewards();
+		QueueSendUndoList();
 	}
 }

@@ -317,6 +317,9 @@
       #tabRegistered tbody tr.dataRow {
         height: calc(54px * var(--uiScale));
       }
+      #tabUndo tbody tr.dataRow {
+        height: calc(62px * var(--uiScale));
+      }
       #tabQuick td:nth-child(2) {
         overflow: hidden;
       }
@@ -333,7 +336,8 @@
       #tabRegistered td:nth-child(2) {
         overflow: hidden;
       }
-      #tabRegistered .itemName {
+      #tabRegistered .itemName,
+      #tabUndo .itemName {
         display: block;
         white-space: nowrap;
         overflow: hidden;
@@ -613,6 +617,7 @@
       <div class="tabs">
         <button class="active" data-tab="tabQuick"><span class="btnLabel" data-i18n="tab.quick">Quick Register</span></button>
         <button data-tab="tabRegistered"><span class="btnLabel" data-i18n="tab.registered">Registered</span></button>
+        <button data-tab="tabUndo"><span class="btnLabel" data-i18n="tab.undo">Undo</span></button>
         <button data-tab="tabRewards"><span class="btnLabel" data-i18n="tab.rewards">Rewards</span></button>
         <button data-tab="tabSettings"><span class="btnLabel" data-i18n="tab.settings">Settings</span></button>
       </div>
@@ -670,6 +675,31 @@
           </thead>
           <tbody id="regBody"></tbody>
         </table>
+      </div>
+
+      <div class="card section" id="tabUndo">
+        <div class="toolbar">
+          <div class="left">
+            <span class="pill" id="undoMeta" data-i18n="undo.meta">Recent registrations (latest first)</span>
+          </div>
+          <div class="left">
+            <button id="btnRefreshUndo"><span class="btnLabel" data-i18n="btn.refresh">Refresh</span></button>
+          </div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th class="colGroup" data-i18n="th.group">Group</th>
+              <th data-i18n="th.item">Item</th>
+              <th class="colFormId mono">FormID</th>
+              <th class="colAction"></th>
+            </tr>
+          </thead>
+          <tbody id="undoBody"></tbody>
+        </table>
+        <div class="small" style="margin-top: 10px" data-i18n="undo.help">
+          Up to 10 recent registrations are shown. To keep rewards consistent, only the latest entry can be undone.
+        </div>
       </div>
 
       <div class="card section" id="tabRewards">
@@ -931,6 +961,8 @@
       const btnInvPrev = document.getElementById("btnInvPrev");
       const btnInvNext = document.getElementById("btnInvNext");
       const regBody = document.getElementById("regBody");
+      const undoBody = document.getElementById("undoBody");
+      const undoMetaEl = document.getElementById("undoMeta");
       const rewardsBody = document.getElementById("rewardsBody");
       const rewardMeta = document.getElementById("rewardMeta");
       const rewardOrbitEl = document.getElementById("rewardOrbit");
@@ -953,12 +985,14 @@
           "btn.prev": "Prev",
           "btn.next": "Next",
           "btn.register": "Register",
+          "btn.undo": "Undo",
           "btn.refund": "Refund",
           "btn.reload": "Reload",
           "btn.save": "Save",
           "btn.bindKey": "Bind…",
           "tab.quick": "Quick Register",
           "tab.registered": "Registered",
+          "tab.undo": "Undo",
           "tab.rewards": "Rewards",
           "tab.settings": "Settings",
           "placeholder.search": "Search...",
@@ -974,6 +1008,12 @@
           "rewards.imageMissing": "Character image missing: assets/character.png",
           "rewards.orbitHelp": "Top reward effects are shown around the character.",
           "rewards.more": "+{n} more",
+          "undo.meta": "Recent registrations (latest first)",
+          "undo.help": "Up to 10 recent registrations are shown. To keep rewards consistent, only the latest entry can be undone.",
+          "undo.none": "(No recent registrations)",
+          "undo.onlyLatest": "Latest only",
+          "undo.rewarded": "rewarded",
+          "undo.noReward": "no reward",
           "quick.help":
             "Only shows items safe to consume (not worn; optionally not favorited). List is paginated to avoid stutter. Click a row to select, then press Enter to register.",
           "rewards.help": "Refund removes only recorded bonus stats. It does not restore consumed items and does not clear registrations.",
@@ -1070,12 +1110,14 @@
           "btn.prev": "이전",
           "btn.next": "다음",
           "btn.register": "등록",
+          "btn.undo": "되돌리기",
           "btn.refund": "환불",
           "btn.reload": "다시 불러오기",
           "btn.save": "저장",
           "btn.bindKey": "키 지정…",
           "tab.quick": "빠른 등록",
           "tab.registered": "등록됨",
+          "tab.undo": "되돌리기",
           "tab.rewards": "보상",
           "tab.settings": "설정",
           "placeholder.search": "검색...",
@@ -1091,6 +1133,12 @@
           "rewards.imageMissing": "캐릭터 이미지 없음: assets/character.png",
           "rewards.orbitHelp": "상위 보상 효과를 캐릭터 주변에 표시합니다.",
           "rewards.more": "+{n}개 더",
+          "undo.meta": "최근 등록 내역 (최신순)",
+          "undo.help": "최근 등록 10개까지 표시됩니다. 보상 일관성을 위해 최신 항목만 되돌릴 수 있습니다.",
+          "undo.none": "(최근 등록 내역이 없습니다)",
+          "undo.onlyLatest": "최신만 가능",
+          "undo.rewarded": "보상 있음",
+          "undo.noReward": "보상 없음",
           "quick.help":
             "소비해도 안전한 아이템만 표시합니다(착용 중 제외, 즐겨찾기 보호는 설정). 렉 방지를 위해 페이지네이션됩니다. 행을 클릭해 선택한 뒤 Enter로 등록할 수 있습니다.",
           "rewards.help": "환불은 기록된 보너스 스탯만 제거합니다. 소비한 아이템은 복구되지 않으며, 등록 기록도 지워지지 않습니다.",
@@ -1220,6 +1268,7 @@
         // Dynamic labels (not driven by data-i18n)
         syncLangDropdown();
         updateToggleKeyResolved();
+        renderUndo();
         renderRewards();
       }
 
@@ -1240,6 +1289,7 @@
       let quickVisibleIds = [];
       const quickVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
       let registered = [];
+      let undoItems = [];
       const regVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
       let rewards = { totals: [] };
       let settings = null;
@@ -1778,6 +1828,41 @@
         scheduleVirtualRender({ force: true });
       }
 
+      function renderUndo() {
+        if (!undoBody) return;
+        const rows = Array.isArray(undoItems) ? undoItems : [];
+
+        if (undoMetaEl) {
+          undoMetaEl.textContent = `${t("undo.meta", "Recent registrations (latest first)")} (${rows.length}/${10})`;
+        }
+
+        undoBody.innerHTML =
+          rows.length === 0
+            ? `<tr><td colspan="4" class="small">${escapeHtml(t("undo.none", "(No recent registrations)"))}</td></tr>`
+            : rows
+                .map((it, idx) => {
+                  const actionId = Number(it.actionId || 0);
+                  const canUndo = !!it.canUndo;
+                  const rewardText = it.hasRewardDelta ? t("undo.rewarded", "rewarded") : t("undo.noReward", "no reward");
+                  const btnText = canUndo ? t("btn.undo", "Undo") : t("undo.onlyLatest", "Latest only");
+                  const disabled = canUndo ? "" : " disabled";
+                  const actionClass = canUndo ? "danger" : "";
+                  return `
+          <tr class="dataRow ${idx % 2 === 0 ? "rowOdd" : ""}">
+            <td class="colGroup"><span class="pill">${escapeHtml(it.groupName || String(it.group || ""))}</span></td>
+            <td>
+              <span class="itemName">${escapeHtml(it.name || "(unnamed)")}</span>
+              <span class="small mono">${escapeHtml(rewardText)}</span>
+            </td>
+            <td class="colFormId mono">${toHex32(Number(it.formId || 0) >>> 0)}</td>
+            <td class="colAction"><button class="${actionClass}" data-action="undo" data-id="${actionId}"${disabled}><span class="btnLabel">${escapeHtml(
+                    btnText
+                  )}</span></button></td>
+          </tr>`;
+                })
+                .join("");
+      }
+
       function syncRewardCharacterImageState() {
         if (rewardOrbitApi && typeof rewardOrbitApi.syncRewardCharacterImageState === "function") {
           rewardOrbitApi.syncRewardCharacterImageState({
@@ -1893,6 +1978,7 @@
         renderStatus();
         renderQuick();
         renderRegistered();
+        renderUndo();
         renderRewards();
       }
 
@@ -1913,6 +1999,11 @@
       function onNativeRewards(nextRewards) {
         rewards = nextRewards && typeof nextRewards === "object" ? nextRewards : { totals: [] };
         renderRewards();
+      }
+
+      function onNativeUndoList(nextUndoItems) {
+        undoItems = Array.isArray(nextUndoItems) ? nextUndoItems : [];
+        renderUndo();
       }
 
       function onNativeSettings(nextSettings) {
@@ -1942,6 +2033,7 @@
           onInventory: onNativeInventory,
           onRegistered: onNativeRegistered,
           onRewards: onNativeRewards,
+          onUndoList: onNativeUndoList,
           onSettings: onNativeSettings,
           onToast: onNativeToast,
         });
@@ -1986,6 +2078,13 @@
             payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
           } catch {}
           onNativeRewards(payload);
+        };
+        window.copng_setUndoList = (jsonStr) => {
+          let payload = [];
+          try {
+            payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
+          } catch {}
+          onNativeUndoList(Array.isArray(payload) ? payload : []);
         };
         window.copng_setSettings = (jsonStr) => {
           let payload = null;
@@ -2089,6 +2188,27 @@
           node = node.parentNode;
         }
       }
+
+      function onUndoBodyClick(e) {
+        let node = e.target;
+        while (node && node !== undoBody) {
+          if (node.nodeType === 1) {
+            const el = node;
+            if (el.tagName === "BUTTON" && el.getAttribute("data-action") === "undo") {
+              if (el.disabled) {
+                return;
+              }
+
+              const actionId = Number(el.getAttribute("data-id"));
+              if (Number.isFinite(actionId) && actionId > 0) {
+                safeCall("copng_undoRegisterItem", { actionId: Math.trunc(actionId) });
+              }
+              return;
+            }
+          }
+          node = node.parentNode;
+        }
+      }
       // (renderSettings/escapeHtml/native callbacks/wiring moved earlier)
 
       function saveSettingsFromUi() {
@@ -2156,6 +2276,7 @@
           windowObj: window,
           rootScrollEl,
           quickBody,
+          undoBody,
           rewardCharacterImgEl,
           invPageSizeEl,
           btnInvPrev,
@@ -2183,9 +2304,11 @@
           t,
           scheduleRenderQuick,
           scheduleRenderRegistered,
+          renderUndo,
           scheduleVirtualRender,
           renderRewards,
           onQuickBodyClick,
+          onUndoBodyClick,
           onSaveSettings: saveSettingsFromUi,
           updateToggleKeyResolved,
           setCaptureToggleKey: (next) => {
@@ -2357,6 +2480,7 @@
       // Initial pull
       safeCall("copng_requestState", {});
       safeCall("copng_getSettings", {});
+      safeCall("copng_requestUndoList", {});
       // High DPI click correction + direct wheel scrolling are isolated in a
       // dedicated module to keep this bootstrap script focused on state/render.
       if (inputCorrectionApi && typeof inputCorrectionApi.installInputCorrection === "function") {

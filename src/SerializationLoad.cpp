@@ -12,6 +12,8 @@
 #include <array>
 #include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <utility>
 
 namespace CodexOfPowerNG::Serialization::Internal
 {
@@ -40,6 +42,8 @@ namespace CodexOfPowerNG::Serialization::Internal
 			state.blockedItems.clear();
 			state.notifiedItems.clear();
 			state.rewardTotals.clear();
+			state.undoHistory.clear();
+			state.undoNextActionId = 1;
 		}
 
 		std::uint32_t type{};
@@ -186,6 +190,103 @@ namespace CodexOfPowerNG::Serialization::Internal
 							clamped);
 					}
 					state.rewardTotals.insert_or_assign(av, clamped);
+				}
+
+				if (remaining > 0) {
+					Skip(a_intfc, remaining);
+				}
+				break;
+			}
+			case kRecordUndoHistory: {
+				std::uint32_t count{};
+				std::uint64_t nextActionId{ 1 };
+				const auto headerSize = static_cast<std::uint32_t>(sizeof(count) + sizeof(nextActionId));
+				if (length < headerSize ||
+				    a_intfc->ReadRecordData(count) != sizeof(count) ||
+				    a_intfc->ReadRecordData(nextActionId) != sizeof(nextActionId)) {
+					SKSE::log::error("Failed to read undo header");
+					return;
+				}
+
+				auto remaining = length - headerSize;
+				const auto undoHeaderSize = static_cast<std::uint32_t>(
+					sizeof(std::uint64_t) + sizeof(RE::FormID) + sizeof(RE::FormID) + sizeof(std::uint32_t) + sizeof(std::uint32_t));
+				const auto rewardDeltaSize = static_cast<std::uint32_t>(sizeof(std::uint32_t) + sizeof(float));
+
+				std::scoped_lock lock(state.mutex);
+				state.undoHistory.clear();
+				for (std::uint32_t i = 0; i < count && remaining >= undoHeaderSize; ++i) {
+					Registration::UndoRecord entry{};
+					std::uint32_t            rewardCount{};
+					RE::FormID               oldFormId{};
+					RE::FormID               oldRegKey{};
+					if (a_intfc->ReadRecordData(entry.actionId) != sizeof(entry.actionId) ||
+					    a_intfc->ReadRecordData(oldFormId) != sizeof(oldFormId) ||
+					    a_intfc->ReadRecordData(oldRegKey) != sizeof(oldRegKey) ||
+					    a_intfc->ReadRecordData(entry.group) != sizeof(entry.group) ||
+					    a_intfc->ReadRecordData(rewardCount) != sizeof(rewardCount)) {
+						SKSE::log::error("Failed to read undo entry header");
+						return;
+					}
+					remaining -= undoHeaderSize;
+
+					RE::FormID newRegKey{};
+					const bool regKeyResolved = a_intfc->ResolveFormID(oldRegKey, newRegKey);
+					RE::FormID newFormId{};
+					const bool formIdResolved = a_intfc->ResolveFormID(oldFormId, newFormId);
+
+					const auto maxRewardCount = rewardDeltaSize > 0 ? (remaining / rewardDeltaSize) : 0;
+					if (rewardCount > maxRewardCount) {
+						rewardCount = maxRewardCount;
+					}
+
+					entry.rewardDeltas.reserve(rewardCount);
+					for (std::uint32_t j = 0; j < rewardCount; ++j) {
+						std::uint32_t avRaw{};
+						float         delta{};
+						if (a_intfc->ReadRecordData(avRaw) != sizeof(avRaw) ||
+						    a_intfc->ReadRecordData(delta) != sizeof(delta)) {
+							SKSE::log::error("Failed to read undo reward delta");
+							return;
+						}
+						remaining -= rewardDeltaSize;
+						entry.rewardDeltas.push_back(Registration::RewardDelta{
+							static_cast<RE::ActorValue>(avRaw),
+							delta });
+					}
+
+					if (!regKeyResolved) {
+						SKSE::log::warn(
+							"Skipping undo entry {}: unresolved regKey {:08X}",
+							entry.actionId,
+							oldRegKey);
+						continue;
+					}
+
+					entry.regKey = newRegKey;
+					if (formIdResolved) {
+						entry.formId = newFormId;
+					} else {
+						// Keep undo usable even if the concrete item variant cannot be resolved.
+						entry.formId = newRegKey;
+						SKSE::log::warn(
+							"Undo entry {}: unresolved formId {:08X}, falling back to regKey {:08X}",
+							entry.actionId,
+							oldFormId,
+							oldRegKey);
+					}
+
+					state.undoHistory.push_back(std::move(entry));
+					while (state.undoHistory.size() > Registration::kUndoHistoryLimit) {
+						state.undoHistory.pop_front();
+					}
+				}
+
+				if (!state.undoHistory.empty()) {
+					const auto maxActionId = state.undoHistory.back().actionId + 1;
+					state.undoNextActionId = (std::max)(nextActionId, maxActionId);
+				} else {
+					state.undoNextActionId = (std::max)(nextActionId, std::uint64_t{ 1 });
 				}
 
 				if (remaining > 0) {

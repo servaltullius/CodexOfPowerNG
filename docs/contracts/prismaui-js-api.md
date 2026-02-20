@@ -60,6 +60,14 @@ Payload:
 {}
 ```
 
+### `window.copng_requestUndoList(payloadJson)`
+Requests recent register-undo candidates via `window.copng_setUndoList(...)`.
+
+Payload:
+```json
+{}
+```
+
 ### `window.copng_getSettings(payloadJson)`
 Requests current settings via `window.copng_setSettings(...)`.
 
@@ -100,6 +108,18 @@ Payload:
 Notes:
 - `formId` may be a number or a string (`"0x00012EB7"`).
 - On failure, the plugin returns an error toast and the item is not consumed.
+
+### `window.copng_undoRegisterItem(payloadJson)`
+Attempts to undo the latest registration action.
+
+Payload:
+```json
+{ "actionId": 42 }
+```
+
+Notes:
+- Safety policy: only the latest action can be undone (LIFO).
+- Undo restores 1 consumed item and rolls back reward deltas recorded for that action.
 
 ### `window.copng_refundRewards(payloadJson)`
 Refunds recorded rewards (does not restore consumed items; registrations remain).
@@ -167,6 +187,25 @@ Example:
     { "label": "Health", "total": 4.0, "format": "raw", "display": "+4.00" }
   ]
 }
+```
+
+### `window.copng_setUndoList(jsonOrString)`
+Recent undo list (newest first).
+
+Example:
+```json
+[
+  {
+    "actionId": 42,
+    "formId": 46775,
+    "regKey": 46775,
+    "name": "Iron Sword",
+    "group": 0,
+    "groupName": "Weapons",
+    "canUndo": true,
+    "hasRewardDelta": false
+  }
+]
 ```
 
 ### `window.copng_setSettings(jsonOrString)`

@@ -55,6 +55,7 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
     "btnClose",
     "btnRefreshInv",
     "btnRefreshReg",
+    "btnRefreshUndo",
     "btnRefreshRewards",
     "btnRefundRewards",
     "btnReloadSettings",
@@ -81,6 +82,7 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   const tabBtn = makeElement("tabBtn");
   tabBtn.dataset.tab = "tabQuick";
   const quickBody = makeElement("quickBody");
+  const undoBody = makeElement("undoBody");
   const rewardCharacterImgEl = makeElement("rewardCharacterImg");
   const invPageSizeEl = makeElement("invPageSize");
   const btnInvPrev = makeElement("btnInvPrev");
@@ -88,6 +90,7 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   const rootScrollEl = makeElement("rootScroll");
 
   map.set("quickBody", quickBody);
+  map.set("undoBody", undoBody);
   map.set("rewardCharacterImg", rewardCharacterImgEl);
   map.set("invPageSize", invPageSizeEl);
 
@@ -115,6 +118,7 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   const setPageSize = [];
   let renderQuickInputs = 0;
   let renderRegInputs = 0;
+  let renderUndoCount = 0;
   let saveSettingsCount = 0;
   let captureToggle = false;
   let toastInfoCount = 0;
@@ -131,6 +135,7 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   let closeLangMenuCount = 0;
   let openLangMenuCount = 0;
   let quickBodyClickCount = 0;
+  let undoBodyClickCount = 0;
   let setTabValue = "";
 
   mod.installUIWiring({
@@ -138,6 +143,7 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
     windowObj: win,
     rootScrollEl,
     quickBody,
+    undoBody,
     rewardCharacterImgEl,
     invPageSizeEl,
     btnInvPrev,
@@ -165,10 +171,16 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
     scheduleRenderRegistered: () => {
       renderRegInputs += 1;
     },
+    renderUndo: () => {
+      renderUndoCount += 1;
+    },
     scheduleVirtualRender: () => {},
     renderRewards: () => {},
     onQuickBodyClick: () => {
       quickBodyClickCount += 1;
+    },
+    onUndoBodyClick: () => {
+      undoBodyClickCount += 1;
     },
     onSaveSettings: () => {
       saveSettingsCount += 1;
@@ -245,7 +257,9 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   assert.equal(renderRegInputs, 1);
 
   quickBody.fire("click");
+  undoBody.fire("click");
   assert.equal(quickBodyClickCount, 1);
+  assert.equal(undoBodyClickCount, 1);
 
   map.get("btnSaveSettings").fire("click");
   assert.equal(saveSettingsCount, 1);
@@ -278,9 +292,12 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   assert.deepEqual(inputScaleRaw[2], { raw: "2.0", opts: { toast: true } });
 
   map.get("btnRefundRewards").fire("click");
+  map.get("btnRefreshUndo").fire("click");
   await Promise.resolve();
   const refundCall = safeCalls.find((it) => it.name === "copng_refundRewards");
   assert.ok(refundCall, "Refund action should call copng_refundRewards");
+  const undoRefreshCall = safeCalls.find((it) => it.name === "copng_requestUndoList");
+  assert.ok(undoRefreshCall, "Undo refresh action should call copng_requestUndoList");
 
   assert.equal(syncRewardImageCount, 1);
   assert.equal(syncLangDropdownCount, 1);
@@ -288,6 +305,7 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   assert.equal(syncUiScaleControlsCount, 1);
   assert.equal(applyUiScaleFromPrefsCount, 1);
   assert.equal(syncInputScaleControlsCount, 1);
+  assert.equal(renderUndoCount, 1);
   assert.equal(openLangMenuCount, 0);
   assert.equal(closeLangMenuCount, 0);
 });

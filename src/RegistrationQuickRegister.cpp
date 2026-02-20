@@ -5,18 +5,72 @@
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/RegistrationRules.h"
 #include "CodexOfPowerNG/RegistrationStateStore.h"
+#include "CodexOfPowerNG/RewardCaps.h"
 #include "CodexOfPowerNG/Rewards.h"
+#include "CodexOfPowerNG/State.h"
 
 #include "RegistrationInternal.h"
 
 #include <algorithm>
+#include <cmath>
 #include <iterator>
+#include <unordered_map>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
 namespace CodexOfPowerNG::Registration
 {
+	namespace
+	{
+		using RewardSnapshot = std::unordered_map<RE::ActorValue, float, ActorValueHash>;
+
+		RewardSnapshot SnapshotRewardTotals() noexcept
+		{
+			RewardSnapshot out;
+			auto& state = GetState();
+			std::scoped_lock lock(state.mutex);
+			out.reserve(state.rewardTotals.size());
+			for (const auto& [av, total] : state.rewardTotals) {
+				out.insert_or_assign(av, total);
+			}
+			return out;
+		}
+
+		std::vector<RewardDelta> BuildRewardDeltas(
+			const RewardSnapshot& before,
+			const RewardSnapshot& after) noexcept
+		{
+			std::vector<RewardDelta> deltas;
+			deltas.reserve(after.size() + before.size());
+
+			for (const auto& [av, afterTotal] : after) {
+				float beforeTotal = 0.0f;
+				if (const auto it = before.find(av); it != before.end()) {
+					beforeTotal = it->second;
+				}
+
+				const float delta = afterTotal - beforeTotal;
+				if (std::abs(delta) > Rewards::kRewardCapEpsilon) {
+					deltas.push_back(RewardDelta{ av, delta });
+				}
+			}
+
+			for (const auto& [av, beforeTotal] : before) {
+				if (after.contains(av)) {
+					continue;
+				}
+
+				const float delta = -beforeTotal;
+				if (std::abs(delta) > Rewards::kRewardCapEpsilon) {
+					deltas.push_back(RewardDelta{ av, delta });
+				}
+			}
+
+			return deltas;
+		}
+	}
+
 	QuickRegisterList BuildQuickRegisterList(std::size_t offset, std::size_t limit)
 	{
 		QuickRegisterList result{};
@@ -280,7 +334,16 @@ namespace CodexOfPowerNG::Registration
 			L10n::T("msg.totalSuffix", " items") + ")";
 		RE::DebugNotification(msg.c_str());
 
+		const auto rewardBefore = SnapshotRewardTotals();
 		Rewards::MaybeGrantRegistrationReward(group, static_cast<std::int32_t>(totalRegistered));
+		const auto rewardAfter = SnapshotRewardTotals();
+
+		UndoRecord undoRecord{};
+		undoRecord.formId = item->GetFormID();
+		undoRecord.regKey = regKey->GetFormID();
+		undoRecord.group = group;
+		undoRecord.rewardDeltas = BuildRewardDeltas(rewardBefore, rewardAfter);
+		(void)RegistrationStateStore::PushUndoRecord(std::move(undoRecord));
 
 		result.success = true;
 		result.message = msg;

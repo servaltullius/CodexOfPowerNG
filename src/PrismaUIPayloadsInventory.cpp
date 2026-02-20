@@ -42,4 +42,22 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 		}
 		return arr;
 	}
+
+	json BuildUndoPayload(const std::vector<Registration::UndoListItem>& items) noexcept
+	{
+		json arr = json::array();
+		for (const auto& it : items) {
+			arr.push_back({
+				{ "actionId", it.actionId },
+				{ "formId", it.formId },
+				{ "regKey", it.regKey },
+				{ "name", it.name },
+				{ "group", it.group },
+				{ "groupName", Registration::GetDiscoveryGroupName(it.group) },
+				{ "canUndo", it.canUndo },
+				{ "hasRewardDelta", it.hasRewardDelta },
+			});
+		}
+		return arr;
+	}
 }

@@ -1,7 +1,10 @@
 #pragma once
 
+#include "CodexOfPowerNG/RegistrationUndoTypes.h"
+
 #include <RE/Skyrim.h>
 
+#include <deque>
 #include <mutex>
 #include <type_traits>
 #include <unordered_map>
@@ -26,6 +29,8 @@ namespace CodexOfPowerNG
 		std::unordered_set<RE::FormID> blockedItems;
 		std::unordered_set<RE::FormID> notifiedItems;
 		std::unordered_map<RE::ActorValue, float, ActorValueHash> rewardTotals;
+		std::deque<Registration::UndoRecord> undoHistory;
+		std::uint64_t                        undoNextActionId{ 1 };
 	};
 
 	[[nodiscard]] RuntimeState& GetState() noexcept;

@@ -2,7 +2,9 @@
 
 #include "CodexOfPowerNG/State.h"
 
+#include <algorithm>
 #include <atomic>
+#include <utility>
 
 namespace CodexOfPowerNG::RegistrationStateStore
 {
@@ -59,6 +61,75 @@ namespace CodexOfPowerNG::RegistrationStateStore
 				std::scoped_lock lock(state.mutex);
 				state.registeredItems.emplace(regKeyId, group);
 				return state.registeredItems.size();
+			}
+
+			bool RemoveRegistered(RE::FormID regKeyId) noexcept override
+			{
+				auto& state = GetState();
+				std::scoped_lock lock(state.mutex);
+				return state.registeredItems.erase(regKeyId) > 0;
+			}
+
+			std::uint64_t PushUndoRecord(Registration::UndoRecord record) noexcept override
+			{
+				auto& state = GetState();
+				std::scoped_lock lock(state.mutex);
+
+				record.actionId = state.undoNextActionId++;
+				state.undoHistory.push_back(std::move(record));
+				while (state.undoHistory.size() > Registration::kUndoHistoryLimit) {
+					state.undoHistory.pop_front();
+				}
+
+				return state.undoHistory.empty() ? 0 : state.undoHistory.back().actionId;
+			}
+
+			std::optional<Registration::UndoRecord> PopLatestUndoRecord(std::uint64_t actionId) noexcept override
+			{
+				auto& state = GetState();
+				std::scoped_lock lock(state.mutex);
+				if (state.undoHistory.empty()) {
+					return std::nullopt;
+				}
+
+				const auto& latest = state.undoHistory.back();
+				if (latest.actionId != actionId) {
+					return std::nullopt;
+				}
+
+				auto out = std::move(state.undoHistory.back());
+				state.undoHistory.pop_back();
+				return out;
+			}
+
+			void RestoreUndoRecord(Registration::UndoRecord record) noexcept override
+			{
+				auto& state = GetState();
+				std::scoped_lock lock(state.mutex);
+				state.undoNextActionId = (std::max)(state.undoNextActionId, record.actionId + 1);
+				state.undoHistory.push_back(std::move(record));
+				while (state.undoHistory.size() > Registration::kUndoHistoryLimit) {
+					state.undoHistory.pop_front();
+				}
+			}
+
+			std::vector<Registration::UndoRecord> SnapshotUndoRecords(std::size_t limit) noexcept override
+			{
+				std::vector<Registration::UndoRecord> out;
+				auto& state = GetState();
+				std::scoped_lock lock(state.mutex);
+
+				if (state.undoHistory.empty()) {
+					return out;
+				}
+
+				const auto take = (std::min)(limit, state.undoHistory.size());
+				out.reserve(take);
+
+				for (auto it = state.undoHistory.rbegin(); it != state.undoHistory.rend() && out.size() < take; ++it) {
+					out.push_back(*it);
+				}
+				return out;
 			}
 
 			QuickListSnapshot SnapshotQuickList() noexcept override
@@ -129,6 +200,31 @@ namespace CodexOfPowerNG::RegistrationStateStore
 	std::size_t InsertRegistered(RE::FormID regKeyId, std::uint32_t group) noexcept
 	{
 		return GetStore().InsertRegistered(regKeyId, group);
+	}
+
+	bool RemoveRegistered(RE::FormID regKeyId) noexcept
+	{
+		return GetStore().RemoveRegistered(regKeyId);
+	}
+
+	std::uint64_t PushUndoRecord(Registration::UndoRecord record) noexcept
+	{
+		return GetStore().PushUndoRecord(std::move(record));
+	}
+
+	std::optional<Registration::UndoRecord> PopLatestUndoRecord(std::uint64_t actionId) noexcept
+	{
+		return GetStore().PopLatestUndoRecord(actionId);
+	}
+
+	void RestoreUndoRecord(Registration::UndoRecord record) noexcept
+	{
+		GetStore().RestoreUndoRecord(std::move(record));
+	}
+
+	std::vector<Registration::UndoRecord> SnapshotUndoRecords(std::size_t limit) noexcept
+	{
+		return GetStore().SnapshotUndoRecords(limit);
 	}
 
 	QuickListSnapshot SnapshotQuickList() noexcept

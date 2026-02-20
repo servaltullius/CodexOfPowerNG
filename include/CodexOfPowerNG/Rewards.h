@@ -1,7 +1,10 @@
 #pragma once
 
+#include "CodexOfPowerNG/RegistrationUndoTypes.h"
+
 #include <cstdint>
 #include <cstddef>
+#include <vector>
 
 namespace CodexOfPowerNG::Rewards
 {
@@ -21,4 +24,8 @@ namespace CodexOfPowerNG::Rewards
 	// Refunds recorded rewards (does not restore consumed items, does not clear registrations).
 	// Returns number of actor values refunded.
 	[[nodiscard]] std::size_t RefundRewards() noexcept;
+
+	// Rolls back reward deltas produced by a single registration action.
+	// Returns number of actor values actually adjusted.
+	[[nodiscard]] std::size_t RollbackRewardDeltas(const std::vector<Registration::RewardDelta>& deltas) noexcept;
 }

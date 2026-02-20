@@ -90,6 +90,40 @@ namespace CodexOfPowerNG::Serialization::Internal
 				}
 			}
 		}
+
+		void WriteUndoRecord(SKSE::SerializationInterface* a_intfc, const RuntimeState& state) noexcept
+		{
+			if (!a_intfc->OpenRecord(kRecordUndoHistory, kSerializationVersion)) {
+				SKSE::log::error("Failed to open co-save record UNDO");
+				return;
+			}
+
+			const std::uint32_t count = static_cast<std::uint32_t>(state.undoHistory.size());
+			if (!a_intfc->WriteRecordData(count) || !a_intfc->WriteRecordData(state.undoNextActionId)) {
+				SKSE::log::error("Failed to write undo header");
+				return;
+			}
+
+			for (const auto& entry : state.undoHistory) {
+				const std::uint32_t rewardCount = static_cast<std::uint32_t>(entry.rewardDeltas.size());
+				if (!a_intfc->WriteRecordData(entry.actionId) ||
+				    !a_intfc->WriteRecordData(entry.formId) ||
+				    !a_intfc->WriteRecordData(entry.regKey) ||
+				    !a_intfc->WriteRecordData(entry.group) ||
+				    !a_intfc->WriteRecordData(rewardCount)) {
+					SKSE::log::error("Failed to write undo entry header");
+					return;
+				}
+
+				for (const auto& delta : entry.rewardDeltas) {
+					const auto avRaw = static_cast<std::uint32_t>(delta.av);
+					if (!a_intfc->WriteRecordData(avRaw) || !a_intfc->WriteRecordData(delta.delta)) {
+						SKSE::log::error("Failed to write undo reward delta");
+						return;
+					}
+				}
+			}
+		}
 	}
 
 	void Revert(SKSE::SerializationInterface* /*a_intfc*/) noexcept
@@ -100,6 +134,8 @@ namespace CodexOfPowerNG::Serialization::Internal
 		state.blockedItems.clear();
 		state.notifiedItems.clear();
 		state.rewardTotals.clear();
+		state.undoHistory.clear();
+		state.undoNextActionId = 1;
 	}
 
 	void Save(SKSE::SerializationInterface* a_intfc) noexcept
@@ -111,6 +147,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 			[&]() { WriteRegisteredRecord(a_intfc, state); },
 			[&]() { WriteBlockedRecord(a_intfc, state); },
 			[&]() { WriteNotifiedRecord(a_intfc, state); },
-			[&]() { WriteRewardsRecord(a_intfc, state); });
+			[&]() { WriteRewardsRecord(a_intfc, state); },
+			[&]() { WriteUndoRecord(a_intfc, state); });
 	}
 }

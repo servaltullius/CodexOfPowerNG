@@ -64,6 +64,7 @@ test("installNativeCallbacks wires global callbacks and forwards normalized payl
     inventory: null,
     registered: null,
     rewards: null,
+    undoList: null,
     settings: null,
     toast: null,
   };
@@ -82,6 +83,9 @@ test("installNativeCallbacks wires global callbacks and forwards normalized payl
     onRewards: (v) => {
       received.rewards = v;
     },
+    onUndoList: (v) => {
+      received.undoList = v;
+    },
     onSettings: (v) => {
       received.settings = v;
     },
@@ -94,6 +98,7 @@ test("installNativeCallbacks wires global callbacks and forwards normalized payl
   assert.equal(typeof win.copng_setInventory, "function");
   assert.equal(typeof win.copng_setRegistered, "function");
   assert.equal(typeof win.copng_setRewards, "function");
+  assert.equal(typeof win.copng_setUndoList, "function");
   assert.equal(typeof win.copng_setSettings, "function");
   assert.equal(typeof win.copng_toast, "function");
 
@@ -101,6 +106,7 @@ test("installNativeCallbacks wires global callbacks and forwards normalized payl
   win.copng_setInventory('[{"formId":4660}]');
   win.copng_setRegistered('{"oops":1}');
   win.copng_setRewards('{"totals":[{"label":"Health","total":5}]}');
+  win.copng_setUndoList('[{"actionId":1}]');
   win.copng_setSettings('{"languageOverride":"en"}');
   win.copng_toast('{"level":"warn","message":"hello"}');
 
@@ -108,6 +114,7 @@ test("installNativeCallbacks wires global callbacks and forwards normalized payl
   assert.equal(received.inventory.total, 1);
   assert.deepEqual(received.registered, []);
   assert.deepEqual(received.rewards.totals, [{ label: "Health", total: 5 }]);
+  assert.deepEqual(received.undoList, [{ actionId: 1 }]);
   assert.equal(received.settings.languageOverride, "en");
   assert.deepEqual(received.toast, { level: "warn", message: "hello" });
 

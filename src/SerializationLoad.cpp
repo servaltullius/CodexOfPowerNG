@@ -13,6 +13,9 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <deque>
+#include <unordered_map>
+#include <unordered_set>
 #include <utility>
 
 namespace CodexOfPowerNG::Serialization::Internal
@@ -35,20 +38,15 @@ namespace CodexOfPowerNG::Serialization::Internal
 
 	void Load(SKSE::SerializationInterface* a_intfc) noexcept
 	{
-		auto& state = GetState();
-		{
-			std::scoped_lock lock(state.mutex);
-			state.registeredItems.clear();
-			state.blockedItems.clear();
-			state.notifiedItems.clear();
-			state.rewardTotals.clear();
-			state.undoHistory.clear();
-			state.undoNextActionId = 1;
-		}
-
 		std::uint32_t type{};
 		std::uint32_t version{};
 		std::uint32_t length{};
+		std::unordered_map<RE::FormID, std::uint32_t>                 loadedRegisteredItems;
+		std::unordered_set<RE::FormID>                                loadedBlockedItems;
+		std::unordered_set<RE::FormID>                                loadedNotifiedItems;
+		std::unordered_map<RE::ActorValue, float, ActorValueHash>     loadedRewardTotals;
+		std::deque<Registration::UndoRecord>                          loadedUndoHistory;
+		std::uint64_t                                                 loadedUndoNextActionId{ 1 };
 
 		while (a_intfc->GetNextRecordInfo(type, version, length)) {
 			switch (type) {
@@ -63,7 +61,6 @@ namespace CodexOfPowerNG::Serialization::Internal
 
 				auto remaining = length - static_cast<std::uint32_t>(sizeof(count));
 
-				std::scoped_lock lock(state.mutex);
 				if (version == 1) {
 					const auto maxCount = remaining / static_cast<std::uint32_t>(sizeof(RE::FormID));
 					if (count > maxCount) {
@@ -83,7 +80,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 							continue;
 						}
 
-						state.registeredItems.emplace(newId, 255u);
+						loadedRegisteredItems.emplace(newId, 255u);
 					}
 				} else if (version == 2) {
 					const auto entrySize = static_cast<std::uint32_t>(sizeof(RE::FormID) + sizeof(std::uint32_t));
@@ -106,7 +103,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 							continue;
 						}
 
-						state.registeredItems.emplace(newId, group);
+						loadedRegisteredItems.emplace(newId, group);
 					}
 				} else {
 					SKSE::log::warn("Unsupported REGI version {}", version);
@@ -131,7 +128,6 @@ namespace CodexOfPowerNG::Serialization::Internal
 					count = maxCount;
 				}
 
-				std::scoped_lock lock(state.mutex);
 				for (std::uint32_t i = 0; i < count; ++i) {
 					RE::FormID oldId{};
 					if (a_intfc->ReadRecordData(oldId) != sizeof(oldId)) {
@@ -146,9 +142,9 @@ namespace CodexOfPowerNG::Serialization::Internal
 					}
 
 					if (type == kRecordBlockedItems) {
-						state.blockedItems.insert(newId);
+						loadedBlockedItems.insert(newId);
 					} else {
-						state.notifiedItems.insert(newId);
+						loadedNotifiedItems.insert(newId);
 					}
 				}
 
@@ -171,7 +167,6 @@ namespace CodexOfPowerNG::Serialization::Internal
 					count = maxCount;
 				}
 
-				std::scoped_lock lock(state.mutex);
 				for (std::uint32_t i = 0; i < count; ++i) {
 					std::uint32_t avRaw{};
 					float total{};
@@ -189,7 +184,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 							total,
 							clamped);
 					}
-					state.rewardTotals.insert_or_assign(av, clamped);
+					loadedRewardTotals.insert_or_assign(av, clamped);
 				}
 
 				if (remaining > 0) {
@@ -213,8 +208,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 					sizeof(std::uint64_t) + sizeof(RE::FormID) + sizeof(RE::FormID) + sizeof(std::uint32_t) + sizeof(std::uint32_t));
 				const auto rewardDeltaSize = static_cast<std::uint32_t>(sizeof(std::uint32_t) + sizeof(float));
 
-				std::scoped_lock lock(state.mutex);
-				state.undoHistory.clear();
+				loadedUndoHistory.clear();
 				for (std::uint32_t i = 0; i < count && remaining >= undoHeaderSize; ++i) {
 					Registration::UndoRecord entry{};
 					std::uint32_t            rewardCount{};
@@ -255,38 +249,29 @@ namespace CodexOfPowerNG::Serialization::Internal
 							delta });
 					}
 
-					if (!regKeyResolved) {
+					if (!regKeyResolved || !formIdResolved) {
 						SKSE::log::warn(
-							"Skipping undo entry {}: unresolved regKey {:08X}",
+							"Skipping undo entry {}: unresolved form(s) formId={:08X} regKey={:08X}",
 							entry.actionId,
+							oldFormId,
 							oldRegKey);
 						continue;
 					}
 
 					entry.regKey = newRegKey;
-					if (formIdResolved) {
-						entry.formId = newFormId;
-					} else {
-						// Keep undo usable even if the concrete item variant cannot be resolved.
-						entry.formId = newRegKey;
-						SKSE::log::warn(
-							"Undo entry {}: unresolved formId {:08X}, falling back to regKey {:08X}",
-							entry.actionId,
-							oldFormId,
-							oldRegKey);
-					}
+					entry.formId = newFormId;
 
-					state.undoHistory.push_back(std::move(entry));
-					while (state.undoHistory.size() > Registration::kUndoHistoryLimit) {
-						state.undoHistory.pop_front();
+					loadedUndoHistory.push_back(std::move(entry));
+					while (loadedUndoHistory.size() > Registration::kUndoHistoryLimit) {
+						loadedUndoHistory.pop_front();
 					}
 				}
 
-				if (!state.undoHistory.empty()) {
-					const auto maxActionId = state.undoHistory.back().actionId + 1;
-					state.undoNextActionId = (std::max)(nextActionId, maxActionId);
+				if (!loadedUndoHistory.empty()) {
+					const auto maxActionId = loadedUndoHistory.back().actionId + 1;
+					loadedUndoNextActionId = (std::max)(nextActionId, maxActionId);
 				} else {
-					state.undoNextActionId = (std::max)(nextActionId, std::uint64_t{ 1 });
+					loadedUndoNextActionId = (std::max)(nextActionId, std::uint64_t{ 1 });
 				}
 
 				if (remaining > 0) {
@@ -299,6 +284,17 @@ namespace CodexOfPowerNG::Serialization::Internal
 				Skip(a_intfc, length);
 				break;
 			}
+		}
+
+		auto& state = GetState();
+		{
+			std::scoped_lock lock(state.mutex);
+			state.registeredItems = std::move(loadedRegisteredItems);
+			state.blockedItems = std::move(loadedBlockedItems);
+			state.notifiedItems = std::move(loadedNotifiedItems);
+			state.rewardTotals = std::move(loadedRewardTotals);
+			state.undoHistory = std::move(loadedUndoHistory);
+			state.undoNextActionId = loadedUndoNextActionId;
 		}
 	}
 }

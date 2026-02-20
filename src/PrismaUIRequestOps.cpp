@@ -15,12 +15,32 @@
 #include <chrono>
 #include <cstdint>
 #include <exception>
+#include <mutex>
 #include <string>
 #include <utility>
 #include <vector>
 
 namespace CodexOfPowerNG::PrismaUIManager::Internal
 {
+	namespace
+	{
+		std::mutex       g_inventoryRequestMutex;
+		InventoryRequest g_lastInventoryRequest{};
+
+		void RememberInventoryRequest(InventoryRequest req) noexcept
+		{
+			req.pageSize = std::clamp(req.pageSize, std::uint32_t{ 1 }, std::uint32_t{ 500 });
+			std::scoped_lock lock(g_inventoryRequestMutex);
+			g_lastInventoryRequest = req;
+		}
+
+		[[nodiscard]] InventoryRequest SnapshotLastInventoryRequest() noexcept
+		{
+			std::scoped_lock lock(g_inventoryRequestMutex);
+			return g_lastInventoryRequest;
+		}
+	}
+
 	InventoryRequest ParseInventoryRequest(const char* argument) noexcept
 	{
 		InventoryRequest out{};
@@ -131,6 +151,8 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 
 	void QueueSendInventory(InventoryRequest req) noexcept
 	{
+		RememberInventoryRequest(req);
+
 		if (QueueMainTask([req]() {
 				const auto tBuild0 = std::chrono::steady_clock::now();
 				const auto offset = static_cast<std::size_t>(req.page) * static_cast<std::size_t>(req.pageSize);
@@ -318,7 +340,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 						res.message);
 					ShowToast(res.success ? "info" : "error", res.message);
 					SendStateToUI();
-					QueueSendInventory(InventoryRequest{});
+					QueueSendInventory(SnapshotLastInventoryRequest());
 					QueueSendRegistered();
 					QueueSendRewards();
 					QueueSendUndoList();
@@ -337,7 +359,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			res.message);
 		ShowToast(res.success ? "info" : "error", res.message);
 		SendStateToUI();
-		QueueSendInventory(InventoryRequest{});
+		QueueSendInventory(SnapshotLastInventoryRequest());
 		QueueSendRegistered();
 		QueueSendRewards();
 		QueueSendUndoList();
@@ -389,7 +411,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 						res.message);
 					ShowToast(res.success ? "info" : "error", res.message);
 					SendStateToUI();
-					QueueSendInventory(InventoryRequest{});
+					QueueSendInventory(SnapshotLastInventoryRequest());
 					QueueSendRegistered();
 					QueueSendRewards();
 					QueueSendUndoList();
@@ -408,7 +430,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			res.message);
 		ShowToast(res.success ? "info" : "error", res.message);
 		SendStateToUI();
-		QueueSendInventory(InventoryRequest{});
+		QueueSendInventory(SnapshotLastInventoryRequest());
 		QueueSendRegistered();
 		QueueSendRewards();
 		QueueSendUndoList();

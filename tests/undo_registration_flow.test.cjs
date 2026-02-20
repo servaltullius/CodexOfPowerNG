@@ -28,6 +28,8 @@ test("request ops route undo payload and refresh relevant panels", () => {
   assert.match(src, /void HandleUndoRegisterRequest\(const char\* argument\) noexcept/);
   assert.match(src, /Registration::TryUndoRegistration\(actionId\)/);
   assert.match(src, /SendJS\("copng_setUndoList", PrismaUIPayloads::BuildUndoPayload\(items\)\)/);
+  assert.match(src, /QueueSendInventory\(SnapshotLastInventoryRequest\(\)\)/);
+  assert.doesNotMatch(src, /QueueSendInventory\(InventoryRequest\{\}\)/);
 });
 
 test("registration path records undo metadata and reward delta snapshot", () => {
@@ -45,6 +47,8 @@ test("undo records are serialized and restored", () => {
   assert.match(loadSrc, /case kRecordUndoHistory:/);
   assert.match(loadSrc, /ResolveFormID\(oldRegKey, newRegKey\)/);
   assert.match(loadSrc, /ResolveFormID\(oldFormId, newFormId\)/);
+  assert.match(loadSrc, /if \(!regKeyResolved \|\| !formIdResolved\)/);
+  assert.doesNotMatch(loadSrc, /falling back to regKey/);
   assert.match(loadSrc, /state\.undoHistory/);
 });
 

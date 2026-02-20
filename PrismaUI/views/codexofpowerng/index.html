@@ -1313,7 +1313,8 @@
           const storedRaw = String(localStorage.getItem(INPUT_SCALE_KEY) || "");
           const stored = parseFloat(storedRaw);
           if (isFinite(stored) && stored > 0) {
-            inputScale = clamp(stored, 0.5, 3.0);
+            // settings.json is authoritative; local storage only tracks unsaved in-session tweaks
+            // and should not override values delivered from native settings payloads.
             inputScaleHasLocal = true;
           }
         } catch {}
@@ -1348,8 +1349,10 @@
         const v = parseFloat(String(next));
         if (!isFinite(v) || v <= 0) return;
         inputScale = clamp(v, 0.5, 3.0);
-        inputScaleHasLocal = true;
-        if (persist) saveInputScalePref();
+        inputScaleHasLocal = !!persist;
+        if (persist) {
+          saveInputScalePref();
+        }
         syncInputScaleControls();
         if (uiScaleMode === "auto") scheduleAutoUiScale();
         applyPerfModeFromPrefs();
@@ -1946,15 +1949,11 @@
         document.getElementById("setRewardMult").value = coalesce(settings.rewardMultiplier, 1.0);
         document.getElementById("setSkillRewards").checked = !!settings.allowSkillRewards;
 
-        // Input scale: prefer localStorage override, otherwise use settings value.
+        // Input scale: settings payload value is authoritative.
         const desiredInputScale = parseFloat(String(coalesce(settings.uiInputScale, 1.0)));
-        if (!inputScaleHasLocal) {
-          setInputScale(isFinite(desiredInputScale) && desiredInputScale > 0 ? desiredInputScale : 1.0, { persist: false });
-          // If auto UI scaling is enabled, re-apply using the (potentially updated) inputScale hint.
-          applyUiScaleFromPrefs();
-        } else {
-          syncInputScaleControls();
-        }
+        setInputScale(isFinite(desiredInputScale) && desiredInputScale > 0 ? desiredInputScale : 1.0, { persist: false });
+        // If auto UI scaling is enabled, re-apply using the updated inputScale hint.
+        applyUiScaleFromPrefs();
 
         if (perfModeEl) perfModeEl.value = perfMode;
         applyPerfModeFromPrefs();

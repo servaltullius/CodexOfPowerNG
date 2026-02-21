@@ -58,6 +58,12 @@ namespace CodexOfPowerNG::Rewards
 			std::uint64_t readinessDeadlineMs{ 0 };
 		};
 
+		struct RewardSyncPassResult
+		{
+			std::size_t correctedCount{ 0 };
+			std::size_t pendingCount{ 0 };
+		};
+
 		struct CarryWeightQuickResyncState
 		{
 			std::uint32_t attempt{ 0 };
@@ -541,23 +547,23 @@ namespace CodexOfPowerNG::Rewards
 			return totals;
 		}
 
-		[[nodiscard]] std::size_t ApplyRewardSyncPass(RewardSyncPassState& passState) noexcept
+		[[nodiscard]] RewardSyncPassResult ApplyRewardSyncPass(RewardSyncPassState& passState) noexcept
 		{
+			RewardSyncPassResult passResult{};
+
 			auto* player = RE::PlayerCharacter::GetSingleton();
 			if (!player) {
-				return 0;
+				return passResult;
 			}
 			auto* avOwner = player->AsActorValueOwner();
 			if (!avOwner) {
-				return 0;
+				return passResult;
 			}
 
 			const auto totals = SnapshotRewardTotals();
 			if (totals.empty()) {
-				return 0;
+				return passResult;
 			}
-
-			std::size_t corrected = 0;
 			for (const auto& [av, total] : totals) {
 				if (passState.nonConvergingActorValues.contains(av)) {
 					continue;
@@ -604,6 +610,9 @@ namespace CodexOfPowerNG::Rewards
 				}
 
 				if (!forceImmediate && !ShouldApplyAfterStreak(delta, streak, kRewardSyncMinMissingStreak)) {
+					if (std::abs(delta) > kRewardCapEpsilon) {
+						++passResult.pendingCount;
+					}
 					continue;
 				}
 				streak = 0;
@@ -634,7 +643,7 @@ namespace CodexOfPowerNG::Rewards
 				}
 
 				avOwner->ModActorValue(av, delta);
-				++corrected;
+				++passResult.correctedCount;
 				if (av == RE::ActorValue::kAttackDamageMult) {
 					passState.weaponAbilityRefreshRequested = true;
 				}
@@ -689,11 +698,11 @@ namespace CodexOfPowerNG::Rewards
 					total);
 			}
 
-			if (corrected > 0) {
-				SKSE::log::info("Reward sync: corrected {} actor value entries", corrected);
+			if (passResult.correctedCount > 0) {
+				SKSE::log::info("Reward sync: corrected {} actor value entries", passResult.correctedCount);
 			}
 
-			return corrected;
+			return passResult;
 		}
 
 		void RunRewardSyncPasses(std::shared_ptr<RewardSyncPassState> passState, std::uint32_t remainingPasses) noexcept
@@ -733,18 +742,36 @@ namespace CodexOfPowerNG::Rewards
 				ApplyRewardCapAdjustmentsToPlayer(capAdjustments);
 			}
 
-			(void)ApplyRewardSyncPass(*passState);
+			const auto passResult = ApplyRewardSyncPass(*passState);
+
+			const auto scheduleRerunIfRequested = [&]() -> bool {
+				if (!g_rewardSyncRerunRequested.exchange(false, std::memory_order_acq_rel)) {
+					return false;
+				}
+
+				g_rewardSyncScheduledSinceMs.store(NowMs(), std::memory_order_release);
+				auto rerunPassState = std::make_shared<RewardSyncPassState>();
+				rerunPassState->weaponAbilityRefreshRequested = passState->weaponAbilityRefreshRequested;
+				rerunPassState->generation = passState->generation;
+				if (QueueMainTask([rerunPassState]() { RunRewardSyncPasses(rerunPassState, kRewardSyncPassCount); })) {
+					return true;
+				}
+				RunRewardSyncPasses(rerunPassState, kRewardSyncPassCount);
+				return true;
+			};
+
+			if (ShouldStopSyncAfterPass(passResult.correctedCount, passResult.pendingCount)) {
+				const auto remainingAfterThisPass = remainingPasses > 0 ? (remainingPasses - 1) : 0;
+				SKSE::log::info("Reward sync: converged early (remaining passes: {})", remainingAfterThisPass);
+				if (scheduleRerunIfRequested()) {
+					return;
+				}
+				FinalizeRewardSyncRun(passState);
+				return;
+			}
 
 			if (remainingPasses <= 1) {
-				if (g_rewardSyncRerunRequested.exchange(false, std::memory_order_acq_rel)) {
-					g_rewardSyncScheduledSinceMs.store(NowMs(), std::memory_order_release);
-					auto rerunPassState = std::make_shared<RewardSyncPassState>();
-					rerunPassState->weaponAbilityRefreshRequested = passState->weaponAbilityRefreshRequested;
-					rerunPassState->generation = passState->generation;
-					if (QueueMainTask([rerunPassState]() { RunRewardSyncPasses(rerunPassState, kRewardSyncPassCount); })) {
-						return;
-					}
-					RunRewardSyncPasses(rerunPassState, kRewardSyncPassCount);
+				if (scheduleRerunIfRequested()) {
 					return;
 				}
 
@@ -772,27 +799,33 @@ namespace CodexOfPowerNG::Rewards
 		}
 		}
 
-	void MaybeGrantRegistrationReward(std::uint32_t group, std::int32_t totalRegistered) noexcept
+	std::vector<Registration::RewardDelta> MaybeGrantRegistrationReward(
+		std::uint32_t group,
+		std::int32_t totalRegistered) noexcept
 	{
+		std::vector<Registration::RewardDelta> appliedDeltas;
 		const auto settings = GetSettings();
 		if (!settings.enableRewards) {
-			return;
+			return appliedDeltas;
 		}
 
 		const auto every = settings.rewardEvery;
 		if (every <= 0) {
-			return;
+			return appliedDeltas;
 		}
 
 		if (totalRegistered <= 0) {
-			return;
+			return appliedDeltas;
 		}
 
 		if ((totalRegistered % every) != 0) {
-			return;
+			return appliedDeltas;
 		}
 
+		Internal::BeginRewardDeltaCapture(appliedDeltas);
 		Internal::GrantWeightedRandomReward(group);
+		Internal::EndRewardDeltaCapture();
+		return appliedDeltas;
 	}
 
 	void SyncRewardTotalsToPlayer() noexcept

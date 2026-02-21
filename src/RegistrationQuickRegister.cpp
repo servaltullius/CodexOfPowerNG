@@ -5,16 +5,15 @@
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/RegistrationRules.h"
 #include "CodexOfPowerNG/RegistrationStateStore.h"
-#include "CodexOfPowerNG/RewardCaps.h"
 #include "CodexOfPowerNG/Rewards.h"
-#include "CodexOfPowerNG/State.h"
+#include "CodexOfPowerNG/Util.h"
 
 #include "RegistrationInternal.h"
 
 #include <algorithm>
-#include <cmath>
-#include <iterator>
-#include <unordered_map>
+#include <atomic>
+#include <cstdint>
+#include <mutex>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -23,52 +22,94 @@ namespace CodexOfPowerNG::Registration
 {
 	namespace
 	{
-		using RewardSnapshot = std::unordered_map<RE::ActorValue, float, ActorValueHash>;
+		inline constexpr std::uint64_t kQuickListCacheTtlMs = 750;
 
-		RewardSnapshot SnapshotRewardTotals() noexcept
+		struct QuickListCache
 		{
-			RewardSnapshot out;
-			auto& state = GetState();
-			std::scoped_lock lock(state.mutex);
-			out.reserve(state.rewardTotals.size());
-			for (const auto& [av, total] : state.rewardTotals) {
-				out.insert_or_assign(av, total);
-			}
-			return out;
+			std::vector<ListItem> allEligible{};
+			std::uint64_t generation{ 0 };
+			std::uint64_t builtAtMs{ 0 };
+			std::uint32_t settingsMask{ 0 };
+		};
+
+		std::mutex                g_quickListCacheMutex;
+		QuickListCache            g_quickListCache{};
+		std::atomic<std::uint64_t> g_quickListGeneration{ 1 };
+
+		[[nodiscard]] std::uint32_t BuildQuickListSettingsMask(const Settings& settings) noexcept
+		{
+			std::uint32_t mask = 0;
+			mask |= settings.normalizeRegistration ? (1u << 0) : 0u;
+			mask |= settings.requireTccDisplayed ? (1u << 1) : 0u;
+			mask |= settings.protectFavorites ? (1u << 2) : 0u;
+			return mask;
 		}
 
-		std::vector<RewardDelta> BuildRewardDeltas(
-			const RewardSnapshot& before,
-			const RewardSnapshot& after) noexcept
+		void FillQuickListPage(
+			const std::vector<ListItem>& allEligible,
+			std::size_t offset,
+			std::size_t limit,
+			QuickRegisterList& result)
 		{
-			std::vector<RewardDelta> deltas;
-			deltas.reserve(after.size() + before.size());
+			const auto totalEligible = allEligible.size();
+			const auto clampedOffset = (std::min)(offset, totalEligible);
+			const auto remaining = totalEligible - clampedOffset;
+			const auto pageSize = (std::min)(limit, remaining);
 
-			for (const auto& [av, afterTotal] : after) {
-				float beforeTotal = 0.0f;
-				if (const auto it = before.find(av); it != before.end()) {
-					beforeTotal = it->second;
-				}
-
-				const float delta = afterTotal - beforeTotal;
-				if (std::abs(delta) > Rewards::kRewardCapEpsilon) {
-					deltas.push_back(RewardDelta{ av, delta });
-				}
-			}
-
-			for (const auto& [av, beforeTotal] : before) {
-				if (after.contains(av)) {
-					continue;
-				}
-
-				const float delta = -beforeTotal;
-				if (std::abs(delta) > Rewards::kRewardCapEpsilon) {
-					deltas.push_back(RewardDelta{ av, delta });
-				}
-			}
-
-			return deltas;
+			result.total = totalEligible;
+			result.hasMore = (clampedOffset + pageSize) < totalEligible;
+			result.items.assign(
+				allEligible.begin() + static_cast<std::ptrdiff_t>(clampedOffset),
+				allEligible.begin() + static_cast<std::ptrdiff_t>(clampedOffset + pageSize));
 		}
+
+		[[nodiscard]] bool TryBuildQuickListFromCache(
+			std::size_t offset,
+			std::size_t limit,
+			std::uint64_t generation,
+			std::uint32_t settingsMask,
+			QuickRegisterList& result) noexcept
+		{
+			std::scoped_lock lock(g_quickListCacheMutex);
+			if (g_quickListCache.generation != generation) {
+				return false;
+			}
+			if (g_quickListCache.settingsMask != settingsMask) {
+				return false;
+			}
+			const auto nowMs = NowMs();
+			if (nowMs < g_quickListCache.builtAtMs || (nowMs - g_quickListCache.builtAtMs) > kQuickListCacheTtlMs) {
+				return false;
+			}
+
+			FillQuickListPage(g_quickListCache.allEligible, offset, limit, result);
+			return true;
+		}
+
+		void UpdateQuickListCache(
+			std::vector<ListItem> allEligible,
+			std::uint64_t generation,
+			std::uint32_t settingsMask,
+			std::uint64_t builtAtMs) noexcept
+		{
+			std::scoped_lock lock(g_quickListCacheMutex);
+			g_quickListCache.allEligible = std::move(allEligible);
+			g_quickListCache.generation = generation;
+			g_quickListCache.settingsMask = settingsMask;
+			g_quickListCache.builtAtMs = builtAtMs;
+		}
+
+		void ClearQuickListCacheStorage() noexcept
+		{
+			std::scoped_lock lock(g_quickListCacheMutex);
+			g_quickListCache = QuickListCache{};
+		}
+	}
+
+	void InvalidateQuickRegisterCache() noexcept
+	{
+		(void)g_quickListGeneration.fetch_add(1, std::memory_order_acq_rel);
+		ClearQuickListCacheStorage();
 	}
 
 	QuickRegisterList BuildQuickRegisterList(std::size_t offset, std::size_t limit)
@@ -81,6 +122,12 @@ namespace CodexOfPowerNG::Registration
 		}
 
 		const auto settings = GetSettings();
+		const auto settingsMask = BuildQuickListSettingsMask(settings);
+		const auto cacheGeneration = g_quickListGeneration.load(std::memory_order_acquire);
+		if (TryBuildQuickListFromCache(offset, limit, cacheGeneration, settingsMask, result)) {
+			return result;
+		}
+
 		const auto tccLists = Internal::ResolveTccLists();
 		if (settings.requireTccDisplayed && (!tccLists.master || !tccLists.displayed)) {
 			Internal::WarnMissingTccListsOnce();
@@ -202,17 +249,9 @@ namespace CodexOfPowerNG::Registration
 			return a.name < b.name;
 		});
 
-		// Phase 3: paginate from sorted result
-		const auto totalEligible = allEligible.size();
-		const auto clampedOffset = (std::min)(offset, totalEligible);
-		const auto remaining = totalEligible - clampedOffset;
-		const auto pageSize = (std::min)(limit, remaining);
-
-		result.total = totalEligible;
-		result.hasMore = (clampedOffset + pageSize) < totalEligible;
-		result.items.assign(
-			std::make_move_iterator(allEligible.begin() + static_cast<std::ptrdiff_t>(clampedOffset)),
-			std::make_move_iterator(allEligible.begin() + static_cast<std::ptrdiff_t>(clampedOffset + pageSize)));
+		// Phase 3: paginate and update short-lived cache
+		FillQuickListPage(allEligible, offset, limit, result);
+		UpdateQuickListCache(std::move(allEligible), cacheGeneration, settingsMask, NowMs());
 
 		return result;
 	}
@@ -334,16 +373,15 @@ namespace CodexOfPowerNG::Registration
 			L10n::T("msg.totalSuffix", " items") + ")";
 		RE::DebugNotification(msg.c_str());
 
-		const auto rewardBefore = SnapshotRewardTotals();
-		Rewards::MaybeGrantRegistrationReward(group, static_cast<std::int32_t>(totalRegistered));
-		const auto rewardAfter = SnapshotRewardTotals();
+		auto rewardDeltas = Rewards::MaybeGrantRegistrationReward(group, static_cast<std::int32_t>(totalRegistered));
 
 		UndoRecord undoRecord{};
 		undoRecord.formId = item->GetFormID();
 		undoRecord.regKey = regKey->GetFormID();
 		undoRecord.group = group;
-		undoRecord.rewardDeltas = BuildRewardDeltas(rewardBefore, rewardAfter);
+		undoRecord.rewardDeltas = std::move(rewardDeltas);
 		(void)RegistrationStateStore::PushUndoRecord(std::move(undoRecord));
+		InvalidateQuickRegisterCache();
 
 		result.success = true;
 		result.message = msg;

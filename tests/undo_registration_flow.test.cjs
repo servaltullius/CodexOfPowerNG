@@ -32,10 +32,12 @@ test("request ops route undo payload and refresh relevant panels", () => {
   assert.doesNotMatch(src, /QueueSendInventory\(InventoryRequest\{\}\)/);
 });
 
-test("registration path records undo metadata and reward delta snapshot", () => {
+test("registration path records undo metadata using exact applied reward deltas", () => {
   const src = read("src/RegistrationQuickRegister.cpp");
-  assert.match(src, /SnapshotRewardTotals\(\)/);
-  assert.match(src, /BuildRewardDeltas\(rewardBefore, rewardAfter\)/);
+  assert.match(src, /auto rewardDeltas = Rewards::MaybeGrantRegistrationReward\(group, static_cast<std::int32_t>\(totalRegistered\)\);/);
+  assert.match(src, /undoRecord\.rewardDeltas = std::move\(rewardDeltas\);/);
+  assert.doesNotMatch(src, /SnapshotRewardTotals\(\)/);
+  assert.doesNotMatch(src, /BuildRewardDeltas\(/);
   assert.match(src, /RegistrationStateStore::PushUndoRecord\(std::move\(undoRecord\)\)/);
 });
 
@@ -56,4 +58,11 @@ test("undo reward rollback applies actual clamped delta to actor values", () => 
   const rewardsSrc = read("src/Rewards.cpp");
   assert.match(rewardsSrc, /appliedActorDelta = next - previousTotal/);
   assert.match(rewardsSrc, /RewardDelta\{ av, appliedActorDelta \}/);
+});
+
+test("undo checks rollback result and emits warning path when no actor deltas were applied", () => {
+  const undoSrc = read("src/RegistrationUndo.cpp");
+  assert.match(undoSrc, /const auto rollbackApplied = Rewards::RollbackRewardDeltas\(record\.rewardDeltas\);/);
+  assert.match(undoSrc, /if \(hadRollbackTarget && rollbackApplied == 0\)/);
+  assert.match(undoSrc, /msg\.undoRewardRollbackWarning/);
 });

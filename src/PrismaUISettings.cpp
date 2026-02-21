@@ -4,6 +4,7 @@
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/PrismaUIManager.h"
+#include "CodexOfPowerNG/Registration.h"
 #include "CodexOfPowerNG/TaskScheduler.h"
 
 #include <RE/Skyrim.h>
@@ -154,6 +155,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 
 		// Apply in-memory immediately; persist on a background worker to avoid stutter.
 		SetSettings(next);
+		Registration::InvalidateQuickRegisterCache();
 		SendJS("copng_setSettings", BuildSettingsPayload(GetSettings()));
 		SendStateToUI();
 

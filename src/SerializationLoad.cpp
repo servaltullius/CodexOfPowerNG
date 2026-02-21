@@ -1,6 +1,7 @@
 #include "SerializationInternal.h"
 
 #include "CodexOfPowerNG/Constants.h"
+#include "CodexOfPowerNG/Registration.h"
 #include "CodexOfPowerNG/RewardCaps.h"
 #include "CodexOfPowerNG/Rewards.h"
 #include "CodexOfPowerNG/State.h"
@@ -296,5 +297,6 @@ namespace CodexOfPowerNG::Serialization::Internal
 			state.undoHistory = std::move(loadedUndoHistory);
 			state.undoNextActionId = loadedUndoNextActionId;
 		}
+		Registration::InvalidateQuickRegisterCache();
 	}
 }

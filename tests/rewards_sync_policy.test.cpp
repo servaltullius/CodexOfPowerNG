@@ -6,6 +6,7 @@ int main()
 {
 	using CodexOfPowerNG::Rewards::DecideSyncRequestAction;
 	using CodexOfPowerNG::Rewards::NextMissingStreak;
+	using CodexOfPowerNG::Rewards::ShouldStopSyncAfterPass;
 	using CodexOfPowerNG::Rewards::ShouldApplyAfterStreak;
 	using CodexOfPowerNG::Rewards::SyncRequestAction;
 
@@ -24,6 +25,11 @@ int main()
 	assert(ShouldApplyAfterStreak(0.5f, 3, 3));
 	assert(ShouldApplyAfterStreak(-0.5f, 3, 3));
 	assert(!ShouldApplyAfterStreak(0.0f, 5, 3));
+
+	// Early-stop decision (performance guard).
+	assert(ShouldStopSyncAfterPass(0, 0));
+	assert(!ShouldStopSyncAfterPass(1, 0));
+	assert(!ShouldStopSyncAfterPass(0, 2));
 
 	return 0;
 }

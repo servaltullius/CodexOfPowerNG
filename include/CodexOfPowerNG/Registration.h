@@ -76,6 +76,7 @@ namespace CodexOfPowerNG::Registration
 
 	// Quick-register inventory: unregistered + owned + registerable + safe to consume.
 	[[nodiscard]] QuickRegisterList BuildQuickRegisterList(std::size_t offset, std::size_t limit);
+	void InvalidateQuickRegisterCache() noexcept;
 
 	// Registered items view (discovery mode): state map keys -> names + groups.
 	[[nodiscard]] std::vector<ListItem> BuildRegisteredList();

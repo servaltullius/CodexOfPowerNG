@@ -9,7 +9,10 @@
 namespace CodexOfPowerNG::Rewards
 {
 	// Called after successful registration. Triggers rewards at the configured cadence.
-	void MaybeGrantRegistrationReward(std::uint32_t group, std::int32_t totalRegistered) noexcept;
+	// Returns the exact actor-value deltas that were applied for this registration tick.
+	[[nodiscard]] std::vector<Registration::RewardDelta> MaybeGrantRegistrationReward(
+		std::uint32_t group,
+		std::int32_t totalRegistered) noexcept;
 
 	// After loading a save, re-sync reward totals to runtime AV state if any bonus is missing.
 	void SyncRewardTotalsToPlayer() noexcept;

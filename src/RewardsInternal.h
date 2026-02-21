@@ -1,9 +1,12 @@
 #pragma once
 
+#include "CodexOfPowerNG/RegistrationUndoTypes.h"
+
 #include <RE/Skyrim.h>
 
 #include <cstdint>
 #include <string_view>
+#include <vector>
 
 namespace CodexOfPowerNG::Rewards::Internal
 {
@@ -11,6 +14,9 @@ namespace CodexOfPowerNG::Rewards::Internal
 	[[nodiscard]] float RewardMult() noexcept;
 
 	[[nodiscard]] float RecordRewardDelta(RE::ActorValue av, float delta) noexcept;
+	void BeginRewardDeltaCapture(std::vector<Registration::RewardDelta>& outDeltas) noexcept;
+	void EndRewardDeltaCapture() noexcept;
+	void CaptureAppliedRewardDelta(RE::ActorValue av, float delta) noexcept;
 	void GrantReward(
 		RE::ActorValue av,
 		float amount,

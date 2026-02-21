@@ -80,7 +80,8 @@
     "undoMissingRegistration": "힘의 도감: 되돌리기 실패(등록 기록 없음)",
     "undoPlayerUnavailable": "힘의 도감: 되돌리기 실패(플레이어 없음)",
     "undoItemMissing": "힘의 도감: 되돌리기 실패(아이템 폼 없음)",
-    "undoRestoreFailed": "힘의 도감: 되돌리기 실패(아이템 복구 불가)"
+    "undoRestoreFailed": "힘의 도감: 되돌리기 실패(아이템 복구 불가)",
+    "undoRewardRollbackWarning": " [경고: 보상 롤백이 적용되지 않음]"
   },
   "av": {
     "health": "체력",

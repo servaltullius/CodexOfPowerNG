@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cmath>
 #include <cstdint>
 
@@ -48,5 +49,12 @@ namespace CodexOfPowerNG::Rewards
 		float epsilon = 0.001f) noexcept
 	{
 		return std::abs(delta) > epsilon && streak >= requiredStreak;
+	}
+
+	[[nodiscard]] inline bool ShouldStopSyncAfterPass(
+		std::size_t correctedCount,
+		std::size_t pendingCount) noexcept
+	{
+		return correctedCount == 0 && pendingCount == 0;
 	}
 }

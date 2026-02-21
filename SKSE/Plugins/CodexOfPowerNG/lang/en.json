@@ -80,7 +80,8 @@
     "undoMissingRegistration": "Codex of Power: Undo failed (registration missing)",
     "undoPlayerUnavailable": "Codex of Power: Undo failed (player unavailable)",
     "undoItemMissing": "Codex of Power: Undo failed (item form missing)",
-    "undoRestoreFailed": "Codex of Power: Undo failed (cannot restore item)"
+    "undoRestoreFailed": "Codex of Power: Undo failed (cannot restore item)",
+    "undoRewardRollbackWarning": " [warning: reward rollback not applied]"
   },
   "av": {
     "health": "Health",

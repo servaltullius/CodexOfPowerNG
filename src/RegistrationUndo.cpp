@@ -1,12 +1,16 @@
 #include "CodexOfPowerNG/Registration.h"
 
 #include "CodexOfPowerNG/L10n.h"
+#include "CodexOfPowerNG/RewardCaps.h"
 #include "CodexOfPowerNG/RegistrationStateStore.h"
 #include "CodexOfPowerNG/Rewards.h"
 
 #include "RegistrationInternal.h"
 
+#include <SKSE/Logger.h>
+
 #include <algorithm>
+#include <cmath>
 #include <string>
 #include <utility>
 
@@ -107,7 +111,19 @@ namespace CodexOfPowerNG::Registration
 			return result;
 		}
 
-		(void)Rewards::RollbackRewardDeltas(record.rewardDeltas);
+		const auto rollbackApplied = Rewards::RollbackRewardDeltas(record.rewardDeltas);
+		const bool hadRollbackTarget =
+			std::any_of(record.rewardDeltas.begin(), record.rewardDeltas.end(), [](const RewardDelta& entry) {
+				return std::abs(entry.delta) > Rewards::kRewardCapEpsilon;
+			});
+		if (hadRollbackTarget && rollbackApplied == 0) {
+			SKSE::log::warn(
+				"Undo reward rollback: no actor deltas applied (actionId={}, regKey=0x{:08X}, deltas={})",
+				record.actionId,
+				static_cast<std::uint32_t>(record.regKey),
+				record.rewardDeltas.size());
+		}
+		InvalidateQuickRegisterCache();
 
 		const auto totalRegistered = RegistrationStateStore::SnapshotRegisteredItems().size();
 		result.totalRegistered = totalRegistered;
@@ -117,6 +133,11 @@ namespace CodexOfPowerNG::Registration
 			" (" + L10n::T("msg.totalPrefix", "total ") +
 			std::to_string(totalRegistered) +
 			L10n::T("msg.totalSuffix", " items") + ")";
+		if (hadRollbackTarget && rollbackApplied == 0) {
+			result.message += L10n::T(
+				"msg.undoRewardRollbackWarning",
+				" [warning: reward rollback not applied]");
+		}
 
 		RE::DebugNotification(result.message.c_str());
 		return result;

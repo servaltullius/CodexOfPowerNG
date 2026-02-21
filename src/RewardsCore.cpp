@@ -18,6 +18,11 @@
 
 namespace CodexOfPowerNG::Rewards::Internal
 {
+	namespace
+	{
+		thread_local std::vector<Registration::RewardDelta>* g_rewardCaptureOut{ nullptr };
+	}
+
 	int RandomInt(int minInclusive, int maxInclusive) noexcept
 	{
 		static thread_local std::mt19937 rng{ std::random_device{}() };
@@ -53,6 +58,34 @@ namespace CodexOfPowerNG::Rewards::Internal
 		const float appliedDelta = clampedTotal - total;
 		total = clampedTotal;
 		return (std::abs(appliedDelta) <= kRewardCapEpsilon) ? 0.0f : appliedDelta;
+	}
+
+	void BeginRewardDeltaCapture(std::vector<Registration::RewardDelta>& outDeltas) noexcept
+	{
+		outDeltas.clear();
+		g_rewardCaptureOut = &outDeltas;
+	}
+
+	void EndRewardDeltaCapture() noexcept
+	{
+		g_rewardCaptureOut = nullptr;
+	}
+
+	void CaptureAppliedRewardDelta(RE::ActorValue av, float delta) noexcept
+	{
+		if (!g_rewardCaptureOut || std::abs(delta) <= kRewardCapEpsilon) {
+			return;
+		}
+
+		for (auto& entry : *g_rewardCaptureOut) {
+			if (entry.av != av) {
+				continue;
+			}
+			entry.delta += delta;
+			return;
+		}
+
+		g_rewardCaptureOut->push_back(Registration::RewardDelta{ av, delta });
 	}
 
 	void GrantReward(
@@ -107,6 +140,7 @@ namespace CodexOfPowerNG::Rewards::Internal
 		}
 
 		avOwner->ModActorValue(av, applied);
+		CaptureAppliedRewardDelta(av, applied);
 		if (av == RE::ActorValue::kCarryWeight) {
 			// Carry weight desync reports are high-impact in gameplay feel.
 			// Schedule carry-only quick resync so missed application

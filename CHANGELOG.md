@@ -9,6 +9,23 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.8-rc.1] - 2026-02-21 (Pre-release)
+
+### Fixed
+- Reward sync now supports early convergence exit, reducing unnecessary post-load pass execution.
+- Registration undo now records reward deltas from actual applied grant deltas (instead of full before/after snapshot diff), improving rollback consistency.
+- Undo flow now warns when a rollback target existed but no actor-value rollback delta could be applied.
+- Save writer flow now aggregates writer success/failure and emits a top-level failure log when co-save write is incomplete.
+
+### Changed
+- Quick-register list now uses a short-lived cache with generation-based invalidation to reduce repeated full-scan/sort cost.
+- Quick-register cache is invalidated on registration/undo/load/revert/settings updates to keep list correctness.
+- Added/updated regression tests for reward sync policy, undo rollback behavior, save writer aggregation, and quick-register cache invalidation.
+
+### Notes
+- Detailed release note: `docs/releases/v1.0.8-rc.1.md`
+- Save compatibility policy remains unchanged: Codex of Power / SVCollection is not compatible.
+
 ## [1.0.7-rc.14] - 2026-02-19 (Pre-release)
 
 ### Fixed
@@ -155,7 +172,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.7-rc.14...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.8-rc.1...HEAD
+[1.0.8-rc.1]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.8-rc.1
 [1.0.7-rc.14]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.14
 [1.0.7-rc.13]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.13
 [1.0.7-rc.12]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.12

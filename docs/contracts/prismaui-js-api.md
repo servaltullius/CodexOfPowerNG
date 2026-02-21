@@ -120,6 +120,7 @@ Payload:
 Notes:
 - Safety policy: only the latest action can be undone (LIFO).
 - Undo restores 1 consumed item and rolls back reward deltas recorded for that action.
+- If item restore succeeds but no actor-value delta remains to roll back, the success message may include a warning suffix (`[warning: reward rollback not applied]` / `[경고: 보상 롤백이 적용되지 않음]`).
 
 ### `window.copng_refundRewards(payloadJson)`
 Refunds recorded rewards (does not restore consumed items; registrations remain).
@@ -147,6 +148,7 @@ Example payload:
 
 ### `window.copng_setInventory(jsonOrString)`
 Quick-register inventory list (safe-to-consume entries only).
+Implementation note: native side may serve this from a short-lived internal cache. Payload schema is unchanged.
 
 Example:
 ```json

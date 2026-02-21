@@ -77,6 +77,7 @@ NG는 잔재가 남아 있으면 런타임에서 경고 로그/알림을 표시�
 - UI 열림 상태에서 커서/호버가 무거움: `Performance mode`를 `On`으로 설정합니다.
 - UI를 닫았는데도 프레임 드랍이 남음: `Destroy view on close`를 `ON` 권장(기본값).
 - UI 포커스로 게임 입력이 묶인 느낌: `ESC` 또는 `F4`로 닫아 복구합니다.
+- Undo 성공 메시지에 `[경고: 보상 롤백이 적용되지 않음]`이 붙음: 아이템 복구는 성공했지만 해당 액션의 보상 델타가 현재 actor 값에 적용되지 않아(이미 정규화/동기화된 경우) 추가 롤백할 값이 없다는 의미입니다.
 
 ### 8) 로그 위치
 - Prisma UI: `Documents/My Games/Skyrim Special Edition/SKSE/PrismaUI.log`
@@ -149,6 +150,7 @@ If residue is detected, NG logs and shows an in-game warning.
 - Cursor/hover feels choppy while UI is open: set `Performance mode` to `On`.
 - FPS drop remains after closing UI: keep `Destroy view on close` enabled.
 - Input feels stuck in UI focus mode: close with `ESC` or `F4`.
+- Undo success message includes `[warning: reward rollback not applied]`: item restore succeeded, but there was no remaining actor-value delta to roll back for that action (for example, the value was already normalized/resynced).
 
 ### 8) Log locations
 - Prisma UI: `Documents/My Games/Skyrim Special Edition/SKSE/PrismaUI.log`

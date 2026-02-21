@@ -48,7 +48,6 @@ test("sync/refund paths normalize over-capped totals and include carry-weight di
   assert.match(src, /normalizeCapsOnFirstPass/);
   assert.match(src, /Reward cap normalize:/);
   assert.match(src, /ComputeCappedRewardSyncDeltaFromSnapshot\(/);
-  assert.match(src, /Reward sync cap guard:/);
   assert.match(src, /Reward sync \(carry weight\):/);
   assert.match(src, /ComputeCarryWeightSyncDelta\(/);
   assert.match(src, /ComputeRewardSyncDeltaFromSnapshot\(/);
@@ -56,7 +55,7 @@ test("sync/refund paths normalize over-capped totals and include carry-weight di
   assert.match(src, /kCarryWeightQuickResyncStuckMs = 3000/);
   assert.match(src, /g_carryWeightQuickResyncRerunRequested/);
   assert.match(src, /ScheduleCarryWeightQuickResync\(\)/);
-  assert.match(src, /if \(av == RE::ActorValue::kCarryWeight\)[\s\S]*forceImmediate = std::abs\(delta\) > kRewardCapEpsilon;/);
+  assert.match(src, /if \(av == RE::ActorValue::kCarryWeight\)[\s\S]*applyImmediately = std::abs\(delta\) > kRewardCapEpsilon;/);
   assert.match(src, /nonConvergingActorValues/);
   assert.match(src, /Reward sync guard: AV/);
 });

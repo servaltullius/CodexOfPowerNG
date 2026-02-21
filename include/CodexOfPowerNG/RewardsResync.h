@@ -133,9 +133,11 @@ namespace CodexOfPowerNG::Rewards
 	}
 
 	// Conservative correction policy for capped AVs:
-	// 1) If current value is above hard cap, correct downward immediately.
-	// 2) For positive expected totals, only apply a positive delta when both
-	//    current-based and snapshot-based views agree that reward is missing.
+	// For positive expected totals, only apply a positive delta when both
+	// current-based and snapshot-based views agree that reward is missing.
+	// NOTE: Do not apply downward corrections based on cap comparisons here;
+	// "currentValue" can be above cap due to external buffs/gear, and reward
+	// sync must not interfere with those sources.
 	[[nodiscard]] inline float ComputeCappedRewardSyncDeltaFromSnapshot(
 		float baseValue,
 		float currentValue,
@@ -146,10 +148,6 @@ namespace CodexOfPowerNG::Rewards
 		float epsilon = 0.001f) noexcept
 	{
 		const float cappedExpectedTotal = (std::min)(expectedTotal, hardCapTotal);
-		const float hardCapCurrent = baseValue + hardCapTotal;
-		if (currentValue > (hardCapCurrent + epsilon)) {
-			return hardCapCurrent - currentValue;
-		}
 
 		const float deltaFromCurrent = ComputeRewardSyncDeltaFromCurrent(
 			baseValue,

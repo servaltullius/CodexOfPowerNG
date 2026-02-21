@@ -576,12 +576,12 @@ namespace CodexOfPowerNG::Rewards
 				float delta = 0.0f;
 				float cap = 0.0f;
 				const bool hasRewardCap = TryGetRewardCap(av, cap);
-				bool forceImmediate = false;
+				bool applyImmediately = false;
 				if (av == RE::ActorValue::kCarryWeight) {
 					delta = ComputeCarryWeightSyncDelta(base, cur, permanent, permanentModifier, total);
 					// Carry weight desync on load is high-impact in gameplay.
 					// Apply immediately when a non-trivial delta is observed.
-					forceImmediate = std::abs(delta) > kRewardCapEpsilon;
+					applyImmediately = std::abs(delta) > kRewardCapEpsilon;
 				} else if (hasRewardCap) {
 					delta = ComputeCappedRewardSyncDeltaFromSnapshot(
 						base,
@@ -591,7 +591,6 @@ namespace CodexOfPowerNG::Rewards
 						total,
 						cap,
 						kRewardCapEpsilon);
-					forceImmediate = cur > (base + cap + kRewardCapEpsilon);
 				} else {
 					delta = snapshot.delta;
 				}
@@ -609,23 +608,13 @@ namespace CodexOfPowerNG::Rewards
 						streak);
 				}
 
-				if (!forceImmediate && !ShouldApplyAfterStreak(delta, streak, kRewardSyncMinMissingStreak)) {
+				if (!applyImmediately && !ShouldApplyAfterStreak(delta, streak, kRewardSyncMinMissingStreak)) {
 					if (std::abs(delta) > kRewardCapEpsilon) {
 						++passResult.pendingCount;
 					}
 					continue;
 				}
 				streak = 0;
-
-				if (forceImmediate) {
-					SKSE::log::warn(
-						"Reward sync cap guard: AV {} above cap (base {:.4f}, current {:.4f}, cap {:.2f}); applying {:.4f}",
-						static_cast<std::uint32_t>(av),
-						base,
-						cur,
-						cap,
-						delta);
-				}
 
 				// Keep shout cooldown in sane range even if load-time state diverges.
 				if (av == RE::ActorValue::kShoutRecoveryMult) {

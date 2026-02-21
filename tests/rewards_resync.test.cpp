@@ -121,7 +121,7 @@ int main()
 		5.0f);
 
 	// Capped AV conservative policy:
-	// when current already exceeds hard cap, force immediate downward correction.
+	// do not apply downward correction when current exceeds hard cap (external sources).
 	AssertNear(
 		ComputeCappedRewardSyncDeltaFromSnapshot(
 			100.0f,  // base
@@ -130,7 +130,27 @@ int main()
 			0.0f,    // permanent mod
 			50.0f,   // expected reward total
 			50.0f),  // hard cap total
-		-70.0f);
+		0.0f);
+
+	// Regression: resist/speed can exceed cap due to external effects; never debuff.
+	AssertNear(
+		ComputeCappedRewardSyncDeltaFromSnapshot(
+			0.0f,   // base
+			110.0f, // current (+110; above cap from external)
+			110.0f, // permanent
+			110.0f, // permanent mod
+			4.0f,   // expected reward total
+			85.0f), // hard cap total
+		0.0f);
+	AssertNear(
+		ComputeCappedRewardSyncDeltaFromSnapshot(
+			1.0f,  // base
+			1.7f,  // current (+0.7; above cap from external)
+			1.7f,  // permanent
+			0.7f,  // permanent mod
+			0.5f,  // expected reward total
+			0.5f), // hard cap total
+		0.0f);
 
 	// If current-based view says no missing reward, do not apply positive sync
 	// even when another snapshot source under-reports.

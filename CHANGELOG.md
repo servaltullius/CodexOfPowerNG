@@ -9,6 +9,15 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.8-rc.2] - 2026-02-21 (Pre-release)
+
+### Fixed
+- Reward sync no longer applies downward "cap-guard" corrections for capped actor values when the observed cap overflow is caused by external buffs/gear (prevents unintended debuffs on e.g. frost resist / move speed).
+
+### Notes
+- Detailed release note: `docs/releases/v1.0.8-rc.2.md`
+- Save compatibility policy remains unchanged: Codex of Power / SVCollection is not compatible.
+
 ## [1.0.8-rc.1] - 2026-02-21 (Pre-release)
 
 ### Fixed

@@ -1,8 +1,10 @@
 #include "CodexOfPowerNG/TaskScheduler.h"
 
 #include <SKSE/SKSE.h>
+#include <SKSE/Logger.h>
 
 #include <atomic>
+#include <exception>
 #include <utility>
 
 namespace CodexOfPowerNG
@@ -19,7 +21,15 @@ namespace CodexOfPowerNG
 				}
 
 				if (auto* tasks = SKSE::GetTaskInterface(); tasks) {
-					tasks->AddTask([task = std::move(task)]() mutable { task(); });
+					tasks->AddTask([task = std::move(task)]() mutable {
+						try {
+							task();
+						} catch (const std::exception& e) {
+							SKSE::log::error("Unhandled exception in queued main task: {}", e.what());
+						} catch (...) {
+							SKSE::log::error("Unhandled exception in queued main task");
+						}
+					});
 					return true;
 				}
 				return false;
@@ -32,7 +42,15 @@ namespace CodexOfPowerNG
 				}
 
 				if (auto* tasks = SKSE::GetTaskInterface(); tasks) {
-					tasks->AddUITask([task = std::move(task)]() mutable { task(); });
+					tasks->AddUITask([task = std::move(task)]() mutable {
+						try {
+							task();
+						} catch (const std::exception& e) {
+							SKSE::log::error("Unhandled exception in queued UI task: {}", e.what());
+						} catch (...) {
+							SKSE::log::error("Unhandled exception in queued UI task");
+						}
+					});
 					return true;
 				}
 				return false;

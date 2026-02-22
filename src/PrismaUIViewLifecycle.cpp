@@ -14,6 +14,7 @@ extern "C" __declspec(dllimport) void* __stdcall GetProcAddress(void* hModule, c
 
 #include "PrismaUI_API.h"
 
+#include <exception>
 #include <utility>
 
 namespace CodexOfPowerNG::PrismaUIManager::Internal
@@ -28,12 +29,23 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			if (!State::domReady.load(std::memory_order_acquire)) {
 				return;
 			}
-			auto* api = State::prismaAPI.load(std::memory_order_acquire);
+			auto* api = GetPrismaAPI();
 			const auto view = State::view.load(std::memory_order_acquire);
 			if (!api || view == 0 || !api->IsValid(view)) {
 				return;
 			}
-			const auto s = payload.dump();
+
+			std::string s;
+			try {
+				s = payload.dump();
+			} catch (const std::exception& e) {
+				SKSE::log::error("InteropCall: failed to serialize payload for '{}': {}", fn, e.what());
+				return;
+			} catch (...) {
+				SKSE::log::error("InteropCall: failed to serialize payload for '{}'", fn);
+				return;
+			}
+
 			api->InteropCall(view, fn, s.c_str());
 		}
 
@@ -44,7 +56,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 
 		void OnDomReady(PrismaView view) noexcept
 		{
-			auto* api = State::prismaAPI.load(std::memory_order_acquire);
+			auto* api = GetPrismaAPI();
 			const auto activeView = State::view.load(std::memory_order_acquire);
 			if (!api || view == 0 || activeView == 0 || view != activeView) {
 				SKSE::log::info("DOM ready ignored for stale view {} (active {})", view, activeView);
@@ -60,7 +72,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			// Route initialization through the task queue to avoid any uncertainty
 			// about which thread PrismaUI invokes the DOM-ready callback on.
 			if (QueueUITask([view]() {
-					auto* api = State::prismaAPI.load(std::memory_order_acquire);
+					auto* api = GetPrismaAPI();
 					const auto activeView = State::view.load(std::memory_order_acquire);
 					if (!api || activeView == 0 || activeView != view || !api->IsValid(activeView)) {
 						return;
@@ -96,12 +108,32 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 
 	PRISMA_UI_API::IVPrismaUI1* GetPrismaAPI() noexcept
 	{
-		return State::prismaAPI.load(std::memory_order_acquire);
+		if (auto* api = State::prismaAPI.load(std::memory_order_acquire)) {
+			return api;
+		}
+
+		auto* requested = static_cast<PRISMA_UI_API::IVPrismaUI1*>(
+			PRISMA_UI_API::RequestPluginAPI(PRISMA_UI_API::InterfaceVersion::V1));
+		if (!requested) {
+			return nullptr;
+		}
+
+		PRISMA_UI_API::IVPrismaUI1* expected = nullptr;
+		if (State::prismaAPI.compare_exchange_strong(
+				expected,
+				requested,
+				std::memory_order_release,
+				std::memory_order_relaxed)) {
+			SKSE::log::info("Prisma UI API acquired (late)");
+			return requested;
+		}
+
+		return expected;
 	}
 
 	bool IsReady() noexcept
 	{
-		auto* api = State::prismaAPI.load(std::memory_order_acquire);
+		auto* api = GetPrismaAPI();
 		const auto view = State::view.load(std::memory_order_acquire);
 		return api && view != 0 && api->IsValid(view);
 	}
@@ -162,7 +194,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 				return;
 			}
 
-			auto* api = State::prismaAPI.load(std::memory_order_acquire);
+			auto* api = GetPrismaAPI();
 			const auto view = State::view.load(std::memory_order_acquire);
 			if (!api || view == 0 || !api->IsValid(view)) {
 				return;
@@ -182,7 +214,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 
 	bool EnsureCreatedOnUIThread() noexcept
 	{
-		auto* api = State::prismaAPI.load(std::memory_order_acquire);
+		auto* api = GetPrismaAPI();
 		if (!api) {
 			SKSE::log::warn("Prisma UI API unavailable. Is PrismaUI installed?");
 			return false;

@@ -119,8 +119,19 @@ if(COPNG_BUILD_CPP_TEST_TARGETS)
     endif()
 
     if(CMAKE_CROSSCOMPILING AND CMAKE_SYSTEM_NAME STREQUAL "Windows")
+      # Prefer a 64-bit Wine loader when running 64-bit Windows test executables.
+      # (On some distros, `wine` may default to a 32-bit loader and fail with
+      #  "could not load kernel32.dll".)
+      find_program(WINE64_EXECUTABLE wine64)
+      if(NOT WINE64_EXECUTABLE AND EXISTS "/usr/lib/wine/wine64")
+        set(WINE64_EXECUTABLE "/usr/lib/wine/wine64")
+      endif()
+
       find_program(WINE_EXECUTABLE wine)
-      if(WINE_EXECUTABLE)
+      if(WINE64_EXECUTABLE)
+        add_test(NAME "${test_name}" COMMAND "${WINE64_EXECUTABLE}" "$<TARGET_FILE:${test_target}>")
+        set_tests_properties("${test_name}" PROPERTIES ENVIRONMENT "WINEDEBUG=fixme-all")
+      elseif(WINE_EXECUTABLE)
         add_test(NAME "${test_name}" COMMAND "${WINE_EXECUTABLE}" "$<TARGET_FILE:${test_target}>")
       else()
         message(WARNING "wine not found; running ${test_name} directly may fail in cross-compile environments")

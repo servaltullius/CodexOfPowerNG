@@ -95,7 +95,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 									return;
 								}
 
-								auto* api = State::prismaAPI.load(std::memory_order_acquire);
+								auto* api = GetPrismaAPI();
 								const auto activeView = State::view.load(std::memory_order_acquire);
 								if (!api || view == 0 || activeView == 0 || activeView != view || !api->IsValid(view)) {
 									promise->set_value(CloseResult::kDone);
@@ -183,6 +183,33 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		State::JoinIfJoinable(State::focusDelayThread);
 	}
 
+	void ForceCleanupForLoadBoundary() noexcept
+	{
+		// PreLoadGame can happen while PrismaUI has focus/cursor capture active.
+		// Make a best-effort attempt to release focus and hide any residual overlays/cursor.
+		State::openRequested.store(false, std::memory_order_relaxed);
+
+		const auto view = State::view.load(std::memory_order_acquire);
+
+		QueueForceHideFocusMenu();
+		QueueHideSkyrimCursor();
+
+		if (!QueueUITask([view]() {
+				auto* api = GetPrismaAPI();
+				if (api && view != 0 && api->IsValid(view)) {
+					api->Unfocus(view);
+					api->Hide(view);
+					api->Destroy(view);
+					SKSE::log::info("PreLoadGame: forced PrismaView destroy: {}", view);
+				}
+
+				ResetViewStateOnUIThread();
+			})) {
+			SKSE::log::warn("PreLoadGame: failed to queue UI cleanup task");
+			ResetViewStateOnUIThread();
+		}
+	}
+
 	void QueueDelayedFocusAndState(std::uint32_t delayMs) noexcept
 	{
 		bool expected = false;
@@ -211,7 +238,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 							return;
 						}
 
-						auto* api = State::prismaAPI.load(std::memory_order_acquire);
+						auto* api = GetPrismaAPI();
 						const auto view = State::view.load(std::memory_order_acquire);
 						if (!api || view == 0 || !api->IsValid(view)) {
 							return;
@@ -249,7 +276,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 
 	void BeginCloseOnUIThread(PrismaView view, bool destroyOnClose) noexcept
 	{
-		auto* api = State::prismaAPI.load(std::memory_order_acquire);
+		auto* api = GetPrismaAPI();
 		if (!api || view == 0 || !api->IsValid(view)) {
 			if (destroyOnClose) {
 				ResetViewStateOnUIThread();

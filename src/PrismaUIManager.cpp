@@ -52,6 +52,7 @@ namespace CodexOfPowerNG::PrismaUIManager
 	void OnPreLoadGame() noexcept
 	{
 		Shutdown();
+		Internal::ForceCleanupForLoadBoundary();
 		Internal::ResetTogglePolicyForPreLoad();
 	}
 

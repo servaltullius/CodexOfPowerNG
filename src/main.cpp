@@ -133,7 +133,7 @@ namespace CodexOfPowerNG
 		spdlog::set_default_logger(std::move(logger));
 		spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
 		spdlog::set_level(spdlog::level::info);
-		spdlog::flush_on(spdlog::level::info);
+		spdlog::flush_on(spdlog::level::warn);
 	}
 
 	class InputEventSink final : public RE::BSTEventSink<RE::InputEvent*>

@@ -125,7 +125,13 @@ namespace CodexOfPowerNG::RegistrationMaps
 				break;
 			}
 			const auto patchPath = paths.pluginDataDir / name;
-			if (!std::filesystem::exists(patchPath)) {
+			std::error_code ec;
+			const bool exists = std::filesystem::exists(patchPath, ec);
+			if (ec) {
+				SKSE::log::warn("Exclude patch file check failed for '{}': {}", patchPath.string(), ec.message());
+				break;
+			}
+			if (!exists) {
 				break;
 			}
 			LoadExcludeFile(patchPath, out.excluded, resolveEntry);

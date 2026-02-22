@@ -52,6 +52,8 @@ Codex of Power NG는 기존 SVCollection 계열을 이어가는 패치가 아니
    - 기본값 템플릿: `SKSE/Plugins/CodexOfPowerNG/settings.json`
    - 사용자 오버라이드(권장): `SKSE/Plugins/CodexOfPowerNG/settings.user.json`
    - 인게임 Settings 저장 시 `settings.user.json`에 기록되어 업데이트/재설치 시 덮어쓰기 영향을 줄입니다.
+   - 안전을 위해 저장 시 이전 파일을 `settings.user.json.bak`로 보관합니다(복구용).
+   - 크래시 등으로 `settings.user.json.tmp`가 남아있으면 다음 실행 시 정리/복구를 시도합니다.
 
 ### 5) 구버전 사용자 필수 정리 절차
 NG는 구버전 런타임 상태와 호환되지 않습니다. 아래 잔재를 먼저 정리하세요.
@@ -125,6 +127,8 @@ Codex of Power NG is not a continuation patch for SVCollection. It is a separate
    - Default template: `SKSE/Plugins/CodexOfPowerNG/settings.json`
    - User override (recommended): `SKSE/Plugins/CodexOfPowerNG/settings.user.json`
    - In-game Settings save writes to `settings.user.json` so updates/reinstalls are less likely to wipe your preferences.
+   - For safety, saves keep a previous copy as `settings.user.json.bak` (for recovery).
+   - If `settings.user.json.tmp` is left behind (for example after a crash), the next launch will attempt cleanup/recovery.
 
 ### 5) Mandatory cleanup for legacy users
 NG is not compatible with old Codex/SVCollection runtime residue.

@@ -9,6 +9,23 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.8-rc.3] - 2026-02-22 (Pre-release)
+
+### Fixed
+- Settings save (`settings.user.json`) is now atomic via `.tmp` + rename with `.bak` backup retention, and startup repair for stale `.tmp/.bak` artifacts was added.
+- Prisma UI interop now guards JSON serialization (`payload.dump()`) failures to avoid `noexcept` termination.
+- Queued SKSE tasks are now wrapped with exception guards to prevent unhandled exceptions from killing the game process.
+- PreLoadGame now forces Prisma UI cleanup (FocusMenu/cursor/view) to reduce stuck focus/cursor/pause cases across load boundaries.
+- Exclude patch scanning now uses non-throwing `std::filesystem::exists(..., error_code)` to avoid unexpected exceptions.
+
+### Changed
+- Logging now flushes on `warn` (instead of `info`) to reduce potential I/O stalls under verbose logs.
+- Prisma UI API can be acquired lazily if it was unavailable during PostLoad.
+
+### Notes
+- Detailed release note: `docs/releases/v1.0.8-rc.3.md`
+- Save compatibility policy remains unchanged: Codex of Power / SVCollection is not compatible.
+
 ## [1.0.8-rc.2] - 2026-02-21 (Pre-release)
 
 ### Fixed
@@ -181,7 +198,9 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.8-rc.1...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.8-rc.3...HEAD
+[1.0.8-rc.3]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.8-rc.3
+[1.0.8-rc.2]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.8-rc.2
 [1.0.8-rc.1]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.8-rc.1
 [1.0.7-rc.14]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.14
 [1.0.7-rc.13]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.7-rc.13

@@ -22,6 +22,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 	[[nodiscard]] PRISMA_UI_API::IVPrismaUI1* GetPrismaAPI() noexcept;
 	void SetShuttingDown(bool value) noexcept;
 	void JoinLifecycleWorkers() noexcept;
+	void ForceCleanupForLoadBoundary() noexcept;
 
 	[[nodiscard]] bool IsReady() noexcept;
 	[[nodiscard]] bool IsDomReady() noexcept;

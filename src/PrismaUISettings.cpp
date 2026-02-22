@@ -12,6 +12,7 @@
 #include <SKSE/Logger.h>
 
 #include <atomic>
+#include <exception>
 #include <mutex>
 #include <optional>
 #include <thread>
@@ -59,48 +60,66 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 				std::scoped_lock lock(g_settingsWorkerMutex);
 				JoinIfJoinable(g_settingsSaveThread);
 				g_settingsSaveThread = std::thread([]() {
-					for (;;) {
-						if (g_settingsSaveWorkerStopping.load(std::memory_order_relaxed)) {
-							g_settingsSaveWorkerRunning.store(false, std::memory_order_relaxed);
-							return;
-						}
-
-						SettingsSaveJob next{};
-						{
-							std::scoped_lock lock(g_settingsSaveMutex);
-							if (!g_pendingSettingsSave) {
+					try {
+						for (;;) {
+							if (g_settingsSaveWorkerStopping.load(std::memory_order_relaxed)) {
 								g_settingsSaveWorkerRunning.store(false, std::memory_order_relaxed);
 								return;
 							}
-							next = std::move(*g_pendingSettingsSave);
-							g_pendingSettingsSave.reset();
-						}
 
-						const auto ok = SaveSettingsToDisk(next.settings);
-						bool needsMainThreadL10n = false;
-						if (ok && next.reloadL10n) {
-							// Reload localization. Avoid calling RE::GetINISetting from a background thread when in auto mode.
-							const auto explicitLang = (next.settings.languageOverride == "en" || next.settings.languageOverride == "ko");
-							if (explicitLang) {
-								L10n::Load();
-							} else {
-								needsMainThreadL10n = true;
-							}
-						}
-
-						(void)QueueUITask([ok, needsMainThreadL10n]() {
-							if (ok) {
-								if (needsMainThreadL10n) {
-									L10n::Load();
+							SettingsSaveJob next{};
+							{
+								std::scoped_lock lock(g_settingsSaveMutex);
+								if (!g_pendingSettingsSave) {
+									g_settingsSaveWorkerRunning.store(false, std::memory_order_relaxed);
+									return;
 								}
-								ShowToast("info", "Settings saved");
-							} else {
-								ShowToast("error", "Failed to save settings");
+								next = std::move(*g_pendingSettingsSave);
+								g_pendingSettingsSave.reset();
 							}
-							SendJS("copng_setSettings", BuildSettingsPayload(GetSettings()));
-							SendStateToUI();
-						});
+
+							bool ok = false;
+							try {
+								ok = SaveSettingsToDisk(next.settings);
+							} catch (const std::exception& e) {
+								SKSE::log::error("Settings save worker: SaveSettingsToDisk threw: {}", e.what());
+								ok = false;
+							} catch (...) {
+								SKSE::log::error("Settings save worker: SaveSettingsToDisk threw (unknown exception)");
+								ok = false;
+							}
+
+							bool needsMainThreadL10n = false;
+							if (ok && next.reloadL10n) {
+								// Reload localization. Avoid calling RE::GetINISetting from a background thread when in auto mode.
+								const auto explicitLang = (next.settings.languageOverride == "en" || next.settings.languageOverride == "ko");
+								if (explicitLang) {
+									L10n::Load();
+								} else {
+									needsMainThreadL10n = true;
+								}
+							}
+
+							(void)QueueUITask([ok, needsMainThreadL10n]() {
+								if (ok) {
+									if (needsMainThreadL10n) {
+										L10n::Load();
+									}
+									ShowToast("info", "Settings saved");
+								} else {
+									ShowToast("error", "Failed to save settings");
+								}
+								SendJS("copng_setSettings", BuildSettingsPayload(GetSettings()));
+								SendStateToUI();
+							});
+						}
+					} catch (const std::exception& e) {
+						SKSE::log::error("Settings save worker crashed: {}", e.what());
+					} catch (...) {
+						SKSE::log::error("Settings save worker crashed (unknown exception)");
 					}
+
+					g_settingsSaveWorkerRunning.store(false, std::memory_order_relaxed);
 				});
 			}
 		}

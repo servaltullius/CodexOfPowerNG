@@ -12,6 +12,7 @@
 #include <fstream>
 #include <algorithm>
 #include <cmath>
+#include <exception>
 #include <mutex>
 #include <string_view>
 
@@ -21,6 +22,78 @@ namespace CodexOfPowerNG
 	{
 		std::mutex g_settingsMutex;
 		Settings   g_settings{};
+
+		[[nodiscard]] bool IsValidJsonFile(const std::filesystem::path& path) noexcept
+		{
+			std::error_code sizeEc{};
+			const auto size = std::filesystem::file_size(path, sizeEc);
+			if (!sizeEc) {
+				// A settings file should remain tiny; avoid parsing pathological files.
+				constexpr std::uintmax_t kMaxBytes = 1024 * 1024;  // 1 MiB
+				if (size > kMaxBytes) {
+					return false;
+				}
+			}
+
+			std::ifstream in(path, std::ios::binary);
+			if (!in.is_open()) {
+				return false;
+			}
+
+			try {
+				nlohmann::json j;
+				in >> j;
+				return true;
+			} catch (...) {
+				return false;
+			}
+		}
+
+		void RepairUserSettingsFiles() noexcept
+		{
+			const auto path = std::filesystem::path(kSettingsUserPath);
+			auto tmpPath = path;
+			tmpPath += ".tmp";
+			auto bakPath = path;
+			bakPath += ".bak";
+
+			std::error_code ec{};
+			const bool finalExists = std::filesystem::exists(path, ec) && !ec;
+			ec.clear();
+			const bool tmpExists = std::filesystem::exists(tmpPath, ec) && !ec;
+			ec.clear();
+			const bool bakExists = std::filesystem::exists(bakPath, ec) && !ec;
+
+			// If the final file is missing but a temp exists, try recovering the temp first.
+			// (Conservative: do not overwrite a valid final settings.user.json automatically.)
+			if (!finalExists && tmpExists && IsValidJsonFile(tmpPath)) {
+				std::error_code recoverEc{};
+				std::filesystem::rename(tmpPath, path, recoverEc);
+				if (!recoverEc) {
+					SKSE::log::warn("Recovered settings.user.json from stale temp file '{}'", tmpPath.string());
+				}
+			}
+
+			// Remove stale temp file (best effort).
+			if (tmpExists) {
+				std::error_code rmEc{};
+				(void)std::filesystem::remove(tmpPath, rmEc);
+				if (!rmEc) {
+					SKSE::log::info("Removed stale settings.user.json.tmp at '{}'", tmpPath.string());
+				}
+			}
+
+			// If the final file is still missing, try restoring the backup.
+			ec.clear();
+			const bool finalExistsAfter = std::filesystem::exists(path, ec) && !ec;
+			if (!finalExistsAfter && bakExists && IsValidJsonFile(bakPath)) {
+				std::error_code restoreEc{};
+				std::filesystem::rename(bakPath, path, restoreEc);
+				if (!restoreEc) {
+					SKSE::log::warn("Restored settings.user.json from backup file '{}'", bakPath.string());
+				}
+			}
+		}
 
 		[[nodiscard]] Settings Clamp(Settings settings)
 		{
@@ -156,6 +229,7 @@ namespace CodexOfPowerNG
 
 		[[nodiscard]] Settings LoadFromDisk()
 		{
+			RepairUserSettingsFiles();
 			Settings settings = Defaults();
 			ApplySettingsFromFile(SettingsPath(), settings, "settings.json");
 			ApplySettingsFromFile(UserSettingsPath(), settings, "settings.user.json");
@@ -165,8 +239,21 @@ namespace CodexOfPowerNG
 		[[nodiscard]] bool SaveToDisk(const Settings& settings)
 		{
 			const auto path = UserSettingsPath();
+			auto tmpPath = path;
+			tmpPath += ".tmp";
+			auto bakPath = path;
+			bakPath += ".bak";
+
 			std::error_code ec{};
 			std::filesystem::create_directories(path.parent_path(), ec);
+			if (ec) {
+				SKSE::log::error(
+					"Failed to create settings directory '{}' ({}): {}",
+					path.parent_path().string(),
+					ec.value(),
+					ec.message());
+				return false;
+			}
 
 			nlohmann::json j;
 			j["version"] = 2;
@@ -191,15 +278,84 @@ namespace CodexOfPowerNG
 				{ "allowSkillRewards", settings.allowSkillRewards },
 			};
 
-			std::ofstream out(path, std::ios::binary | std::ios::trunc);
-			if (!out.is_open()) {
-				SKSE::log::error("Failed to write settings.user.json at '{}'", path.string());
+			std::string serialized;
+			try {
+				serialized = j.dump(2);
+			} catch (const std::exception& e) {
+				SKSE::log::error("Failed to serialize settings JSON for settings.user.json: {}", e.what());
+				return false;
+			} catch (...) {
+				SKSE::log::error("Failed to serialize settings JSON for settings.user.json");
 				return false;
 			}
 
-			out << j.dump(2);
-			out << "\n";
-			return true;
+			{
+				std::ofstream out(tmpPath, std::ios::binary | std::ios::trunc);
+				if (!out.is_open()) {
+					SKSE::log::error("Failed to write settings.user.json.tmp at '{}'", tmpPath.string());
+					return false;
+				}
+
+				out << serialized;
+				out << "\n";
+				out.flush();
+				if (!out) {
+					SKSE::log::error("Failed to flush settings.user.json.tmp at '{}'", tmpPath.string());
+					std::error_code rmEc{};
+					(void)std::filesystem::remove(tmpPath, rmEc);
+					return false;
+				}
+			}
+
+			// Rotate: settings.user.json -> settings.user.json.bak (best effort).
+			ec.clear();
+			if (std::filesystem::exists(path, ec) && !ec) {
+				std::error_code bakRemoveEc{};
+				(void)std::filesystem::remove(bakPath, bakRemoveEc);
+
+				std::error_code bakEc{};
+				std::filesystem::rename(path, bakPath, bakEc);
+				if (bakEc) {
+					SKSE::log::warn(
+						"Failed to rotate settings.user.json to backup '{}' ({}): {}",
+						bakPath.string(),
+						bakEc.value(),
+						bakEc.message());
+				}
+			}
+
+			// Commit: settings.user.json.tmp -> settings.user.json
+			std::error_code commitEc{};
+			std::filesystem::rename(tmpPath, path, commitEc);
+			if (!commitEc) {
+				return true;
+			}
+
+			SKSE::log::error(
+				"Failed to replace settings.user.json with temp file '{}' ({}): {}",
+				path.string(),
+				commitEc.value(),
+				commitEc.message());
+
+			std::error_code rmEc{};
+			(void)std::filesystem::remove(tmpPath, rmEc);
+
+			// Restore backup if we moved the original away and the final path is now missing.
+			std::error_code existsEc{};
+			const bool finalExists = std::filesystem::exists(path, existsEc) && !existsEc;
+			if (!finalExists) {
+				std::error_code restoreEc{};
+				std::filesystem::rename(bakPath, path, restoreEc);
+				if (restoreEc) {
+					SKSE::log::error(
+						"Failed to restore settings.user.json from backup '{}' ({}): {}",
+						bakPath.string(),
+						restoreEc.value(),
+						restoreEc.message());
+				}
+			}
+
+			return false;
 		}
 	}
 

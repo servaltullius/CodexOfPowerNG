@@ -28,6 +28,9 @@ namespace CodexOfPowerNG
 	inline constexpr std::uint32_t kRecordRewards = 'RWDS';
 	inline constexpr std::uint32_t kRecordUndoHistory = 'UNDO';
 
+	// Sentinel: group was not stored (v1 serialization). Triggers re-computation.
+	inline constexpr std::uint32_t kGroupUnknown = 255;
+
 	// Default: F4 (DIK_F4 = 0x3E)
 	inline constexpr std::uint32_t kToggleKeyCode = 0x3E;
 }

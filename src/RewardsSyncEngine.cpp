@@ -242,7 +242,7 @@ namespace CodexOfPowerNG::Rewards::Engine
 					continue;
 				}
 
-				avOwner->ModActorValue(entry.av, delta);
+				avOwner->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kPermanent, entry.av, delta);
 				++appliedCount;
 
 				float cap = 0.0f;
@@ -344,6 +344,7 @@ namespace CodexOfPowerNG::Rewards::Engine
 			float cap = 0.0f;
 			const bool hasRewardCap = TryGetRewardCap(av, cap);
 			bool applyImmediately = false;
+			bool isMigrationCandidate = false;
 			if (av == RE::ActorValue::kCarryWeight) {
 				delta = ComputeCarryWeightSyncDelta(base, cur, permanent, permanentModifier, total);
 				// Carry weight desync on load is high-impact in gameplay.
@@ -359,21 +360,39 @@ namespace CodexOfPowerNG::Rewards::Engine
 					cap,
 					kRewardCapEpsilon);
 			} else if (IsBaseStickyRewardActorValue(av)) {
-				delta = ComputeBaseStickyAwareRewardSyncDelta(snapshot, total);
-				if (std::abs(total) > kRewardCapEpsilon &&
-				    std::abs(delta) <= kRewardCapEpsilon &&
-				    ShouldSuppressBaseStickyPositiveSync(
-					    permanent - base,
-					    permanentModifier,
-					    total,
-					    kRewardCapEpsilon)) {
-					passState.nonConvergingActorValues.insert(av);
-					SKSE::log::warn(
-						"Reward sync guard: AV {} has no persistent modifier evidence; suppressing positive resync to avoid load-time stacking",
-						static_cast<std::uint32_t>(av));
+				// Check for temporary→permanent channel migration:
+				// if permanent modifier is near zero but the temporary channel
+				// holds the expected reward, use direct permanent comparison
+				// instead of base-sticky suppression to enable migration.
+				const float tempModifier = player->GetActorValueModifier(
+					RE::ACTOR_VALUE_MODIFIER::kTemporary, av);
+				isMigrationCandidate =
+					permanentModifier <= kRewardCapEpsilon &&
+					total > kRewardCapEpsilon &&
+					tempModifier >= total - kRewardCapEpsilon;
+
+				if (isMigrationCandidate) {
+					delta = ComputeRewardSyncDelta(permanentModifier, total, kRewardCapEpsilon);
+				} else {
+					delta = ComputeBaseStickyAwareRewardSyncDelta(snapshot, total);
+					if (std::abs(total) > kRewardCapEpsilon &&
+					    std::abs(delta) <= kRewardCapEpsilon &&
+					    ShouldSuppressBaseStickyPositiveSync(
+						    permanent - base,
+						    permanentModifier,
+						    total,
+						    kRewardCapEpsilon)) {
+						passState.nonConvergingActorValues.insert(av);
+						SKSE::log::warn(
+							"Reward sync guard: AV {} has no persistent modifier evidence; suppressing positive resync to avoid load-time stacking",
+							static_cast<std::uint32_t>(av));
+					}
 				}
 			} else {
-				delta = snapshot.delta;
+				// Rewards use the permanent modifier channel
+				// (RestoreActorValue(kPermanent)), so permanentModifier
+				// reliably tracks the applied amount.
+				delta = ComputeRewardSyncDelta(permanentModifier, total, kRewardCapEpsilon);
 			}
 			auto& streak = passState.missingStreaks[av];
 			streak = NextMissingStreak(delta, streak);
@@ -412,7 +431,25 @@ namespace CodexOfPowerNG::Rewards::Engine
 				continue;
 			}
 
-			avOwner->ModActorValue(av, delta);
+			avOwner->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kPermanent, av, delta);
+
+			// Migration: if permanentModifier was near zero, the reward may
+			// have been in the temporary channel (old ModActorValue path).
+			// Only subtract from temporary when it actually holds enough to
+			// migrate; otherwise the subtraction creates an artificial negative
+			// offset that cancels the permanent addition.
+			if (permanentModifier <= kRewardCapEpsilon && delta > kRewardCapEpsilon) {
+				const float tempModifier = player->GetActorValueModifier(
+					RE::ACTOR_VALUE_MODIFIER::kTemporary, av);
+				if (tempModifier >= delta - kRewardCapEpsilon) {
+					avOwner->ModActorValue(av, -delta);
+					SKSE::log::info(
+						"Reward channel migration: AV {} moved {:.4f} from temporary to permanent",
+						static_cast<std::uint32_t>(av),
+						delta);
+				}
+			}
+
 			++passResult.correctedCount;
 			if (av == RE::ActorValue::kAttackDamageMult) {
 				passState.weaponAbilityRefreshRequested = true;
@@ -437,9 +474,17 @@ namespace CodexOfPowerNG::Rewards::Engine
 					cap,
 					kRewardCapEpsilon);
 			} else if (IsBaseStickyRewardActorValue(av)) {
-				postDelta = ComputeBaseStickyAwareRewardSyncDelta(postSnapshot, total);
+				// After migration, permanent modifier should now hold the reward;
+				// use direct comparison for convergence check.
+				if (isMigrationCandidate) {
+					postDelta = ComputeRewardSyncDelta(
+						postSnapshot.permanentModifier, total, kRewardCapEpsilon);
+				} else {
+					postDelta = ComputeBaseStickyAwareRewardSyncDelta(postSnapshot, total);
+				}
 			} else {
-				postDelta = postSnapshot.delta;
+				postDelta = ComputeRewardSyncDelta(
+					postSnapshot.permanentModifier, total, kRewardCapEpsilon);
 			}
 
 			// Some AVs (e.g. multiplicative channels) can report no observable convergence

@@ -211,23 +211,12 @@ namespace CodexOfPowerNG::Rewards
 		float expectedTotal,
 		float epsilon = 0.001f) noexcept
 	{
-		const float deltaFromCurrent = ComputeRewardSyncDeltaFromCurrent(
-			baseValue,
-			currentValue,
-			expectedTotal,
-			epsilon);
-		const float deltaFromSnapshot = ComputeRewardSyncDeltaFromSnapshot(
-			baseValue,
-			currentValue,
-			permanentValue,
-			permanentModifier,
-			expectedTotal,
-			epsilon);
-		return MergeRewardSyncDeltaCandidates(
-			expectedTotal,
-			deltaFromCurrent,
-			deltaFromSnapshot,
-			epsilon);
+		// Rewards use the permanent modifier channel
+		// (RestoreActorValue(kPermanent)), so permanentModifier reliably
+		// tracks the applied reward amount.  Direct comparison eliminates
+		// the snapshot/current heuristic issues that caused repeated
+		// over-application when equipment bonuses were present.
+		return ComputeRewardSyncDelta(permanentModifier, expectedTotal, epsilon);
 	}
 
 	// Conservative correction policy for capped AVs:

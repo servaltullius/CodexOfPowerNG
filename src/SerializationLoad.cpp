@@ -135,7 +135,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 							continue;
 						}
 
-						loadedRegisteredItems.emplace(newId, 255u);
+						loadedRegisteredItems.emplace(newId, kGroupUnknown);
 					}
 				} else if (version == 2) {
 					const auto entrySize = static_cast<std::uint32_t>(sizeof(RE::FormID) + sizeof(std::uint32_t));

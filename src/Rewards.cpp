@@ -146,7 +146,18 @@ namespace CodexOfPowerNG::Rewards
 				return CarryWeightQuickResyncAttemptResult::kDone;
 			}
 
-			avOwner->ModActorValue(RE::ActorValue::kCarryWeight, delta);
+			avOwner->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kPermanent, RE::ActorValue::kCarryWeight, delta);
+
+			// Migration: move from temporary to permanent channel only when
+			// temporary actually holds the reward (old ModActorValue path).
+			if (permanentModifier <= kRewardCapEpsilon && delta > kRewardCapEpsilon) {
+				const float tempModifier = player->GetActorValueModifier(
+					RE::ACTOR_VALUE_MODIFIER::kTemporary, RE::ActorValue::kCarryWeight);
+				if (tempModifier >= delta - kRewardCapEpsilon) {
+					avOwner->ModActorValue(RE::ActorValue::kCarryWeight, -delta);
+				}
+			}
+
 			const float postBase = avOwner->GetBaseActorValue(RE::ActorValue::kCarryWeight);
 			const float postCurrent = avOwner->GetActorValue(RE::ActorValue::kCarryWeight);
 			const float postPermanent = avOwner->GetPermanentActorValue(RE::ActorValue::kCarryWeight);
@@ -456,7 +467,7 @@ namespace CodexOfPowerNG::Rewards
 
 		std::size_t cleared = 0;
 		for (const auto& [av, total] : totals) {
-			avOwner->ModActorValue(av, -total);
+			avOwner->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kPermanent, av, -total);
 			++cleared;
 		}
 
@@ -522,7 +533,7 @@ namespace CodexOfPowerNG::Rewards
 
 		bool carryWeightTouched = false;
 		for (const auto& adjustment : actorAdjustments) {
-			avOwner->ModActorValue(adjustment.av, adjustment.delta);
+			avOwner->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kPermanent, adjustment.av, adjustment.delta);
 			if (adjustment.av == RE::ActorValue::kCarryWeight) {
 				carryWeightTouched = true;
 			}

@@ -148,7 +148,7 @@ namespace CodexOfPowerNG::Rewards::Internal
 		}
 
 		if (std::abs(outcome.actorDelta) > kRewardCapEpsilon) {
-			avOwner->ModActorValue(av, outcome.actorDelta);
+			avOwner->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kPermanent, av, outcome.actorDelta);
 		}
 		CaptureAppliedRewardDelta(av, outcome.stateDelta);
 		if (av == RE::ActorValue::kCarryWeight && std::abs(outcome.actorDelta) > kRewardCapEpsilon) {

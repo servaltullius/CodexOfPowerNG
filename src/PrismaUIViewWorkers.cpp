@@ -29,19 +29,17 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 {
 	namespace
 	{
+		// Workers whose slot was replaced before they finished.
+		// Joined during shutdown by JoinLifecycleWorkers().
+		// Protected by State::workerMutex (callers always hold it).
+		std::vector<std::thread> g_staleWorkerThreads;
+
 		void ReplaceWorkerThread(std::thread& slot, std::thread next) noexcept
 		{
-			std::thread previous;
 			if (slot.joinable()) {
-				previous = std::move(slot);
+				g_staleWorkerThreads.push_back(std::move(slot));
 			}
 			slot = std::move(next);
-
-			if (previous.joinable()) {
-				std::thread([thread = std::move(previous)]() mutable {
-					thread.join();
-				}).detach();
-			}
 		}
 
 		void ClearFocusDelayArmedIfCurrent(std::uint64_t generation) noexcept
@@ -222,6 +220,10 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		std::scoped_lock lock(State::workerMutex);
 		State::JoinIfJoinable(State::closeRetryThread);
 		State::JoinIfJoinable(State::focusDelayThread);
+		for (auto& t : g_staleWorkerThreads) {
+			State::JoinIfJoinable(t);
+		}
+		g_staleWorkerThreads.clear();
 	}
 
 	void ForceCleanupForLoadBoundary() noexcept

@@ -90,28 +90,21 @@ namespace CodexOfPowerNG::Events
 					return RE::BSEventNotifyControl::kContinue;
 				}
 
-				bool alreadyNotified = false;
 				{
 					auto& state = GetState();
 					std::scoped_lock lock(state.mutex);
-					alreadyNotified =
+
+					const bool alreadyNotified =
 						state.notifiedItems.contains(regKeyId) ||
 						state.notifiedItems.contains(baseId);
-				}
 
-				const auto lastNotify = g_lastNotifyMs.load(std::memory_order_relaxed);
-				const auto decision =
-					DecideLootNotify(alreadyNotified, nowMs, lastNotify, kNotifyThrottleMs);
-				if (decision != LootNotifyDecision::kNotify) {
-					return RE::BSEventNotifyControl::kContinue;
-				}
-
-				{
-					auto& state = GetState();
-					std::scoped_lock lock(state.mutex);
-					if (state.notifiedItems.contains(regKeyId) || state.notifiedItems.contains(baseId)) {
+					const auto lastNotify = g_lastNotifyMs.load(std::memory_order_relaxed);
+					const auto decision =
+						DecideLootNotify(alreadyNotified, nowMs, lastNotify, kNotifyThrottleMs);
+					if (decision != LootNotifyDecision::kNotify) {
 						return RE::BSEventNotifyControl::kContinue;
 					}
+
 					state.notifiedItems.insert(regKeyId);
 					state.notifiedItems.insert(baseId);
 				}

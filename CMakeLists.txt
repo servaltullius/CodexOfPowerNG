@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 option(COPNG_BUILD_CPP_TEST_TARGETS "Build standalone C++ test executables for ctest" OFF)
+include(CTest)
 
 if(MSVC)
   add_compile_definitions(NOMINMAX WIN32_LEAN_AND_MEAN)
@@ -100,8 +101,7 @@ install(
   DESTINATION "PrismaUI/views"
 )
 
-if(COPNG_BUILD_CPP_TEST_TARGETS)
-  enable_testing()
+if(BUILD_TESTING AND COPNG_BUILD_CPP_TEST_TARGETS)
   file(GLOB COPNG_CPP_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp")
 
   foreach(test_src IN LISTS COPNG_CPP_TEST_SOURCES)

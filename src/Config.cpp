@@ -392,4 +392,9 @@ namespace CodexOfPowerNG
 		SetSettings(settings);
 		return SaveSettingsToDisk();
 	}
+
+	bool SaveSettingsSnapshotToDisk(const Settings& settings)
+	{
+		return SaveToDisk(Clamp(settings));
+	}
 }

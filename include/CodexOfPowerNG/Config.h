@@ -48,4 +48,7 @@ namespace CodexOfPowerNG
 
 	// Saves a provided settings snapshot to disk and replaces current settings.
 	bool SaveSettingsToDisk(const Settings& settings);
+
+	// Saves a provided settings snapshot to disk without mutating in-memory settings.
+	bool SaveSettingsSnapshotToDisk(const Settings& settings);
 }

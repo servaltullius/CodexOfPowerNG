@@ -54,11 +54,11 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		[[nodiscard]] bool PersistSettingsToDisk(const Settings& settings) noexcept
 		{
 			try {
-				return SaveSettingsToDisk(settings);
+				return SaveSettingsSnapshotToDisk(settings);
 			} catch (const std::exception& e) {
-				SKSE::log::error("Settings save worker: SaveSettingsToDisk threw: {}", e.what());
+				SKSE::log::error("Settings save worker: SaveSettingsSnapshotToDisk threw: {}", e.what());
 			} catch (...) {
-				SKSE::log::error("Settings save worker: SaveSettingsToDisk threw (unknown exception)");
+				SKSE::log::error("Settings save worker: SaveSettingsSnapshotToDisk threw (unknown exception)");
 			}
 			return false;
 		}

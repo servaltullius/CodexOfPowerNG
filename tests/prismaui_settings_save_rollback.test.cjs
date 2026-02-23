@@ -32,6 +32,12 @@ test("settings save job carries fallback snapshot and rolls back on save failure
 
   assert.match(
     src,
+    /return SaveSettingsSnapshotToDisk\(settings\);/,
+    "Worker persistence should use snapshot-only disk save to avoid stale in-memory overwrite",
+  );
+
+  assert.match(
+    src,
     /QueueSettingsSave\(next,\s*current,\s*reloadL10n\);/,
     "Request handler should pass the current settings as rollback snapshot",
   );

@@ -35,5 +35,10 @@ test("config saves settings.user.json atomically via tmp + rename", () => {
     /std::filesystem::rename\(tmpPath, path,/,
     "SaveToDisk should commit tmpPath -> path via filesystem rename",
   );
-});
 
+  assert.match(
+    src,
+    /bool SaveSettingsSnapshotToDisk\(const Settings& settings\)[\s\S]*return SaveToDisk\(Clamp\(settings\)\);/,
+    "Snapshot save API should persist without mutating global in-memory settings first",
+  );
+});

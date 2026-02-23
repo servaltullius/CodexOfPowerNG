@@ -6,6 +6,8 @@ const path = require("node:path");
 const capsPath = path.join(__dirname, "..", "include", "CodexOfPowerNG", "RewardCaps.h");
 const corePath = path.join(__dirname, "..", "src", "RewardsCore.cpp");
 const rewardsPath = path.join(__dirname, "..", "src", "Rewards.cpp");
+const enginePath = path.join(__dirname, "..", "src", "RewardsSyncEngine.cpp");
+const runtimePath = path.join(__dirname, "..", "include", "CodexOfPowerNG", "RewardsSyncRuntime.h");
 const randomTablesPath = path.join(__dirname, "..", "src", "RewardsRandomTables.cpp");
 const mainPath = path.join(__dirname, "..", "src", "main.cpp");
 
@@ -43,21 +45,29 @@ test("weapon reward table avoids AttackDamageMult percent grants", () => {
 });
 
 test("sync/refund paths normalize over-capped totals and include carry-weight diagnostics", () => {
-  const src = read(rewardsPath);
-  assert.match(src, /ClampRewardTotalsInState\(\)/);
-  assert.match(src, /normalizeCapsOnFirstPass/);
-  assert.match(src, /Reward cap normalize:/);
-  assert.match(src, /ComputeCappedRewardSyncDeltaFromSnapshot\(/);
-  assert.match(src, /Reward sync \(carry weight\):/);
-  assert.match(src, /ComputeCarryWeightSyncDelta\(/);
-  assert.match(src, /ComputeRewardSyncDeltaFromSnapshot\(/);
-  assert.match(src, /kCarryWeightQuickResyncMaxAttempts = 3/);
-  assert.match(src, /kCarryWeightQuickResyncStuckMs = 3000/);
-  assert.match(src, /g_carryWeightQuickResyncRerunRequested/);
-  assert.match(src, /ScheduleCarryWeightQuickResync\(\)/);
-  assert.match(src, /if \(av == RE::ActorValue::kCarryWeight\)[\s\S]*applyImmediately = std::abs\(delta\) > kRewardCapEpsilon;/);
-  assert.match(src, /nonConvergingActorValues/);
-  assert.match(src, /Reward sync guard: AV/);
+  const rewardsSrc = read(rewardsPath);
+  const engineSrc = read(enginePath);
+  const runtimeSrc = read(runtimePath);
+
+  assert.match(rewardsSrc, /Engine::NormalizeRewardCapsOnStateAndPlayer\(\);/);
+  assert.match(rewardsSrc, /Engine::PrepareRewardSyncPass\(\*passState\);/);
+  assert.match(rewardsSrc, /Engine::ApplyRewardSyncPass\(\*passState,\s*kRewardSyncMinMissingStreak\)/);
+  assert.match(rewardsSrc, /kCarryWeightQuickResyncMaxAttempts = 3/);
+  assert.match(rewardsSrc, /kCarryWeightQuickResyncStuckMs = 3000/);
+  assert.match(rewardsSrc, /ScheduleCarryWeightQuickResync\(\)/);
+
+  assert.match(engineSrc, /ClampRewardTotalsInState\(\)/);
+  assert.match(engineSrc, /normalizeCapsOnFirstPass/);
+  assert.match(engineSrc, /Reward cap normalize:/);
+  assert.match(engineSrc, /ComputeCappedRewardSyncDeltaFromSnapshot\(/);
+  assert.match(engineSrc, /Reward sync \(carry weight\):/);
+  assert.match(engineSrc, /ComputeCarryWeightSyncDelta\(/);
+  assert.match(engineSrc, /ComputeRewardSyncDeltaFromSnapshot\(/);
+  assert.match(engineSrc, /if \(av == RE::ActorValue::kCarryWeight\)[\s\S]*applyImmediately = std::abs\(delta\) > kRewardCapEpsilon;/);
+  assert.match(engineSrc, /nonConvergingActorValues/);
+  assert.match(engineSrc, /Reward sync guard: AV/);
+
+  assert.match(runtimeSrc, /carryWeightQuickResync\.rerunRequested/);
 });
 
 test("carry weight reward schedules quick resync after grant", () => {
@@ -83,19 +93,22 @@ test("post-load/new-game path schedules full + carry-weight quick reward resync"
 });
 
 test("reward sync runtime protects load boundary and readiness retries", () => {
-  const src = read(rewardsPath);
-  assert.match(src, /void ResetSyncSchedulersForLoad\(\) noexcept/);
-  assert.match(src, /BumpSyncGenerationAndClearSchedulers\(\)/);
-  assert.match(src, /g_rewardSyncGeneration\.fetch_add/);
-  assert.match(src, /IsCurrentSyncGeneration\(passState->generation\)/);
-  assert.match(src, /kRewardSyncReadinessTimeoutMs = 20000/);
-  assert.match(src, /kCarryWeightQuickResyncReadinessTimeoutMs = 10000/);
-  assert.match(src, /if \(!IsRewardSyncEnvironmentReady\(\)\)/);
-  assert.match(src, /watchdog: force restarting stale sync worker \(generation \{\}\)/);
-  assert.match(src, /weaponAbilityRefreshRequested/);
-  assert.match(src, /UpdateWeaponAbility\(/);
-  assert.match(src, /RefreshEquippedWeaponAbilities\(\)/);
-  assert.match(src, /MigrateLegacyAttackDamageMultReward/);
-  assert.match(src, /state\.rewardTotals\.erase\(it\)/);
-  assert.match(src, /ModActorValue\(RE::ActorValue::kAttackDamageMult,\s*-removable\)/);
+  const rewardsSrc = read(rewardsPath);
+  const runtimeSrc = read(runtimePath);
+  const engineSrc = read(enginePath);
+
+  assert.match(rewardsSrc, /void ResetSyncSchedulersForLoad\(\) noexcept/);
+  assert.match(runtimeSrc, /BumpGenerationAndClearSchedulers\(\)/);
+  assert.match(runtimeSrc, /state\.generation\.fetch_add/);
+  assert.match(rewardsSrc, /SyncRuntime::IsCurrentGeneration\(passState->generation\)/);
+  assert.match(rewardsSrc, /kRewardSyncReadinessTimeoutMs = 20000/);
+  assert.match(rewardsSrc, /kCarryWeightQuickResyncReadinessTimeoutMs = 10000/);
+  assert.match(rewardsSrc, /if \(!IsRewardSyncEnvironmentReady\(\)\)/);
+  assert.match(rewardsSrc, /watchdog: force restarting stale sync worker \(generation \{\}\)/);
+  assert.match(engineSrc, /weaponAbilityRefreshRequested/);
+  assert.match(engineSrc, /UpdateWeaponAbility\(/);
+  assert.match(engineSrc, /RefreshEquippedWeaponAbilities\(\)/);
+  assert.match(engineSrc, /MigrateLegacyAttackDamageMultReward/);
+  assert.match(engineSrc, /state\.rewardTotals\.erase\(it\)/);
+  assert.match(engineSrc, /ModActorValue\(RE::ActorValue::kAttackDamageMult,\s*-removable\)/);
 });

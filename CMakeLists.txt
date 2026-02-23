@@ -48,6 +48,7 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     src/Registration.cpp
     src/RewardsCore.cpp
     src/RewardsRandomTables.cpp
+    src/RewardsSyncEngine.cpp
     src/Rewards.cpp
     src/SerializationSave.cpp
     src/SerializationLoad.cpp
@@ -69,6 +70,7 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     include/CodexOfPowerNG/RewardCaps.h
     include/CodexOfPowerNG/Rewards.h
     include/CodexOfPowerNG/RewardsResync.h
+    include/CodexOfPowerNG/RewardsSyncRuntime.h
     include/CodexOfPowerNG/RewardsSyncPolicy.h
     include/CodexOfPowerNG/Serialization.h
     include/CodexOfPowerNG/SerializationWriteFlow.h

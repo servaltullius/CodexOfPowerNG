@@ -20,8 +20,14 @@ test("settings save job carries fallback snapshot and rolls back on save failure
 
   assert.match(
     src,
-    /if \(!ok\)\s*\{[\s\S]*SetSettings\(next\.previousSettings\);[\s\S]*Registration::InvalidateQuickRegisterCache\(\);/,
-    "Save failure should restore previous settings and invalidate quick-register cache",
+    /void RevertSettingsAfterSaveFailure\(const SettingsSaveJob& job\) noexcept[\s\S]*SetSettings\(job\.previousSettings\);[\s\S]*Registration::InvalidateQuickRegisterCache\(\);/,
+    "Save failure rollback helper should restore previous settings and invalidate quick-register cache",
+  );
+
+  assert.match(
+    src,
+    /if \(!ok\)\s*\{[\s\S]*RevertSettingsAfterSaveFailure\(next\);/,
+    "Save worker should invoke rollback helper when persistence fails",
   );
 
   assert.match(
@@ -30,4 +36,3 @@ test("settings save job carries fallback snapshot and rolls back on save failure
     "Request handler should pass the current settings as rollback snapshot",
   );
 });
-

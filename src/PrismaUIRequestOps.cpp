@@ -16,6 +16,7 @@
 #include <cstdint>
 #include <exception>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -39,24 +40,89 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			std::scoped_lock lock(g_inventoryRequestMutex);
 			return g_lastInventoryRequest;
 		}
+
+		[[nodiscard]] std::optional<json> ParseJsonPayload(
+			const char* argument,
+			const char* contextLabel) noexcept
+		{
+			try {
+				return json::parse(argument ? argument : "{}");
+			} catch (const json::parse_error& e) {
+				SKSE::log::warn("{} parse error: {}", contextLabel, e.what());
+			} catch (const json::exception& e) {
+				SKSE::log::warn("{} JSON exception: {}", contextLabel, e.what());
+			} catch (const std::exception& e) {
+				SKSE::log::warn("{} unexpected exception: {}", contextLabel, e.what());
+			}
+			return std::nullopt;
+		}
+
+		void RefreshUIAfterMutation() noexcept
+		{
+			SendStateToUI();
+			QueueSendInventory(SnapshotLastInventoryRequest());
+			QueueSendRegistered();
+			QueueSendRewards();
+			QueueSendUndoList();
+		}
+
+		void PresentRegisterResult(const Registration::RegisterResult& res, bool syncFallback) noexcept
+		{
+			if (syncFallback) {
+				SKSE::log::info(
+					"Register item result (sync): success={} regKey=0x{:08X} group={} total={} msg='{}'",
+					res.success,
+					static_cast<std::uint32_t>(res.regKey),
+					res.group,
+					res.totalRegistered,
+					res.message);
+			} else {
+				SKSE::log::info(
+					"Register item result: success={} regKey=0x{:08X} group={} total={} msg='{}'",
+					res.success,
+					static_cast<std::uint32_t>(res.regKey),
+					res.group,
+					res.totalRegistered,
+					res.message);
+			}
+
+			ShowToast(res.success ? "info" : "error", res.message);
+			RefreshUIAfterMutation();
+		}
+
+		void PresentUndoResult(const Registration::UndoResult& res, bool syncFallback) noexcept
+		{
+			if (syncFallback) {
+				SKSE::log::info(
+					"Undo register result (sync): success={} actionId={} regKey=0x{:08X} total={} msg='{}'",
+					res.success,
+					res.actionId,
+					static_cast<std::uint32_t>(res.regKey),
+					res.totalRegistered,
+					res.message);
+			} else {
+				SKSE::log::info(
+					"Undo register result: success={} actionId={} regKey=0x{:08X} total={} msg='{}'",
+					res.success,
+					res.actionId,
+					static_cast<std::uint32_t>(res.regKey),
+					res.totalRegistered,
+					res.message);
+			}
+
+			ShowToast(res.success ? "info" : "error", res.message);
+			RefreshUIAfterMutation();
+		}
 	}
 
 	InventoryRequest ParseInventoryRequest(const char* argument) noexcept
 	{
 		InventoryRequest out{};
-		json payload;
-		try {
-			payload = json::parse(argument ? argument : "{}");
-		} catch (const json::parse_error& e) {
-			SKSE::log::warn("Inventory request JSON parse error: {}", e.what());
-			return out;
-		} catch (const json::exception& e) {
-			SKSE::log::warn("Inventory request JSON exception: {}", e.what());
-			return out;
-		} catch (const std::exception& e) {
-			SKSE::log::warn("Inventory request unexpected exception: {}", e.what());
+		const auto payloadOpt = ParseJsonPayload(argument, "Inventory request JSON");
+		if (!payloadOpt) {
 			return out;
 		}
+		const auto& payload = *payloadOpt;
 
 		try {
 			if (auto it = payload.find("page"); it != payload.end() && it->is_number_integer()) {
@@ -296,22 +362,12 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 
 	void HandleRegisterItemRequest(const char* argument) noexcept
 	{
-		json payload;
-		try {
-			payload = json::parse(argument ? argument : "{}");
-		} catch (const json::parse_error& e) {
-			SKSE::log::warn("Register item payload parse error: {}", e.what());
-			ShowToast("error", "Invalid JSON");
-			return;
-		} catch (const json::exception& e) {
-			SKSE::log::warn("Register item payload JSON exception: {}", e.what());
-			ShowToast("error", "Invalid JSON");
-			return;
-		} catch (const std::exception& e) {
-			SKSE::log::warn("Register item payload unexpected exception: {}", e.what());
+		const auto payloadOpt = ParseJsonPayload(argument, "Register item payload");
+		if (!payloadOpt) {
 			ShowToast("error", "Invalid JSON");
 			return;
 		}
+		const auto& payload = *payloadOpt;
 
 		auto formIdIt = payload.find("formId");
 		if (formIdIt == payload.end()) {
@@ -331,58 +387,24 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		if (QueueMainTask([formId]() {
 				const auto res = Registration::TryRegisterItem(formId);
 				(void)QueueUITask([res]() {
-					SKSE::log::info(
-						"Register item result: success={} regKey=0x{:08X} group={} total={} msg='{}'",
-						res.success,
-						static_cast<std::uint32_t>(res.regKey),
-						res.group,
-						res.totalRegistered,
-						res.message);
-					ShowToast(res.success ? "info" : "error", res.message);
-					SendStateToUI();
-					QueueSendInventory(SnapshotLastInventoryRequest());
-					QueueSendRegistered();
-					QueueSendRewards();
-					QueueSendUndoList();
+					PresentRegisterResult(res, false);
 				});
 			})) {
 			return;
 		}
 
 		const auto res = Registration::TryRegisterItem(formId);
-		SKSE::log::info(
-			"Register item result (sync): success={} regKey=0x{:08X} group={} total={} msg='{}'",
-			res.success,
-			static_cast<std::uint32_t>(res.regKey),
-			res.group,
-			res.totalRegistered,
-			res.message);
-		ShowToast(res.success ? "info" : "error", res.message);
-		SendStateToUI();
-		QueueSendInventory(SnapshotLastInventoryRequest());
-		QueueSendRegistered();
-		QueueSendRewards();
-		QueueSendUndoList();
+		PresentRegisterResult(res, true);
 	}
 
 	void HandleUndoRegisterRequest(const char* argument) noexcept
 	{
-		json payload;
-		try {
-			payload = json::parse(argument ? argument : "{}");
-		} catch (const json::parse_error& e) {
-			SKSE::log::warn("Undo payload parse error: {}", e.what());
-			ShowToast("error", "Invalid JSON");
-			return;
-		} catch (const json::exception& e) {
-			SKSE::log::warn("Undo payload JSON exception: {}", e.what());
-			ShowToast("error", "Invalid JSON");
-			return;
-		} catch (const std::exception& e) {
-			SKSE::log::warn("Undo payload unexpected exception: {}", e.what());
+		const auto payloadOpt = ParseJsonPayload(argument, "Undo payload");
+		if (!payloadOpt) {
 			ShowToast("error", "Invalid JSON");
 			return;
 		}
+		const auto& payload = *payloadOpt;
 
 		const auto actionIdIt = payload.find("actionId");
 		if (actionIdIt == payload.end()) {
@@ -402,37 +424,13 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		if (QueueMainTask([actionId]() {
 				const auto res = Registration::TryUndoRegistration(actionId);
 				(void)QueueUITask([res]() {
-					SKSE::log::info(
-						"Undo register result: success={} actionId={} regKey=0x{:08X} total={} msg='{}'",
-						res.success,
-						res.actionId,
-						static_cast<std::uint32_t>(res.regKey),
-						res.totalRegistered,
-						res.message);
-					ShowToast(res.success ? "info" : "error", res.message);
-					SendStateToUI();
-					QueueSendInventory(SnapshotLastInventoryRequest());
-					QueueSendRegistered();
-					QueueSendRewards();
-					QueueSendUndoList();
+					PresentUndoResult(res, false);
 				});
 			})) {
 			return;
 		}
 
 		const auto res = Registration::TryUndoRegistration(actionId);
-		SKSE::log::info(
-			"Undo register result (sync): success={} actionId={} regKey=0x{:08X} total={} msg='{}'",
-			res.success,
-			res.actionId,
-			static_cast<std::uint32_t>(res.regKey),
-			res.totalRegistered,
-			res.message);
-		ShowToast(res.success ? "info" : "error", res.message);
-		SendStateToUI();
-		QueueSendInventory(SnapshotLastInventoryRequest());
-		QueueSendRegistered();
-		QueueSendRewards();
-		QueueSendUndoList();
+		PresentUndoResult(res, true);
 	}
 }

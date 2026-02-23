@@ -13,7 +13,13 @@ namespace CodexOfPowerNG::Rewards::Internal
 	[[nodiscard]] int   RandomInt(int minInclusive, int maxInclusive) noexcept;
 	[[nodiscard]] float RewardMult() noexcept;
 
-	[[nodiscard]] float RecordRewardDelta(RE::ActorValue av, float delta) noexcept;
+	struct RewardDeltaOutcome
+	{
+		float stateDelta{ 0.0f };
+		float actorDelta{ 0.0f };
+	};
+
+	[[nodiscard]] RewardDeltaOutcome RecordRewardDelta(RE::ActorValue av, float delta) noexcept;
 	void BeginRewardDeltaCapture(std::vector<Registration::RewardDelta>& outDeltas) noexcept;
 	void EndRewardDeltaCapture() noexcept;
 	void CaptureAppliedRewardDelta(RE::ActorValue av, float delta) noexcept;

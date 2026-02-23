@@ -36,6 +36,36 @@ test("grant path clamps totals against AV caps before applying reward", () => {
   assert.match(src, /Reward grant skipped by cap:/);
 });
 
+test("skill rewards store fractional progress but apply whole-level actor deltas", () => {
+  const capsSrc = read(capsPath);
+  const coreSrc = read(corePath);
+  const rewardsSrc = read(rewardsPath);
+  const engineSrc = read(enginePath);
+
+  assert.match(capsSrc, /bool IsSkillActorValue\(RE::ActorValue av\)/);
+  assert.match(capsSrc, /kOneHanded/);
+  assert.match(capsSrc, /kTwoHanded/);
+  assert.match(capsSrc, /kArchery/);
+  assert.match(capsSrc, /kHeavyArmor/);
+  assert.match(capsSrc, /kLightArmor/);
+  assert.match(capsSrc, /kBlock/);
+  assert.match(capsSrc, /kAlchemy/);
+  assert.match(capsSrc, /kLockpicking/);
+  assert.match(capsSrc, /kPickpocket/);
+  assert.match(capsSrc, /ActorAppliedRewardTotal\(\s*RE::ActorValue av,\s*float total/);
+  assert.match(capsSrc, /std::trunc\(snapped\)/);
+
+  assert.match(coreSrc, /actorDelta = ActorAppliedRewardTotal\(av, clampedTotal\) - ActorAppliedRewardTotal\(av, total\)/);
+  assert.match(coreSrc, /CaptureAppliedRewardDelta\(av, outcome\.stateDelta\)/);
+  assert.match(coreSrc, /ModActorValue\(av, outcome\.actorDelta\)/);
+
+  assert.match(rewardsSrc, /const float previousApplied = ActorAppliedRewardTotal\(av, previousTotal\);/);
+  assert.match(rewardsSrc, /const float nextApplied = ActorAppliedRewardTotal\(av, next\);/);
+  assert.match(rewardsSrc, /const float appliedActorDelta = nextApplied - previousApplied;/);
+
+  assert.match(engineSrc, /const float applied = ActorAppliedRewardTotal\(av, clamped\);/);
+});
+
 test("weapon reward table avoids AttackDamageMult percent grants", () => {
   const src = read(randomTablesPath);
   assert.doesNotMatch(src, /GrantReward\(RE::ActorValue::kAttackDamageMult,/);
@@ -72,7 +102,7 @@ test("sync/refund paths normalize over-capped totals and include carry-weight di
 
 test("carry weight reward schedules quick resync after grant", () => {
   const src = read(corePath);
-  assert.match(src, /if \(av == RE::ActorValue::kCarryWeight\)[\s\S]*ScheduleCarryWeightQuickResync\(\)/);
+  assert.match(src, /if \(av == RE::ActorValue::kCarryWeight[\s\S]*ScheduleCarryWeightQuickResync\(\)/);
   assert.doesNotMatch(src, /if \(av == RE::ActorValue::kCarryWeight\)[\s\S]*SyncRewardTotalsToPlayer\(\)/);
 });
 

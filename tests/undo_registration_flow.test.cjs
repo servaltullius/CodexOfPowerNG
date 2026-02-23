@@ -56,7 +56,9 @@ test("undo records are serialized and restored", () => {
 
 test("undo reward rollback applies actual clamped delta to actor values", () => {
   const rewardsSrc = read("src/Rewards.cpp");
-  assert.match(rewardsSrc, /appliedActorDelta = next - previousTotal/);
+  assert.match(rewardsSrc, /previousApplied = ActorAppliedRewardTotal\(av, previousTotal\)/);
+  assert.match(rewardsSrc, /nextApplied = ActorAppliedRewardTotal\(av, next\)/);
+  assert.match(rewardsSrc, /appliedActorDelta = nextApplied - previousApplied/);
   assert.match(rewardsSrc, /RewardDelta\{ av, appliedActorDelta \}/);
 });
 

@@ -252,7 +252,8 @@ namespace CodexOfPowerNG::Rewards::Engine
 		}
 
 		const float clamped = ClampRewardTotal(av, it->second);
-		return (std::abs(clamped) > kRewardCapEpsilon) ? clamped : 0.0f;
+		const float applied = ActorAppliedRewardTotal(av, clamped);
+		return (std::abs(applied) > kRewardCapEpsilon) ? applied : 0.0f;
 	}
 
 	void NormalizeRewardCapsOnStateAndPlayer() noexcept
@@ -269,8 +270,9 @@ namespace CodexOfPowerNG::Rewards::Engine
 		totals.reserve(state.rewardTotals.size());
 		for (const auto& [av, total] : state.rewardTotals) {
 			const float clamped = ClampRewardTotal(av, total);
-			if (std::abs(clamped) > kRewardCapEpsilon) {
-				totals.emplace_back(av, clamped);
+			const float applied = ActorAppliedRewardTotal(av, clamped);
+			if (std::abs(applied) > kRewardCapEpsilon) {
+				totals.emplace_back(av, applied);
 			}
 		}
 		return totals;

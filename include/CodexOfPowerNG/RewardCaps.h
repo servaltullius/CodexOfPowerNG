@@ -7,6 +7,25 @@
 namespace CodexOfPowerNG::Rewards
 {
 	inline constexpr float kRewardCapEpsilon = 0.001f;
+	inline constexpr float kSkillActorSnapEpsilon = 0.0001f;
+
+	[[nodiscard]] inline bool IsSkillActorValue(RE::ActorValue av) noexcept
+	{
+		switch (av) {
+		case RE::ActorValue::kOneHanded:
+		case RE::ActorValue::kTwoHanded:
+		case RE::ActorValue::kArchery:
+		case RE::ActorValue::kHeavyArmor:
+		case RE::ActorValue::kLightArmor:
+		case RE::ActorValue::kBlock:
+		case RE::ActorValue::kAlchemy:
+		case RE::ActorValue::kLockpicking:
+		case RE::ActorValue::kPickpocket:
+			return true;
+		default:
+			return false;
+		}
+	}
 
 	[[nodiscard]] inline bool TryGetRewardCap(RE::ActorValue av, float& outCap) noexcept
 	{
@@ -52,5 +71,20 @@ namespace CodexOfPowerNG::Rewards
 		}
 
 		return (total > (cap + epsilon)) ? cap : total;
+	}
+
+	[[nodiscard]] inline float ActorAppliedRewardTotal(
+		RE::ActorValue av,
+		float total,
+		float epsilon = kRewardCapEpsilon) noexcept
+	{
+		const float clamped = ClampRewardTotal(av, total, epsilon);
+		if (!IsSkillActorValue(av)) {
+			return clamped;
+		}
+
+		const float rounded = std::round(clamped);
+		const float snapped = (std::abs(clamped - rounded) <= kSkillActorSnapEpsilon) ? rounded : clamped;
+		return std::trunc(snapped);
 	}
 }

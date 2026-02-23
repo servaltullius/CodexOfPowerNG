@@ -45,19 +45,27 @@ namespace CodexOfPowerNG::Rewards::Internal
 		return mult;
 	}
 
-	float RecordRewardDelta(RE::ActorValue av, float delta) noexcept
+	RewardDeltaOutcome RecordRewardDelta(RE::ActorValue av, float delta) noexcept
 	{
+		RewardDeltaOutcome outcome{};
 		if (std::abs(delta) <= kRewardCapEpsilon) {
-			return 0.0f;
+			return outcome;
 		}
 
 		auto& state = GetState();
 		std::scoped_lock lock(state.mutex);
 		auto& total = state.rewardTotals[av];
 		const float clampedTotal = ClampRewardTotal(av, total + delta);
-		const float appliedDelta = clampedTotal - total;
+		outcome.stateDelta = clampedTotal - total;
+		outcome.actorDelta = ActorAppliedRewardTotal(av, clampedTotal) - ActorAppliedRewardTotal(av, total);
 		total = clampedTotal;
-		return (std::abs(appliedDelta) <= kRewardCapEpsilon) ? 0.0f : appliedDelta;
+		if (std::abs(outcome.stateDelta) <= kRewardCapEpsilon) {
+			outcome.stateDelta = 0.0f;
+		}
+		if (std::abs(outcome.actorDelta) <= kRewardCapEpsilon) {
+			outcome.actorDelta = 0.0f;
+		}
+		return outcome;
 	}
 
 	void BeginRewardDeltaCapture(std::vector<Registration::RewardDelta>& outDeltas) noexcept
@@ -126,8 +134,8 @@ namespace CodexOfPowerNG::Rewards::Internal
 		}
 
 		const float requested = applied;
-		applied = RecordRewardDelta(av, applied);
-		if (std::abs(applied) <= kRewardCapEpsilon) {
+		const auto outcome = RecordRewardDelta(av, applied);
+		if (std::abs(outcome.stateDelta) <= kRewardCapEpsilon) {
 			float cap = 0.0f;
 			if (requested > 0.0f && TryGetRewardCap(av, cap)) {
 				SKSE::log::info(
@@ -139,22 +147,24 @@ namespace CodexOfPowerNG::Rewards::Internal
 			return;
 		}
 
-		avOwner->ModActorValue(av, applied);
-		CaptureAppliedRewardDelta(av, applied);
-		if (av == RE::ActorValue::kCarryWeight) {
+		if (std::abs(outcome.actorDelta) > kRewardCapEpsilon) {
+			avOwner->ModActorValue(av, outcome.actorDelta);
+		}
+		CaptureAppliedRewardDelta(av, outcome.stateDelta);
+		if (av == RE::ActorValue::kCarryWeight && std::abs(outcome.actorDelta) > kRewardCapEpsilon) {
 			// Carry weight desync reports are high-impact in gameplay feel.
 			// Schedule carry-only quick resync so missed application
 			// (load/order side effects) is recovered without full sync cost.
 			Rewards::ScheduleCarryWeightQuickResync();
 		}
-		if (std::abs(applied - requested) > kRewardCapEpsilon) {
+		if (std::abs(outcome.stateDelta - requested) > kRewardCapEpsilon) {
 			float cap = 0.0f;
 			if (TryGetRewardCap(av, cap)) {
 				SKSE::log::info(
 					"Reward cap applied: AV {} request {:.4f} -> applied {:.4f} (cap {:.2f})",
 					static_cast<std::uint32_t>(av),
 					requested,
-					applied,
+					outcome.stateDelta,
 					cap);
 			}
 		}

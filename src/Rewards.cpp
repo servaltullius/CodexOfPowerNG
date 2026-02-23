@@ -505,7 +505,9 @@ namespace CodexOfPowerNG::Rewards
 
 				const float previousTotal = it->second;
 				const float next = ClampRewardTotal(av, previousTotal - delta);
-				const float appliedActorDelta = next - previousTotal;
+				const float previousApplied = ActorAppliedRewardTotal(av, previousTotal);
+				const float nextApplied = ActorAppliedRewardTotal(av, next);
+				const float appliedActorDelta = nextApplied - previousApplied;
 				if (std::abs(next) <= kRewardCapEpsilon) {
 					state.rewardTotals.erase(it);
 				} else {

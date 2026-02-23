@@ -18,9 +18,11 @@ int main()
 	using CodexOfPowerNG::Rewards::ComputeCappedRewardSyncDeltaFromSnapshot;
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDeltaFromCurrent;
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDeltaFromSnapshot;
+	using CodexOfPowerNG::Rewards::ComputeBaseStickyRewardSyncDelta;
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDeltaFromSnapshotWithSuppression;
 	using CodexOfPowerNG::Rewards::MergeRewardSyncDeltaCandidates;
 	using CodexOfPowerNG::Rewards::SelectObservedRewardTotal;
+	using CodexOfPowerNG::Rewards::ShouldSuppressBaseStickyPositiveSync;
 	using CodexOfPowerNG::Rewards::ShouldSuppressPositiveSyncWhenNoObservableDelta;
 
 	// Positive reward already reflected.
@@ -108,6 +110,45 @@ int main()
 			0.0f,    // permanent mod
 			-0.20f,  // expected reward total
 			true),
+		-0.20f);
+
+	// Base-sticky specific guard:
+	// suppress positive sync when permanent/permMod do not show persistent reward evidence.
+	assert(ShouldSuppressBaseStickyPositiveSync(
+		0.0f,   // observed permanent-base
+		0.0f,   // permanent modifier
+		20.0f)  // expected reward total
+	);
+	// Even if current has temporary noise, do not treat it as missing codex bonus.
+	AssertNear(
+		ComputeBaseStickyRewardSyncDelta(
+			300.0f,  // base
+			310.0f,  // current (+10 temp/external)
+			300.0f,  // permanent
+			0.0f,    // permanent mod
+			20.0f),  // expected reward total
+		0.0f);
+	// If permanent channel reflects part of reward, recover only missing amount.
+	AssertNear(
+		ComputeBaseStickyRewardSyncDelta(
+			300.0f,  // base
+			340.0f,  // current (can be noisy)
+			308.0f,  // permanent (+8 observed)
+			8.0f,    // permanent mod (+8 observed)
+			20.0f),  // expected reward total
+		12.0f);
+	// Negative expected totals are not suppressed by base-sticky positive guard.
+	assert(!ShouldSuppressBaseStickyPositiveSync(
+		0.0f,
+		0.0f,
+		-0.20f));
+	AssertNear(
+		ComputeBaseStickyRewardSyncDelta(
+			300.0f,  // base
+			300.0f,  // current
+			300.0f,  // permanent
+			0.0f,    // permanent mod
+			-0.20f), // expected reward total
 		-0.20f);
 
 	// Current-based sync is preferred for carry weight gameplay consistency.

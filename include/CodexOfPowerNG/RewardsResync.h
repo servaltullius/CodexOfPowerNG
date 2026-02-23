@@ -123,6 +123,59 @@ namespace CodexOfPowerNG::Rewards
 		return ComputeRewardSyncDelta(observed, expectedTotal, epsilon);
 	}
 
+	[[nodiscard]] inline bool ShouldSuppressBaseStickyPositiveSync(
+		float observedFromPermanent,
+		float observedPermanentModifier,
+		float expectedTotal,
+		float epsilon = 0.001f) noexcept
+	{
+		if (expectedTotal <= epsilon) {
+			return false;
+		}
+
+		return std::abs(observedFromPermanent) <= epsilon &&
+		       std::abs(observedPermanentModifier) <= epsilon;
+	}
+
+	[[nodiscard]] inline float ComputeBaseStickyRewardSyncDelta(
+		float baseValue,
+		float currentValue,
+		float permanentValue,
+		float permanentModifier,
+		float expectedTotal,
+		float epsilon = 0.001f) noexcept
+	{
+		const float observedFromPermanent = permanentValue - baseValue;
+
+		if (ShouldSuppressBaseStickyPositiveSync(
+			    observedFromPermanent,
+			    permanentModifier,
+			    expectedTotal,
+			    epsilon)) {
+			return 0.0f;
+		}
+
+		// For base-sticky channels (Health/Magicka/Stamina), ignore current-base
+		// for positive sync recovery to avoid treating temporary/external bonuses
+		// as missing Codex bonuses.
+		if (expectedTotal > 0.0f) {
+			const float observedPersistent = SelectObservedRewardTotal(
+				expectedTotal,
+				observedFromPermanent,
+				permanentModifier,
+				permanentModifier);
+			return ComputeRewardSyncDelta(observedPersistent, expectedTotal, epsilon);
+		}
+
+		return ComputeRewardSyncDeltaFromSnapshot(
+			baseValue,
+			currentValue,
+			permanentValue,
+			permanentModifier,
+			expectedTotal,
+			epsilon);
+	}
+
 	[[nodiscard]] inline float ComputeRewardSyncDeltaFromCurrent(
 		float baseValue,
 		float currentValue,

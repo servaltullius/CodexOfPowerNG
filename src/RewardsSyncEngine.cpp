@@ -181,13 +181,12 @@ namespace CodexOfPowerNG::Rewards::Engine
 			const RewardActorSnapshot& snapshot,
 			float expectedTotal) noexcept
 		{
-			return ComputeRewardSyncDeltaFromSnapshotWithSuppression(
+			return ComputeBaseStickyRewardSyncDelta(
 				snapshot.base,
 				snapshot.current,
 				snapshot.permanent,
 				snapshot.permanentModifier,
 				expectedTotal,
-				true,
 				kRewardCapEpsilon);
 		}
 
@@ -363,15 +362,14 @@ namespace CodexOfPowerNG::Rewards::Engine
 				delta = ComputeBaseStickyAwareRewardSyncDelta(snapshot, total);
 				if (std::abs(total) > kRewardCapEpsilon &&
 				    std::abs(delta) <= kRewardCapEpsilon &&
-				    ShouldSuppressPositiveSyncWhenNoObservableDelta(
-					    cur - base,
+				    ShouldSuppressBaseStickyPositiveSync(
 					    permanent - base,
 					    permanentModifier,
 					    total,
 					    kRewardCapEpsilon)) {
 					passState.nonConvergingActorValues.insert(av);
 					SKSE::log::warn(
-						"Reward sync guard: AV {} has no observable modifier delta; suppressing positive resync to avoid load-time stacking",
+						"Reward sync guard: AV {} has no persistent modifier evidence; suppressing positive resync to avoid load-time stacking",
 						static_cast<std::uint32_t>(av));
 				}
 			} else {

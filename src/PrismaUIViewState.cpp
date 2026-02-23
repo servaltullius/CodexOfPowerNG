@@ -11,6 +11,8 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal::State
 	std::atomic_bool                         focusDelayArmed{ false };
 	std::atomic_int                          focusAttemptCount{ 0 };
 	std::atomic_bool                         shuttingDown{ false };
+	std::atomic<std::uint64_t>              closeRetryGeneration{ 0 };
+	std::atomic<std::uint64_t>              focusDelayGeneration{ 0 };
 
 	std::mutex  workerMutex;
 	std::thread closeRetryThread;

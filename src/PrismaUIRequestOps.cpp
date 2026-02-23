@@ -66,52 +66,37 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			QueueSendUndoList();
 		}
 
-		void PresentRegisterResult(const Registration::RegisterResult& res, bool syncFallback) noexcept
+		void PresentRegisterResult(const Registration::RegisterResult& res) noexcept
 		{
-			if (syncFallback) {
-				SKSE::log::info(
-					"Register item result (sync): success={} regKey=0x{:08X} group={} total={} msg='{}'",
-					res.success,
-					static_cast<std::uint32_t>(res.regKey),
-					res.group,
-					res.totalRegistered,
-					res.message);
-			} else {
-				SKSE::log::info(
-					"Register item result: success={} regKey=0x{:08X} group={} total={} msg='{}'",
-					res.success,
-					static_cast<std::uint32_t>(res.regKey),
-					res.group,
-					res.totalRegistered,
-					res.message);
-			}
+			SKSE::log::info(
+				"Register item result: success={} regKey=0x{:08X} group={} total={} msg='{}'",
+				res.success,
+				static_cast<std::uint32_t>(res.regKey),
+				res.group,
+				res.totalRegistered,
+				res.message);
 
 			ShowToast(res.success ? "info" : "error", res.message);
 			RefreshUIAfterMutation();
 		}
 
-		void PresentUndoResult(const Registration::UndoResult& res, bool syncFallback) noexcept
+		void PresentUndoResult(const Registration::UndoResult& res) noexcept
 		{
-			if (syncFallback) {
-				SKSE::log::info(
-					"Undo register result (sync): success={} actionId={} regKey=0x{:08X} total={} msg='{}'",
-					res.success,
-					res.actionId,
-					static_cast<std::uint32_t>(res.regKey),
-					res.totalRegistered,
-					res.message);
-			} else {
-				SKSE::log::info(
-					"Undo register result: success={} actionId={} regKey=0x{:08X} total={} msg='{}'",
-					res.success,
-					res.actionId,
-					static_cast<std::uint32_t>(res.regKey),
-					res.totalRegistered,
-					res.message);
-			}
+			SKSE::log::info(
+				"Undo register result: success={} actionId={} regKey=0x{:08X} total={} msg='{}'",
+				res.success,
+				res.actionId,
+				static_cast<std::uint32_t>(res.regKey),
+				res.totalRegistered,
+				res.message);
 
 			ShowToast(res.success ? "info" : "error", res.message);
 			RefreshUIAfterMutation();
+		}
+
+		void ReportMainTaskQueueUnavailable(const char* context) noexcept
+		{
+			SKSE::log::warn("{}: main task queue unavailable; request dropped", context ? context : "Request");
 		}
 	}
 
@@ -254,10 +239,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			return;
 		}
 
-		// Fallback (no task interface): synchronous
-		const auto offset = static_cast<std::size_t>(req.page) * static_cast<std::size_t>(req.pageSize);
-		auto page = Registration::BuildQuickRegisterList(offset, req.pageSize);
-		SendJS("copng_setInventory", PrismaUIPayloads::BuildInventoryPayload(req.page, req.pageSize, page));
+		ReportMainTaskQueueUnavailable("Inventory");
 	}
 
 	void QueueSendRegistered() noexcept
@@ -271,8 +253,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			return;
 		}
 
-		auto items = Registration::BuildRegisteredList();
-		SendJS("copng_setRegistered", PrismaUIPayloads::BuildRegisteredPayload(items));
+		ReportMainTaskQueueUnavailable("Registered list");
 	}
 
 	void QueueSendRewards() noexcept
@@ -321,9 +302,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			return;
 		}
 
-		// Fallback (no task interface): minimal synchronous snapshot
-		auto [registeredCount, totals] = gatherRewardState();
-		SendJS("copng_setRewards", buildRewardsJson(registeredCount, totals, false));
+		ReportMainTaskQueueUnavailable("Rewards");
 	}
 
 	void QueueSendUndoList() noexcept
@@ -337,8 +316,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			return;
 		}
 
-		auto items = Registration::BuildRecentUndoList();
-		SendJS("copng_setUndoList", PrismaUIPayloads::BuildUndoPayload(items));
+		ReportMainTaskQueueUnavailable("Undo list");
 	}
 
 	void HandleRefundRewardsRequest() noexcept
@@ -354,10 +332,8 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			return;
 		}
 
-		const auto cleared = Rewards::RefundRewards();
-		ShowToast("info", "Rewards refunded (" + std::to_string(cleared) + ")");
-		SendStateToUI();
-		QueueSendRewards();
+		ReportMainTaskQueueUnavailable("Refund rewards");
+		ShowToast("error", "Main thread unavailable. Try again.");
 	}
 
 	void HandleRegisterItemRequest(const char* argument) noexcept
@@ -387,14 +363,14 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		if (QueueMainTask([formId]() {
 				const auto res = Registration::TryRegisterItem(formId);
 				(void)QueueUITask([res]() {
-					PresentRegisterResult(res, false);
+					PresentRegisterResult(res);
 				});
 			})) {
 			return;
 		}
 
-		const auto res = Registration::TryRegisterItem(formId);
-		PresentRegisterResult(res, true);
+		ReportMainTaskQueueUnavailable("Register item");
+		ShowToast("error", "Main thread unavailable. Try again.");
 	}
 
 	void HandleUndoRegisterRequest(const char* argument) noexcept
@@ -424,13 +400,13 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		if (QueueMainTask([actionId]() {
 				const auto res = Registration::TryUndoRegistration(actionId);
 				(void)QueueUITask([res]() {
-					PresentUndoResult(res, false);
+					PresentUndoResult(res);
 				});
 			})) {
 			return;
 		}
 
-		const auto res = Registration::TryUndoRegistration(actionId);
-		PresentUndoResult(res, true);
+		ReportMainTaskQueueUnavailable("Undo register item");
+		ShowToast("error", "Main thread unavailable. Try again.");
 	}
-}
+	}

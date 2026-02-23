@@ -3,6 +3,7 @@
 #include "PrismaUIInternal.h"
 
 #include <atomic>
+#include <cstdint>
 #include <mutex>
 #include <thread>
 
@@ -17,6 +18,8 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal::State
 	extern std::atomic_bool                         focusDelayArmed;
 	extern std::atomic_int                          focusAttemptCount;
 	extern std::atomic_bool                         shuttingDown;
+	extern std::atomic<std::uint64_t>              closeRetryGeneration;
+	extern std::atomic<std::uint64_t>              focusDelayGeneration;
 
 	extern std::mutex  workerMutex;
 	extern std::thread closeRetryThread;

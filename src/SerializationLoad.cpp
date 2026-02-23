@@ -23,6 +23,60 @@ namespace CodexOfPowerNG::Serialization::Internal
 {
 	namespace
 	{
+		inline constexpr std::uint32_t kMaxSerializedRewardEntries = 256;
+		inline constexpr std::uint32_t kMaxSerializedUndoRewardDeltas = 64;
+
+		[[nodiscard]] bool IsSupportedRewardActorValue(std::uint32_t avRaw) noexcept
+		{
+			switch (static_cast<RE::ActorValue>(avRaw)) {
+			case RE::ActorValue::kOneHanded:
+			case RE::ActorValue::kTwoHanded:
+			case RE::ActorValue::kArchery:
+			case RE::ActorValue::kCriticalChance:
+			case RE::ActorValue::kUnarmedDamage:
+			case RE::ActorValue::kStaminaRate:
+			case RE::ActorValue::kStamina:
+			case RE::ActorValue::kSpeedMult:
+			case RE::ActorValue::kCarryWeight:
+			case RE::ActorValue::kDamageResist:
+			case RE::ActorValue::kHealth:
+			case RE::ActorValue::kResistMagic:
+			case RE::ActorValue::kResistFire:
+			case RE::ActorValue::kResistFrost:
+			case RE::ActorValue::kResistShock:
+			case RE::ActorValue::kHealRate:
+			case RE::ActorValue::kReflectDamage:
+			case RE::ActorValue::kHeavyArmor:
+			case RE::ActorValue::kSmithingModifier:
+			case RE::ActorValue::kLightArmor:
+			case RE::ActorValue::kBlock:
+			case RE::ActorValue::kMagicka:
+			case RE::ActorValue::kMagickaRate:
+			case RE::ActorValue::kPoisonResist:
+			case RE::ActorValue::kResistDisease:
+			case RE::ActorValue::kAlchemyModifier:
+			case RE::ActorValue::kAlchemy:
+			case RE::ActorValue::kDestructionModifier:
+			case RE::ActorValue::kRestorationModifier:
+			case RE::ActorValue::kAlterationModifier:
+			case RE::ActorValue::kConjurationModifier:
+			case RE::ActorValue::kIllusionModifier:
+			case RE::ActorValue::kEnchantingModifier:
+			case RE::ActorValue::kAbsorbChance:
+			case RE::ActorValue::kShoutRecoveryMult:
+			case RE::ActorValue::kSpeechcraftModifier:
+			case RE::ActorValue::kLockpickingModifier:
+			case RE::ActorValue::kPickpocketModifier:
+			case RE::ActorValue::kSneakingModifier:
+			case RE::ActorValue::kLockpicking:
+			case RE::ActorValue::kPickpocket:
+			case RE::ActorValue::kAttackDamageMult:
+				return true;
+			default:
+				return false;
+			}
+		}
+
 		void Skip(SKSE::SerializationInterface* a_intfc, std::uint32_t length) noexcept
 		{
 			std::array<std::byte, 256> buffer{};
@@ -164,11 +218,16 @@ namespace CodexOfPowerNG::Serialization::Internal
 				auto remaining = length - static_cast<std::uint32_t>(sizeof(count));
 				const auto entrySize = static_cast<std::uint32_t>(sizeof(std::uint32_t) + sizeof(float));
 				const auto maxCount = remaining / entrySize;
-				if (count > maxCount) {
-					count = maxCount;
+				const auto readableCount = (std::min)(count, maxCount);
+				const auto readCount = (std::min)(readableCount, kMaxSerializedRewardEntries);
+				if (readableCount > readCount) {
+					SKSE::log::warn(
+						"Serialization load: reward record truncated from {} to {} entries",
+						readableCount,
+						readCount);
 				}
 
-				for (std::uint32_t i = 0; i < count; ++i) {
+				for (std::uint32_t i = 0; i < readCount; ++i) {
 					std::uint32_t avRaw{};
 					float total{};
 					if (a_intfc->ReadRecordData(avRaw) != sizeof(avRaw) || a_intfc->ReadRecordData(total) != sizeof(total)) {
@@ -176,6 +235,10 @@ namespace CodexOfPowerNG::Serialization::Internal
 						return;
 					}
 					remaining -= entrySize;
+					if (!IsSupportedRewardActorValue(avRaw)) {
+						SKSE::log::warn("Serialization load: skipping unsupported reward actor value {}", avRaw);
+						continue;
+					}
 					const auto av = static_cast<RE::ActorValue>(avRaw);
 					const float clamped = Rewards::ClampRewardTotal(av, total);
 					if (std::abs(clamped - total) > Rewards::kRewardCapEpsilon) {
@@ -186,6 +249,13 @@ namespace CodexOfPowerNG::Serialization::Internal
 							clamped);
 					}
 					loadedRewardTotals.insert_or_assign(av, clamped);
+				}
+
+				const auto skippedEntries = readableCount - readCount;
+				if (skippedEntries > 0) {
+					const auto skipBytes = skippedEntries * entrySize;
+					Skip(a_intfc, skipBytes);
+					remaining -= skipBytes;
 				}
 
 				if (remaining > 0) {
@@ -230,13 +300,19 @@ namespace CodexOfPowerNG::Serialization::Internal
 					RE::FormID newFormId{};
 					const bool formIdResolved = a_intfc->ResolveFormID(oldFormId, newFormId);
 
-					const auto maxRewardCount = rewardDeltaSize > 0 ? (remaining / rewardDeltaSize) : 0;
-					if (rewardCount > maxRewardCount) {
-						rewardCount = maxRewardCount;
+					const auto availableRewardCount = rewardDeltaSize > 0 ? (remaining / rewardDeltaSize) : 0;
+					const auto readableRewardCount = (std::min)(rewardCount, availableRewardCount);
+					if (readableRewardCount > kMaxSerializedUndoRewardDeltas) {
+						SKSE::log::warn(
+							"Serialization load: truncating undo reward deltas for action {} from {} to {}",
+							entry.actionId,
+							readableRewardCount,
+							kMaxSerializedUndoRewardDeltas);
 					}
 
-					entry.rewardDeltas.reserve(rewardCount);
-					for (std::uint32_t j = 0; j < rewardCount; ++j) {
+					const auto storedRewardCount = (std::min)(readableRewardCount, kMaxSerializedUndoRewardDeltas);
+					entry.rewardDeltas.reserve(storedRewardCount);
+					for (std::uint32_t j = 0; j < readableRewardCount; ++j) {
 						std::uint32_t avRaw{};
 						float         delta{};
 						if (a_intfc->ReadRecordData(avRaw) != sizeof(avRaw) ||
@@ -245,6 +321,17 @@ namespace CodexOfPowerNG::Serialization::Internal
 							return;
 						}
 						remaining -= rewardDeltaSize;
+
+						if (j >= kMaxSerializedUndoRewardDeltas) {
+							continue;
+						}
+						if (!IsSupportedRewardActorValue(avRaw)) {
+							SKSE::log::warn(
+								"Serialization load: dropping unsupported undo reward actor value {} in action {}",
+								avRaw,
+								entry.actionId);
+							continue;
+						}
 						entry.rewardDeltas.push_back(Registration::RewardDelta{
 							static_cast<RE::ActorValue>(avRaw),
 							delta });

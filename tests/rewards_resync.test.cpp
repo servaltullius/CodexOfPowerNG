@@ -18,8 +18,10 @@ int main()
 	using CodexOfPowerNG::Rewards::ComputeCappedRewardSyncDeltaFromSnapshot;
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDeltaFromCurrent;
 	using CodexOfPowerNG::Rewards::ComputeRewardSyncDeltaFromSnapshot;
+	using CodexOfPowerNG::Rewards::ComputeRewardSyncDeltaFromSnapshotWithSuppression;
 	using CodexOfPowerNG::Rewards::MergeRewardSyncDeltaCandidates;
 	using CodexOfPowerNG::Rewards::SelectObservedRewardTotal;
+	using CodexOfPowerNG::Rewards::ShouldSuppressPositiveSyncWhenNoObservableDelta;
 
 	// Positive reward already reflected.
 	AssertNear(ComputeRewardSyncDelta(20.0f, 20.0f), 0.0f);
@@ -74,6 +76,39 @@ int main()
 			3.0f,    // permanent mod
 			8.0f),   // expected reward total
 		5.0f);
+
+	// Base-sticky suppression guard:
+	// if no observable modifier delta exists, suppress positive re-application.
+	assert(ShouldSuppressPositiveSyncWhenNoObservableDelta(
+		0.0f,   // observed current-base
+		0.0f,   // observed permanent-base
+		0.0f,   // permanent modifier
+		20.0f)  // expected reward total
+	);
+	AssertNear(
+		ComputeRewardSyncDeltaFromSnapshotWithSuppression(
+			300.0f,  // base
+			300.0f,  // current
+			300.0f,  // permanent
+			0.0f,    // permanent mod
+			20.0f,   // expected reward total
+			true),
+		0.0f);
+	// Negative expected rewards are not suppressed by this guard.
+	assert(!ShouldSuppressPositiveSyncWhenNoObservableDelta(
+		0.0f,
+		0.0f,
+		0.0f,
+		-0.20f));
+	AssertNear(
+		ComputeRewardSyncDeltaFromSnapshotWithSuppression(
+			300.0f,  // base
+			300.0f,  // current
+			300.0f,  // permanent
+			0.0f,    // permanent mod
+			-0.20f,  // expected reward total
+			true),
+		-0.20f);
 
 	// Current-based sync is preferred for carry weight gameplay consistency.
 	AssertNear(

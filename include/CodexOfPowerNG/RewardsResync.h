@@ -78,6 +78,51 @@ namespace CodexOfPowerNG::Rewards
 		return ComputeRewardSyncDelta(observed, expectedTotal, epsilon);
 	}
 
+	[[nodiscard]] inline bool ShouldSuppressPositiveSyncWhenNoObservableDelta(
+		float observedFromCurrent,
+		float observedFromPermanent,
+		float observedPermanentModifier,
+		float expectedTotal,
+		float epsilon = 0.001f) noexcept
+	{
+		if (expectedTotal <= epsilon) {
+			return false;
+		}
+
+		return std::abs(observedFromCurrent) <= epsilon &&
+		       std::abs(observedFromPermanent) <= epsilon &&
+		       std::abs(observedPermanentModifier) <= epsilon;
+	}
+
+	[[nodiscard]] inline float ComputeRewardSyncDeltaFromSnapshotWithSuppression(
+		float baseValue,
+		float currentValue,
+		float permanentValue,
+		float permanentModifier,
+		float expectedTotal,
+		bool suppressWhenNoObservableDelta,
+		float epsilon = 0.001f) noexcept
+	{
+		const float observedFromCurrent = currentValue - baseValue;
+		const float observedFromPermanent = permanentValue - baseValue;
+		if (suppressWhenNoObservableDelta &&
+		    ShouldSuppressPositiveSyncWhenNoObservableDelta(
+			    observedFromCurrent,
+			    observedFromPermanent,
+			    permanentModifier,
+			    expectedTotal,
+			    epsilon)) {
+			return 0.0f;
+		}
+
+		const float observed = SelectObservedRewardTotal(
+			expectedTotal,
+			observedFromCurrent,
+			observedFromPermanent,
+			permanentModifier);
+		return ComputeRewardSyncDelta(observed, expectedTotal, epsilon);
+	}
+
 	[[nodiscard]] inline float ComputeRewardSyncDeltaFromCurrent(
 		float baseValue,
 		float currentValue,

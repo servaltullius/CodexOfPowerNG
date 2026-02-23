@@ -165,6 +165,32 @@ namespace CodexOfPowerNG::Rewards::Engine
 			return snapshot;
 		}
 
+		[[nodiscard]] bool IsBaseStickyRewardActorValue(RE::ActorValue av) noexcept
+		{
+			switch (av) {
+			case RE::ActorValue::kHealth:
+			case RE::ActorValue::kMagicka:
+			case RE::ActorValue::kStamina:
+				return true;
+			default:
+				return false;
+			}
+		}
+
+		[[nodiscard]] float ComputeBaseStickyAwareRewardSyncDelta(
+			const RewardActorSnapshot& snapshot,
+			float expectedTotal) noexcept
+		{
+			return ComputeRewardSyncDeltaFromSnapshotWithSuppression(
+				snapshot.base,
+				snapshot.current,
+				snapshot.permanent,
+				snapshot.permanentModifier,
+				expectedTotal,
+				true,
+				kRewardCapEpsilon);
+		}
+
 		[[nodiscard]] std::vector<RewardCapAdjustment> ClampRewardTotalsInState() noexcept
 		{
 			std::vector<RewardCapAdjustment> adjustments;
@@ -333,6 +359,21 @@ namespace CodexOfPowerNG::Rewards::Engine
 					total,
 					cap,
 					kRewardCapEpsilon);
+			} else if (IsBaseStickyRewardActorValue(av)) {
+				delta = ComputeBaseStickyAwareRewardSyncDelta(snapshot, total);
+				if (std::abs(total) > kRewardCapEpsilon &&
+				    std::abs(delta) <= kRewardCapEpsilon &&
+				    ShouldSuppressPositiveSyncWhenNoObservableDelta(
+					    cur - base,
+					    permanent - base,
+					    permanentModifier,
+					    total,
+					    kRewardCapEpsilon)) {
+					passState.nonConvergingActorValues.insert(av);
+					SKSE::log::warn(
+						"Reward sync guard: AV {} has no observable modifier delta; suppressing positive resync to avoid load-time stacking",
+						static_cast<std::uint32_t>(av));
+				}
 			} else {
 				delta = snapshot.delta;
 			}
@@ -397,6 +438,8 @@ namespace CodexOfPowerNG::Rewards::Engine
 					total,
 					cap,
 					kRewardCapEpsilon);
+			} else if (IsBaseStickyRewardActorValue(av)) {
+				postDelta = ComputeBaseStickyAwareRewardSyncDelta(postSnapshot, total);
 			} else {
 				postDelta = postSnapshot.delta;
 			}

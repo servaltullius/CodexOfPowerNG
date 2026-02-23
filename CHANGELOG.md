@@ -9,6 +9,23 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.0.8] - 2026-02-23
+
+### Fixed
+- Prevented load-time stacking on base-sticky rewards (`Health`, `Magicka`, `Stamina`) by suppressing positive resync when no observable modifier delta exists.
+- Quantized skill actor-value application to whole-level effective deltas to avoid floating-point noise in UI/stat display (e.g. `15.100000038147`).
+- Hardened Prisma UI worker lifecycle with generation guards and non-blocking replacement to reduce close/focus re-entry freeze risks.
+- Removed unsafe synchronous gameplay fallback for register/undo/refund requests when main-thread task queue is unavailable.
+- Hardened co-save reward/undo load path with entry caps and supported actor-value validation to improve corrupted-data resilience.
+
+### Changed
+- Stabilized CTest registration behavior for WSL presets (`include(CTest)` + gated test registration with `BUILD_TESTING` and `COPNG_BUILD_CPP_TEST_TARGETS`).
+- Consolidated 1.0.8-rc track stability fixes into a final release.
+
+### Notes
+- Detailed release note: `docs/releases/v1.0.8.md`
+- Save compatibility policy remains unchanged: Codex of Power / SVCollection is not compatible.
+
 ## [1.0.8-rc.3] - 2026-02-22 (Pre-release)
 
 ### Fixed
@@ -198,7 +215,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.8-rc.3...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.8...HEAD
+[1.0.8]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.7...v1.0.8
 [1.0.8-rc.3]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.8-rc.3
 [1.0.8-rc.2]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.8-rc.2
 [1.0.8-rc.1]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.8-rc.1

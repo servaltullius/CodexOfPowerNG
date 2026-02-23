@@ -49,7 +49,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 	[[nodiscard]] json BuildRuntimeStatePayload();
 	void               SendJS(const char* fn, const json& payload) noexcept;
 	void               ShowToast(std::string_view level, std::string message) noexcept;
-	void               QueueSettingsSave(Settings settings, bool reloadL10n) noexcept;
+	void               QueueSettingsSave(Settings settings, Settings fallbackSettings, bool reloadL10n) noexcept;
 	void               ShutdownSettingsWorker() noexcept;
 	void               HandleSaveSettingsRequest(const char* argument) noexcept;
 

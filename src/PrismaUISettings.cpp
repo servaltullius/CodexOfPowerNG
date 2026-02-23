@@ -25,6 +25,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		struct SettingsSaveJob
 		{
 			Settings settings{};
+			Settings previousSettings{};
 			bool     reloadL10n{ false };
 		};
 
@@ -89,6 +90,13 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 								ok = false;
 							}
 
+							if (!ok) {
+								// Save failed: restore the previous in-memory snapshot so runtime state
+								// does not drift from the persisted settings file.
+								SetSettings(next.previousSettings);
+								Registration::InvalidateQuickRegisterCache();
+							}
+
 							bool needsMainThreadL10n = false;
 							if (ok && next.reloadL10n) {
 								// Reload localization. Avoid calling RE::GetINISetting from a background thread when in auto mode.
@@ -100,18 +108,20 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 								}
 							}
 
-							(void)QueueUITask([ok, needsMainThreadL10n]() {
+							if (!QueueUITask([ok, needsMainThreadL10n]() {
 								if (ok) {
 									if (needsMainThreadL10n) {
 										L10n::Load();
 									}
 									ShowToast("info", "Settings saved");
 								} else {
-									ShowToast("error", "Failed to save settings");
+									ShowToast("error", "Failed to save settings (reverted)");
 								}
 								SendJS("copng_setSettings", BuildSettingsPayload(GetSettings()));
 								SendStateToUI();
-							});
+							})) {
+								SKSE::log::warn("Settings save worker: failed to queue UI feedback task (ok={})", ok);
+							}
 						}
 					} catch (const std::exception& e) {
 						SKSE::log::error("Settings save worker crashed: {}", e.what());
@@ -125,9 +135,9 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		}
 	}
 
-	void QueueSettingsSave(Settings settings, bool reloadL10n) noexcept
+	void QueueSettingsSave(Settings settings, Settings fallbackSettings, bool reloadL10n) noexcept
 	{
-		QueueSaveSettingsToDisk(SettingsSaveJob{ std::move(settings), reloadL10n });
+		QueueSaveSettingsToDisk(SettingsSaveJob{ std::move(settings), std::move(fallbackSettings), reloadL10n });
 	}
 
 	void ShutdownSettingsWorker() noexcept
@@ -178,6 +188,6 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		SendJS("copng_setSettings", BuildSettingsPayload(GetSettings()));
 		SendStateToUI();
 
-		QueueSettingsSave(next, reloadL10n);
+		QueueSettingsSave(next, current, reloadL10n);
 	}
 }

@@ -98,7 +98,10 @@ namespace CodexOfPowerNG::Rewards
 				if (QueueMainTask([rerunState]() { RunCarryWeightQuickResync(rerunState); })) {
 					return;
 				}
-				RunCarryWeightQuickResync(rerunState);
+				SKSE::log::warn(
+					"Reward sync (carry weight quick): scheduler unavailable while queueing rerun; deferring rerun");
+				SyncRuntime::CompleteCarryWeightQuickResyncRun(generation);
+				SyncRuntime::MarkCarryWeightQuickResyncRerunRequested();
 				return;
 			}
 
@@ -238,32 +241,11 @@ namespace CodexOfPowerNG::Rewards
 				return;
 			}
 
-			// Fallback when task interface is unavailable: finish synchronously.
-			bool abortedForReadiness = false;
-			while (
-				state->attempt < kCarryWeightQuickResyncMaxAttempts &&
-				SyncRuntime::IsCurrentGeneration(state->generation)) {
-				const auto fallbackResult = TryCarryWeightQuickResyncAttempt(state->attempt);
-				if (fallbackResult == CarryWeightQuickResyncAttemptResult::kDone) {
-					CompleteCarryWeightQuickResync(state->generation);
-					return;
-				}
-				if (fallbackResult == CarryWeightQuickResyncAttemptResult::kRetryWithoutAttemptConsume) {
-					SKSE::log::warn("Reward sync (carry weight quick): not ready during fallback; aborting this quick pass");
-					abortedForReadiness = true;
-					break;
-				}
-				++state->attempt;
-			}
-			if (abortedForReadiness) {
-				CompleteCarryWeightQuickResync(state->generation);
-				return;
-			}
-
 			SKSE::log::warn(
-				"Reward sync (carry weight quick): unresolved after {} attempts",
-				kCarryWeightQuickResyncMaxAttempts);
-			CompleteCarryWeightQuickResync(state->generation);
+				"Reward sync (carry weight quick): scheduler unavailable while queueing retry; deferring rerun");
+			SyncRuntime::CompleteCarryWeightQuickResyncRun(state->generation);
+			SyncRuntime::MarkCarryWeightQuickResyncRerunRequested();
+			return;
 		}
 
 		void RunRewardSyncPasses(std::shared_ptr<RewardSyncPassState> passState, std::uint32_t remainingPasses) noexcept
@@ -311,7 +293,9 @@ namespace CodexOfPowerNG::Rewards
 				if (QueueMainTask([rerunPassState]() { RunRewardSyncPasses(rerunPassState, kRewardSyncPassCount); })) {
 					return true;
 				}
-				RunRewardSyncPasses(rerunPassState, kRewardSyncPassCount);
+				SKSE::log::warn("Reward sync: scheduler unavailable while queueing rerun; deferring rerun");
+				FinalizeRewardSyncRun(passState);
+				SyncRuntime::MarkRewardSyncRerunRequested();
 				return true;
 			};
 
@@ -338,19 +322,10 @@ namespace CodexOfPowerNG::Rewards
 				return;
 			}
 
-			// Fallback when task interface is unavailable: finish synchronously.
-			for (std::uint32_t i = 1; i < remainingPasses; ++i) {
-				if (!SyncRuntime::IsCurrentGeneration(passState->generation)) {
-					return;
-				}
-				if (!IsRewardSyncEnvironmentReady()) {
-					SKSE::log::warn("Reward sync: fallback pass stopped because game is not ready");
-					CompleteRewardSyncRun(passState->generation);
-					return;
-				}
-				(void)Engine::ApplyRewardSyncPass(*passState, kRewardSyncMinMissingStreak);
-			}
+			SKSE::log::warn("Reward sync: scheduler unavailable while scheduling continuation; deferring rerun");
 			FinalizeRewardSyncRun(passState);
+			SyncRuntime::MarkRewardSyncRerunRequested();
+			return;
 		}
 		}
 
@@ -411,7 +386,9 @@ namespace CodexOfPowerNG::Rewards
 			return;
 		}
 
-		RunRewardSyncPasses(passState, kRewardSyncPassCount);
+		SKSE::log::warn("Reward sync: scheduler unavailable; deferring full sync run");
+		CompleteRewardSyncRun(generation);
+		SyncRuntime::MarkRewardSyncRerunRequested();
 	}
 
 	void ResetSyncSchedulersForLoad() noexcept
@@ -443,7 +420,9 @@ namespace CodexOfPowerNG::Rewards
 			return;
 		}
 
-		RunCarryWeightQuickResync(state);
+		SKSE::log::warn("Reward sync (carry weight quick): scheduler unavailable; deferring quick resync run");
+		SyncRuntime::CompleteCarryWeightQuickResyncRun(generation);
+		SyncRuntime::MarkCarryWeightQuickResyncRerunRequested();
 	}
 
 	std::size_t RefundRewards() noexcept

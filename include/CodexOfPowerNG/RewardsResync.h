@@ -204,9 +204,9 @@ namespace CodexOfPowerNG::Rewards
 	}
 
 	[[nodiscard]] inline float ComputeCarryWeightSyncDelta(
-		float baseValue,
-		float currentValue,
-		float permanentValue,
+		[[maybe_unused]] float baseValue,
+		[[maybe_unused]] float currentValue,
+		[[maybe_unused]] float permanentValue,
 		float permanentModifier,
 		float expectedTotal,
 		float epsilon = 0.001f) noexcept

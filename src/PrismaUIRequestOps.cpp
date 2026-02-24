@@ -11,6 +11,7 @@
 #include <SKSE/Logger.h>
 
 #include <algorithm>
+#include <atomic>
 #include <charconv>
 #include <chrono>
 #include <cstdint>
@@ -27,6 +28,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 	{
 		std::mutex       g_inventoryRequestMutex;
 		InventoryRequest g_lastInventoryRequest{};
+		std::atomic_bool g_refreshPending{ false };
 
 		void RememberInventoryRequest(InventoryRequest req) noexcept
 		{
@@ -96,8 +98,25 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 
 		void ReportMainTaskQueueUnavailable(const char* context) noexcept
 		{
-			SKSE::log::warn("{}: main task queue unavailable; request dropped", context ? context : "Request");
+			g_refreshPending.store(true, std::memory_order_release);
+			SKSE::log::warn(
+				"{}: main task queue unavailable; request dropped (pending refresh marked)",
+				context ? context : "Request");
 		}
+	}
+
+	void FlushPendingUIRefresh() noexcept
+	{
+		if (!g_refreshPending.exchange(false, std::memory_order_acq_rel)) {
+			return;
+		}
+
+		SKSE::log::info("UI refresh: replaying pending refresh after queue recovery");
+		SendStateToUI();
+		QueueSendInventory(SnapshotLastInventoryRequest());
+		QueueSendRegistered();
+		QueueSendRewards();
+		QueueSendUndoList();
 	}
 
 	InventoryRequest ParseInventoryRequest(const char* argument) noexcept

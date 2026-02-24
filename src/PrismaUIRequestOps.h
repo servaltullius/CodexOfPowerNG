@@ -22,6 +22,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 	void QueueSendRegistered() noexcept;
 	void QueueSendRewards() noexcept;
 	void QueueSendUndoList() noexcept;
+	void FlushPendingUIRefresh() noexcept;
 
 	void HandleRefundRewardsRequest() noexcept;
 	void HandleRegisterItemRequest(const char* argument) noexcept;

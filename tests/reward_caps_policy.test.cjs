@@ -57,13 +57,36 @@ test("skill rewards store fractional progress but apply whole-level actor deltas
 
   assert.match(coreSrc, /actorDelta = ActorAppliedRewardTotal\(av, clampedTotal\) - ActorAppliedRewardTotal\(av, total\)/);
   assert.match(coreSrc, /CaptureAppliedRewardDelta\(av, outcome\.stateDelta\)/);
-  assert.match(coreSrc, /ModActorValue\(av, outcome\.actorDelta\)/);
+  assert.match(coreSrc, /RestoreActorValue\(RE::ACTOR_VALUE_MODIFIER::kPermanent,\s*av,\s*outcome\.actorDelta\)/);
 
   assert.match(rewardsSrc, /const float previousApplied = ActorAppliedRewardTotal\(av, previousTotal\);/);
   assert.match(rewardsSrc, /const float nextApplied = ActorAppliedRewardTotal\(av, next\);/);
   assert.match(rewardsSrc, /const float appliedActorDelta = nextApplied - previousApplied;/);
 
   assert.match(engineSrc, /const float applied = ActorAppliedRewardTotal\(av, clamped\);/);
+});
+
+test("reward sync avoids synchronous fallback loops when scheduler is unavailable", () => {
+  const src = read(rewardsPath);
+
+  assert.match(src, /Reward sync: scheduler unavailable; deferring full sync run/);
+  assert.match(src, /Reward sync: scheduler unavailable while scheduling continuation; deferring rerun/);
+  assert.match(src, /Reward sync: scheduler unavailable while queueing rerun; deferring rerun/);
+  assert.match(src, /Reward sync \(carry weight quick\): scheduler unavailable while queueing retry; deferring rerun/);
+  assert.match(src, /Reward sync \(carry weight quick\): scheduler unavailable while queueing rerun; deferring rerun/);
+
+  assert.doesNotMatch(
+    src,
+    /if \(QueueMainTask\(\[passState\]\(\) \{ RunRewardSyncPasses\(passState, kRewardSyncPassCount\); \}\)\) \{[\s\S]*?return;[\s\S]*?\}[\s\S]*?RunRewardSyncPasses\(passState, kRewardSyncPassCount\);/,
+  );
+  assert.doesNotMatch(
+    src,
+    /if \(QueueMainTask\(\[rerunPassState\]\(\) \{ RunRewardSyncPasses\(rerunPassState, kRewardSyncPassCount\); \}\)\) \{[\s\S]*?return true;[\s\S]*?\}[\s\S]*?RunRewardSyncPasses\(rerunPassState, kRewardSyncPassCount\);/,
+  );
+  assert.doesNotMatch(src, /Fallback when task interface is unavailable: finish synchronously/);
+  assert.doesNotMatch(src, /not ready during fallback; aborting this quick pass/);
+  assert.doesNotMatch(src, /for \(std::uint32_t i = 1; i < remainingPasses; \+\+i\)/);
+  assert.doesNotMatch(src, /while \(\s*state->attempt < kCarryWeightQuickResyncMaxAttempts/);
 });
 
 test("weapon reward table avoids AttackDamageMult percent grants", () => {

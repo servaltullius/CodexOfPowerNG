@@ -22,6 +22,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 
 		void OnJsRequestState(const char* /*argument*/) noexcept
 		{
+			FlushPendingUIRefresh();
 			SendStateToUI();
 		}
 
@@ -33,30 +34,35 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 
 		void OnJsRequestInventory(const char* argument) noexcept
 		{
+			FlushPendingUIRefresh();
 			SKSE::log::info("JS requested inventory");
 			QueueSendInventory(ParseInventoryRequest(argument));
 		}
 
 		void OnJsRequestRegistered(const char* /*argument*/) noexcept
 		{
+			FlushPendingUIRefresh();
 			SKSE::log::info("JS requested registered list");
 			QueueSendRegistered();
 		}
 
 		void OnJsRequestRewards(const char* /*argument*/) noexcept
 		{
+			FlushPendingUIRefresh();
 			SKSE::log::info("JS requested rewards");
 			QueueSendRewards();
 		}
 
 		void OnJsRequestUndoList(const char* /*argument*/) noexcept
 		{
+			FlushPendingUIRefresh();
 			SKSE::log::info("JS requested undo list");
 			QueueSendUndoList();
 		}
 
 		void OnJsGetSettings(const char* /*argument*/) noexcept
 		{
+			FlushPendingUIRefresh();
 			SKSE::log::info("JS requested settings");
 			SendJS("copng_setSettings", BuildSettingsPayload(GetSettings()));
 		}

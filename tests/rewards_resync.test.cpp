@@ -169,15 +169,14 @@ int main()
 	AssertNear(MergeRewardSyncDeltaCandidates(5.0f, 0.0f, 2.0f), 2.0f);
 	AssertNear(MergeRewardSyncDeltaCandidates(5.0f, 3.0f, 1.0f), 3.0f);
 
-	// Carry helper combines current/snapshot signals.
 	AssertNear(
 		ComputeCarryWeightSyncDelta(
 			300.0f,  // base
-			300.0f,  // current missing
-			305.0f,  // permanent reflects reward
+			300.0f,
+			305.0f,
 			5.0f,    // perm mod
 			5.0f),   // expected
-		5.0f);
+		0.0f);
 	AssertNear(
 		ComputeCarryWeightSyncDelta(
 			300.0f,

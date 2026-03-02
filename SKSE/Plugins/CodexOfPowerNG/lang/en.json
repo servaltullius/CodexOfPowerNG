@@ -75,6 +75,7 @@
     "totalSuffix": " items",
     "registerLotdNotDisplayed": "Codex of Power: Cannot register (LOTD item not displayed yet)",
     "registerLotdGateUnavailable": "Codex of Power: Cannot register (LOTD gate unavailable; check TCC install/load order)",
+    "registerQuestItem": "Codex of Power: Cannot register (active quest item)",
     "undoOkPrefix": "Undo: ",
     "undoOnlyLatest": "Codex of Power: Undo is available only for the latest registration",
     "undoMissingRegistration": "Codex of Power: Undo failed (registration missing)",

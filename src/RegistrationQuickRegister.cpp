@@ -3,6 +3,7 @@
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/Inventory.h"
 #include "CodexOfPowerNG/L10n.h"
+#include "CodexOfPowerNG/RegistrationQuestGuard.h"
 #include "CodexOfPowerNG/RegistrationRules.h"
 #include "CodexOfPowerNG/RegistrationStateStore.h"
 #include "CodexOfPowerNG/Rewards.h"
@@ -135,6 +136,8 @@ namespace CodexOfPowerNG::Registration
 
 		Internal::EnsureMapsLoaded();
 
+		const auto questProtected = QuestGuard::SnapshotProtectedForms();
+
 		const auto quickListState = RegistrationStateStore::SnapshotQuickList();
 		const auto& blocked = quickListState.blockedItems;
 		const auto& registered = quickListState.registeredKeys;
@@ -197,12 +200,17 @@ namespace CodexOfPowerNG::Registration
 					continue;
 				}
 
+				const auto regKeyId = regKey->GetFormID();
+				const auto objId = obj->GetFormID();
+
+				if (questProtected.contains(regKeyId) || questProtected.contains(objId)) {
+					continue;
+				}
+
 				if (Internal::EvaluateTccGate(settings, tccLists, obj, regKey) != TccGateDecision::kAllow) {
 					continue;
 				}
 
-				const auto regKeyId = regKey->GetFormID();
-				const auto objId = obj->GetFormID();
 				if (registered.contains(regKeyId) || registered.contains(objId)) {
 					continue;
 				}
@@ -286,6 +294,14 @@ namespace CodexOfPowerNG::Registration
 
 		if (Internal::IsExcludedOrBlocked(item, regKey)) {
 			result.message = L10n::T("msg.registerExcluded", "Codex of Power: Cannot register (excluded item)");
+			RE::DebugNotification(result.message.c_str());
+			return result;
+		}
+
+		if (QuestGuard::IsQuestProtected(item->GetFormID()) ||
+			(regKey != item && QuestGuard::IsQuestProtected(regKey->GetFormID()))) {
+			result.message = L10n::T("msg.registerQuestItem",
+				"Codex of Power: Cannot register (active quest item)");
 			RE::DebugNotification(result.message.c_str());
 			return result;
 		}

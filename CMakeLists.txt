@@ -44,6 +44,7 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     src/RegistrationInternalMaps.cpp
     src/RegistrationInternal.cpp
     src/RegistrationInternalTcc.cpp
+    src/RegistrationQuestGuard.cpp
     src/RegistrationQuickRegister.cpp
     src/RegistrationUndo.cpp
     src/Registration.cpp
@@ -65,6 +66,7 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     include/CodexOfPowerNG/Registration.h
     include/CodexOfPowerNG/RegistrationFormId.h
     include/CodexOfPowerNG/RegistrationMaps.h
+    include/CodexOfPowerNG/RegistrationQuestGuard.h
     include/CodexOfPowerNG/RegistrationRules.h
     include/CodexOfPowerNG/RegistrationStateStore.h
     include/CodexOfPowerNG/RegistrationUndoTypes.h

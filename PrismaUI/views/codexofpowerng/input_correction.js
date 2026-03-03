@@ -56,7 +56,7 @@
     let lastWheelTs = 0;
 
     // Smooth-scroll state (target-lerp)
-    const LERP_BASE = 0.18;
+    const LERP_BASE = 0.10;
     const SNAP_PX = 0.5;
     const STALE_DT = 200;
     let targetScroll = NaN;
@@ -82,7 +82,7 @@
 
       // Tiny deltas from Ultralight notched wheel: use a moderate fixed step.
       if (abs > 0 && abs < 12 && dt > 24) {
-        dy = Math.sign(dy) * 60 * uiScale;
+        dy = Math.sign(dy) * 45 * uiScale;
       } else if (abs < 40) {
         dy = dy * 1.5 * uiScale;
       } else {

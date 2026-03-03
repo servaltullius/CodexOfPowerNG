@@ -151,16 +151,16 @@ test("smooth scroll converges to target", () => {
     stopPropagation: () => {},
   });
 
-  // Flush 30 frames at ~60fps intervals (allows full convergence)
+  // Flush 60 frames at ~60fps intervals (allows full convergence even with low LERP_BASE)
   let ts = 100;
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) {
     ts += 16.67;
     mock.flush(ts);
   }
 
-  // Should have converged close to target (120px normalized delta)
+  // Should have converged close to target
   assert.ok(rootEl.scrollTop > 0, "should have scrolled");
-  // After 30 frames the animation should have settled (no more pending rAFs)
+  // After 60 frames the animation should have settled (no more pending rAFs)
   assert.equal(mock.pendingCount(), 0, "animation should have converged and stopped");
 
   detach();

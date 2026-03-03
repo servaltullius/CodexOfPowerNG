@@ -2383,7 +2383,7 @@
           const dt = lastWheelTs > 0 ? now - lastWheelTs : 999;
           lastWheelTs = now;
 
-          if (abs > 0 && abs < 12 && dt > 24) dy = Math.sign(dy) * 60 * uiScale;
+          if (abs > 0 && abs < 12 && dt > 24) dy = Math.sign(dy) * 45 * uiScale;
           else if (abs < 40) dy = dy * 1.5 * uiScale;
           else dy = dy * uiScale;
 
@@ -2392,7 +2392,7 @@
         };
 
         // Smooth-scroll state (target-lerp)
-        const LERP_BASE = 0.18;
+        const LERP_BASE = 0.10;
         const SNAP_PX = 0.5;
         const STALE_DT = 200;
         let targetScroll = NaN;

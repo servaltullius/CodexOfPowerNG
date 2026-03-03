@@ -49,21 +49,8 @@
       return 1;
     });
     const perfObj = options.performanceObj || (global && global.performance) || null;
-    const rafFn = asFn(options.requestAnimationFrameFn, (global && global.requestAnimationFrame) ? global.requestAnimationFrame.bind(global) : null);
-    const cafFn = asFn(options.cancelAnimationFrameFn, (global && global.cancelAnimationFrame) ? global.cancelAnimationFrame.bind(global) : null);
-    const nowFn = asFn(options.nowFn, perfObj && typeof perfObj.now === "function" ? function () { return perfObj.now(); } : Date.now);
 
     let lastWheelTs = 0;
-
-    // Smooth-scroll state (target-lerp)
-    const LERP_BASE = 0.10;
-    const SNAP_PX = 0.5;
-    const STALE_DT = 200;
-    let targetScroll = NaN;
-    let lastApplied = NaN;
-    let smoothRaf = 0;
-    let lastFrameTs = 0;
-    let detached = false;
 
     function normalizeWheelDelta(e, container) {
       let dy = Number(e.deltaY || 0);
@@ -82,7 +69,7 @@
 
       // Tiny deltas from Ultralight notched wheel: use a moderate fixed step.
       if (abs > 0 && abs < 12 && dt > 24) {
-        dy = Math.sign(dy) * 60 * uiScale;
+        dy = Math.sign(dy) * 80 * uiScale;
       } else if (abs < 40) {
         dy = dy * 1.5 * uiScale;
       } else {
@@ -91,60 +78,6 @@
 
       const maxStep = Number(container.clientHeight || 800) * 0.45;
       return clampFn(dy, -maxStep, maxStep);
-    }
-
-    function smoothStep(ts) {
-      if (detached) return;
-      if (!Number.isFinite(targetScroll)) { smoothRaf = 0; return; }
-
-      const maxScroll = Math.max(0, Number(rootEl.scrollHeight || 0) - Number(rootEl.clientHeight || 0));
-      targetScroll = clampFn(targetScroll, 0, maxScroll);
-
-      const currentScroll = Number(rootEl.scrollTop || 0);
-
-      // External scrollTop change (keyboard nav, etc.) — adopt it
-      if (Number.isFinite(lastApplied) && Math.abs(currentScroll - lastApplied) > 1) {
-        targetScroll = currentScroll;
-      }
-
-      const gap = targetScroll - currentScroll;
-      if (Math.abs(gap) < SNAP_PX) {
-        rootEl.scrollTop = Math.round(targetScroll);
-        lastApplied = Math.round(targetScroll);
-        targetScroll = NaN;
-        smoothRaf = 0;
-        return;
-      }
-
-      const dt = lastFrameTs > 0 ? ts - lastFrameTs : 16.67;
-      lastFrameTs = ts;
-
-      let next;
-      if (dt > STALE_DT) {
-        // Tab switch, Skyrim pause, etc. — snap immediately
-        next = targetScroll;
-      } else {
-        const alpha = 1 - Math.pow(1 - LERP_BASE, dt / 16.67);
-        next = currentScroll + gap * alpha;
-      }
-      next = Math.round(clampFn(next, 0, maxScroll));
-
-      // Rounding prevented progress — snap to target
-      if (next === currentScroll && next !== Math.round(targetScroll)) {
-        next = Math.round(clampFn(targetScroll, 0, maxScroll));
-        rootEl.scrollTop = next;
-        lastApplied = next;
-        targetScroll = NaN;
-        smoothRaf = 0;
-        return;
-      }
-
-      rootEl.scrollTop = next;
-      lastApplied = next;
-
-      if (typeof rafFn === "function") {
-        smoothRaf = rafFn(smoothStep);
-      }
     }
 
     const onWheel = function (e) {
@@ -158,34 +91,12 @@
       if (e.preventDefault) e.preventDefault();
       if (e.stopPropagation) e.stopPropagation();
 
-      if (typeof rafFn !== "function") {
-        // No rAF available — fall back to direct assignment
-        rootEl.scrollTop = clampFn(Number(rootEl.scrollTop || 0) + deltaPx, 0, maxScroll);
-        return;
-      }
-
-      // Accumulate delta into target
-      const current = Number(rootEl.scrollTop || 0);
-      if (!Number.isFinite(targetScroll)) {
-        targetScroll = current;
-      }
-      targetScroll = clampFn(targetScroll + deltaPx, 0, maxScroll);
-      lastApplied = current;
-
-      // Schedule rAF if not already running
-      if (!smoothRaf) {
-        lastFrameTs = 0;
-        smoothRaf = rafFn(smoothStep);
-      }
+      rootEl.scrollTop = clampFn(Number(rootEl.scrollTop || 0) + deltaPx, 0, maxScroll);
     };
 
     rootEl.addEventListener("wheel", onWheel, { passive: false });
 
     return function detachWheel() {
-      detached = true;
-      if (smoothRaf && typeof cafFn === "function") cafFn(smoothRaf);
-      smoothRaf = 0;
-      targetScroll = NaN;
       if (typeof rootEl.removeEventListener === "function") {
         rootEl.removeEventListener("wheel", onWheel, false);
       }

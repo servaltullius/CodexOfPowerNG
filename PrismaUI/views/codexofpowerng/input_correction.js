@@ -82,7 +82,7 @@
 
       // Tiny deltas from Ultralight notched wheel: use a moderate fixed step.
       if (abs > 0 && abs < 12 && dt > 24) {
-        dy = Math.sign(dy) * 45 * uiScale;
+        dy = Math.sign(dy) * 60 * uiScale;
       } else if (abs < 40) {
         dy = dy * 1.5 * uiScale;
       } else {

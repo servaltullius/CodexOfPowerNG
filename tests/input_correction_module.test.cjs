@@ -60,7 +60,29 @@ test("view keeps observable fallback when module loading fails", () => {
   );
 });
 
+// --- Mock rAF helpers ---
+function makeMockRaf() {
+  let nextId = 1;
+  const pending = new Map();
+  return {
+    raf(cb) { const id = nextId++; pending.set(id, cb); return id; },
+    caf(id) { pending.delete(id); },
+    flush(ts) {
+      // Execute all pending callbacks once (snapshot to avoid infinite loop)
+      const cbs = [...pending.values()];
+      pending.clear();
+      for (const cb of cbs) cb(ts);
+    },
+    pendingCount() { return pending.size; },
+  };
+}
+
+function makeClamp() {
+  return (v, min, max) => Math.max(min, Math.min(max, Number(v)));
+}
+
 test("installDirectWheelScroll applies normalized wheel delta", () => {
+  const mock = makeMockRaf();
   const rootEl = makeEventTarget({
     scrollTop: 0,
     scrollHeight: 1600,
@@ -70,9 +92,12 @@ test("installDirectWheelScroll applies normalized wheel delta", () => {
   const detach = mod.installDirectWheelScroll({
     documentObj: { querySelector: () => rootEl },
     rootEl,
-    clamp: (v, min, max) => Math.max(min, Math.min(max, Number(v))),
+    clamp: makeClamp(),
     getCurrentUiScale: () => 1,
     performanceObj: { now: () => 100 },
+    requestAnimationFrameFn: mock.raf,
+    cancelAnimationFrameFn: mock.caf,
+    nowFn: () => 100,
   });
 
   let prevented = false;
@@ -88,11 +113,204 @@ test("installDirectWheelScroll applies normalized wheel delta", () => {
   });
 
   assert.equal(prevented, true);
-  assert.ok(rootEl.scrollTop > 0, "wheel handler should update scrollTop");
+  // Flush one rAF frame to apply the scroll
+  mock.flush(116.67);
+
+  assert.ok(rootEl.scrollTop > 0, "wheel handler should update scrollTop after rAF flush");
   assert.ok(rootEl.scrollTop <= 1200, "scrollTop should be clamped within scrollable range");
 
   detach();
   assert.equal(rootEl.listenerCount("wheel"), 0);
+});
+
+test("smooth scroll converges to target", () => {
+  const mock = makeMockRaf();
+  const rootEl = makeEventTarget({
+    scrollTop: 0,
+    scrollHeight: 2000,
+    clientHeight: 400,
+  });
+
+  const detach = mod.installDirectWheelScroll({
+    documentObj: { querySelector: () => rootEl },
+    rootEl,
+    clamp: makeClamp(),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 100 },
+    requestAnimationFrameFn: mock.raf,
+    cancelAnimationFrameFn: mock.caf,
+    nowFn: () => 100,
+  });
+
+  rootEl.fire("wheel", {
+    isTrusted: true,
+    deltaY: 120,
+    deltaMode: 0,
+    timeStamp: 100,
+    preventDefault: () => {},
+    stopPropagation: () => {},
+  });
+
+  // Flush 30 frames at ~60fps intervals (allows full convergence)
+  let ts = 100;
+  for (let i = 0; i < 30; i++) {
+    ts += 16.67;
+    mock.flush(ts);
+  }
+
+  // Should have converged close to target (120px normalized delta)
+  assert.ok(rootEl.scrollTop > 0, "should have scrolled");
+  // After 30 frames the animation should have settled (no more pending rAFs)
+  assert.equal(mock.pendingCount(), 0, "animation should have converged and stopped");
+
+  detach();
+});
+
+test("rapid wheel events accumulate delta", () => {
+  const mock = makeMockRaf();
+  const rootEl = makeEventTarget({
+    scrollTop: 0,
+    scrollHeight: 4000,
+    clientHeight: 400,
+  });
+
+  const detach = mod.installDirectWheelScroll({
+    documentObj: { querySelector: () => rootEl },
+    rootEl,
+    clamp: makeClamp(),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 100 },
+    requestAnimationFrameFn: mock.raf,
+    cancelAnimationFrameFn: mock.caf,
+    nowFn: () => 100,
+  });
+
+  // Single wheel event
+  rootEl.scrollTop = 0;
+  rootEl.fire("wheel", {
+    isTrusted: true,
+    deltaY: 120,
+    deltaMode: 0,
+    timeStamp: 100,
+    preventDefault: () => {},
+    stopPropagation: () => {},
+  });
+
+  // Flush all frames to convergence
+  let ts = 100;
+  for (let i = 0; i < 30; i++) { ts += 16.67; mock.flush(ts); }
+  const singleResult = rootEl.scrollTop;
+
+  // Reset and do two rapid wheel events
+  rootEl.scrollTop = 0;
+  detach();
+
+  const mock2 = makeMockRaf();
+  const detach2 = mod.installDirectWheelScroll({
+    documentObj: { querySelector: () => rootEl },
+    rootEl,
+    clamp: makeClamp(),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 200 },
+    requestAnimationFrameFn: mock2.raf,
+    cancelAnimationFrameFn: mock2.caf,
+    nowFn: () => 200,
+  });
+
+  rootEl.fire("wheel", {
+    isTrusted: true, deltaY: 120, deltaMode: 0, timeStamp: 200,
+    preventDefault: () => {}, stopPropagation: () => {},
+  });
+  rootEl.fire("wheel", {
+    isTrusted: true, deltaY: 120, deltaMode: 0, timeStamp: 205,
+    preventDefault: () => {}, stopPropagation: () => {},
+  });
+
+  ts = 200;
+  for (let i = 0; i < 30; i++) { ts += 16.67; mock2.flush(ts); }
+  const doubleResult = rootEl.scrollTop;
+
+  assert.ok(doubleResult > singleResult, "two rapid wheel events should scroll further than one");
+
+  detach2();
+});
+
+test("external scrollTop change resets target", () => {
+  const mock = makeMockRaf();
+  const rootEl = makeEventTarget({
+    scrollTop: 200,
+    scrollHeight: 2000,
+    clientHeight: 400,
+  });
+
+  const detach = mod.installDirectWheelScroll({
+    documentObj: { querySelector: () => rootEl },
+    rootEl,
+    clamp: makeClamp(),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 100 },
+    requestAnimationFrameFn: mock.raf,
+    cancelAnimationFrameFn: mock.caf,
+    nowFn: () => 100,
+  });
+
+  rootEl.fire("wheel", {
+    isTrusted: true, deltaY: 120, deltaMode: 0, timeStamp: 100,
+    preventDefault: () => {}, stopPropagation: () => {},
+  });
+
+  // Flush one frame to start animation
+  mock.flush(116.67);
+  const scrollAfterFirstFrame = rootEl.scrollTop;
+
+  // Simulate external scrollTop change (keyboard navigation)
+  rootEl.scrollTop = 800;
+
+  // Flush more frames — animation should adopt the new position
+  let ts = 116.67;
+  for (let i = 0; i < 20; i++) { ts += 16.67; mock.flush(ts); }
+
+  // Should NOT have returned to the original target area
+  assert.ok(rootEl.scrollTop >= 750, "should stay near externally set scrollTop, not revert to old target");
+
+  detach();
+});
+
+test("detach cancels animation", () => {
+  const mock = makeMockRaf();
+  const rootEl = makeEventTarget({
+    scrollTop: 0,
+    scrollHeight: 2000,
+    clientHeight: 400,
+  });
+
+  const detach = mod.installDirectWheelScroll({
+    documentObj: { querySelector: () => rootEl },
+    rootEl,
+    clamp: makeClamp(),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 100 },
+    requestAnimationFrameFn: mock.raf,
+    cancelAnimationFrameFn: mock.caf,
+    nowFn: () => 100,
+  });
+
+  rootEl.fire("wheel", {
+    isTrusted: true, deltaY: 120, deltaMode: 0, timeStamp: 100,
+    preventDefault: () => {}, stopPropagation: () => {},
+  });
+
+  assert.ok(mock.pendingCount() > 0, "rAF should be scheduled after wheel event");
+
+  detach();
+
+  // After detach, pending rAF should be cancelled
+  assert.equal(mock.pendingCount(), 0, "detach should cancel pending rAF");
+
+  // Flushing should not throw or change scrollTop
+  const scrollBefore = rootEl.scrollTop;
+  mock.flush(200);
+  assert.equal(rootEl.scrollTop, scrollBefore, "flush after detach should not change scrollTop");
 });
 
 test("installMouseEventCorrection re-dispatches click for non-element mouseup target", () => {

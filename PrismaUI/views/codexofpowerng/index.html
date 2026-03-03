@@ -2391,6 +2391,60 @@
           return clamp(dy, -maxStep, maxStep);
         };
 
+        // Smooth-scroll state (target-lerp)
+        const LERP_BASE = 0.18;
+        const SNAP_PX = 0.5;
+        const STALE_DT = 200;
+        let targetScroll = NaN;
+        let lastApplied = NaN;
+        let smoothRaf = 0;
+        let lastFrameTs = 0;
+
+        const smoothStep = (ts) => {
+          if (!isFinite(targetScroll)) { smoothRaf = 0; return; }
+          const maxScroll = Math.max(0, rootEl.scrollHeight - rootEl.clientHeight);
+          targetScroll = clamp(targetScroll, 0, maxScroll);
+          const currentScroll = rootEl.scrollTop;
+
+          if (isFinite(lastApplied) && Math.abs(currentScroll - lastApplied) > 1) {
+            targetScroll = currentScroll;
+          }
+
+          const gap = targetScroll - currentScroll;
+          if (Math.abs(gap) < SNAP_PX) {
+            rootEl.scrollTop = Math.round(targetScroll);
+            lastApplied = Math.round(targetScroll);
+            targetScroll = NaN;
+            smoothRaf = 0;
+            return;
+          }
+
+          const dt = lastFrameTs > 0 ? ts - lastFrameTs : 16.67;
+          lastFrameTs = ts;
+
+          let next;
+          if (dt > STALE_DT) {
+            next = targetScroll;
+          } else {
+            const alpha = 1 - Math.pow(1 - LERP_BASE, dt / 16.67);
+            next = currentScroll + gap * alpha;
+          }
+          next = Math.round(clamp(next, 0, maxScroll));
+
+          if (next === currentScroll && next !== Math.round(targetScroll)) {
+            next = Math.round(clamp(targetScroll, 0, maxScroll));
+            rootEl.scrollTop = next;
+            lastApplied = next;
+            targetScroll = NaN;
+            smoothRaf = 0;
+            return;
+          }
+
+          rootEl.scrollTop = next;
+          lastApplied = next;
+          smoothRaf = requestAnimationFrame(smoothStep);
+        };
+
         rootEl.addEventListener(
           "wheel",
           (e) => {
@@ -2401,7 +2455,15 @@
             if (!isFinite(deltaPx) || deltaPx === 0) return;
             if (e.preventDefault) e.preventDefault();
             if (e.stopPropagation) e.stopPropagation();
-            rootEl.scrollTop = clamp(rootEl.scrollTop + deltaPx, 0, maxScroll);
+
+            const current = rootEl.scrollTop;
+            if (!isFinite(targetScroll)) targetScroll = current;
+            targetScroll = clamp(targetScroll + deltaPx, 0, maxScroll);
+            lastApplied = current;
+            if (!smoothRaf) {
+              lastFrameTs = 0;
+              smoothRaf = requestAnimationFrame(smoothStep);
+            }
           },
           { passive: false }
         );

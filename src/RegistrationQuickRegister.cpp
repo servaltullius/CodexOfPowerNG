@@ -181,6 +181,10 @@ namespace CodexOfPowerNG::Registration
 					continue;
 				}
 
+				if (entry->IsQuestObject()) {
+					continue;
+				}
+
 				auto* obj = entry->GetObject();
 				if (!obj) {
 					continue;
@@ -347,6 +351,15 @@ namespace CodexOfPowerNG::Registration
 
 		if (!foundEntry) {
 			result.message = "Not in inventory";
+			return result;
+		}
+
+		if (foundEntry->IsQuestObject() ||
+			QuestGuard::IsQuestProtected(item->GetFormID()) ||
+			(regKey != item && QuestGuard::IsQuestProtected(regKey->GetFormID()))) {
+			result.message = L10n::T("msg.registerQuestItem",
+				"Codex of Power: Cannot register (active quest item)");
+			RE::DebugNotification(result.message.c_str());
 			return result;
 		}
 

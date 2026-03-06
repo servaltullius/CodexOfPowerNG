@@ -29,3 +29,18 @@ test("quick register list uses live inventory count API", () => {
     "Quick register list should derive counts from PlayerCharacter::GetItemCount",
   );
 });
+
+test("quick register excludes quest objects both in the list and at consume time", () => {
+  const src = fs.readFileSync(path.join(__dirname, "..", "src", "RegistrationQuickRegister.cpp"), "utf8");
+  const questChecks = src.match(/IsQuestObject\(\)/g) || [];
+
+  assert.ok(
+    questChecks.length >= 2,
+    "Quick register should consult InventoryEntryData::IsQuestObject() when listing and registering items",
+  );
+  assert.match(
+    src,
+    /msg\.registerQuestItem/,
+    "Quest-object protection should surface the dedicated active-quest-item message",
+  );
+});

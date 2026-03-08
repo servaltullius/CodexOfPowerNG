@@ -27,8 +27,8 @@
 
 ## Validation
 - `bash scripts/test.sh`
-- `env VCPKG_ROOT=/mnt/c/Users/kdw73/vcpkg cmake --build --preset wsl-release`
-- `env VCPKG_ROOT=/mnt/c/Users/kdw73/vcpkg cmake --install build/wsl-release`
+- `env VCPKG_ROOT=/mnt/c/Users/<user>/vcpkg cmake --build --preset wsl-release`
+- `env VCPKG_ROOT=/mnt/c/Users/<user>/vcpkg cmake --install build/wsl-release`
 - `bash scripts/package_release.sh`
 - `bash scripts/check_release_zip.sh`
 

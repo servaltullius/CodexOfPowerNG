@@ -38,7 +38,7 @@
 ## Validation steps
 1. `node --test tests/reward_state_store_module.test.cjs tests/reward_caps_policy.test.cjs`
 2. `bash scripts/test.sh`
-3. `env VCPKG_ROOT=/mnt/c/Users/kdw73/vcpkg cmake --build --preset wsl-release`
+3. `env VCPKG_ROOT=/mnt/c/Users/<user>/vcpkg cmake --build --preset wsl-release`
 
 ## Risks
 - Regex-based source tests may need coordinated updates when internal structure moves

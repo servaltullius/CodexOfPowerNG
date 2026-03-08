@@ -26,7 +26,7 @@ Skyrim SE SKSE plugin — C++ 백엔드 + PrismaUI(Ultralight) 웹 오버레이 
 ## Build (WSL → Windows)
 
 ```bash
-export VCPKG_ROOT="/mnt/c/Users/kdw73/vcpkg"
+export VCPKG_ROOT="/mnt/c/Users/<user>/vcpkg"
 cmake --preset wsl-release
 cmake --build --preset wsl-release
 cmake --install build/wsl-release

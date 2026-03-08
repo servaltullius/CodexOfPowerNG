@@ -40,7 +40,7 @@
 ## Validation steps
 1. `node --test tests/quick_register_builder_module.test.cjs tests/native_state_bridge_module.test.cjs tests/quick_register_rules.test.cjs tests/virtual_refresh_resync.test.cjs tests/interop_bridge_module.test.cjs`
 2. `bash scripts/test.sh`
-3. `env VCPKG_ROOT=/mnt/c/Users/kdw73/vcpkg cmake --build --preset wsl-release`
+3. `env VCPKG_ROOT=/mnt/c/Users/<user>/vcpkg cmake --build --preset wsl-release`
 
 ## Risks
 - Regex-based source tests need coordinated updates when logic moves across files

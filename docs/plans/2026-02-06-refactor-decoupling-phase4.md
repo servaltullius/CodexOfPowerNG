@@ -44,7 +44,7 @@
 
 **Step 3:** Run Node tests: `keycodes`, `lang_ui`.
 
-**Step 4:** Build with `cmake --build --preset wsl-release` (`VCPKG_ROOT=/mnt/c/Users/kdw73/vcpkg`).
+**Step 4:** Build with `cmake --build --preset wsl-release` (`VCPKG_ROOT=/mnt/c/Users/<user>/vcpkg`).
 
 ### Task 4: Packaging
 

@@ -40,7 +40,7 @@
 ## Validation steps
 1. `node --test tests/notified_state_store_module.test.cjs tests/serialization_state_store_module.test.cjs tests/serialization_load_atomicity.test.cjs`
 2. `bash scripts/test.sh`
-3. `env VCPKG_ROOT=/mnt/c/Users/kdw73/vcpkg cmake --build --preset wsl-release`
+3. `env VCPKG_ROOT=/mnt/c/Users/<user>/vcpkg cmake --build --preset wsl-release`
 
 ## Risks
 - Source-structure tests are regex-based and will need coordinated updates when boundaries move

@@ -34,7 +34,7 @@
 ## Validation
 - 대상 Node 테스트 실행
 - `bash scripts/test.sh`
-- `env VCPKG_ROOT=/mnt/c/Users/kdw73/vcpkg cmake --build --preset wsl-release`
+- `env VCPKG_ROOT=/mnt/c/Users/<user>/vcpkg cmake --build --preset wsl-release`
 
 ## Risks / Rollback
 - 위험: `index.html`에서 제거한 전역/인라인 함수명을 다른 테스트나 모듈이 여전히 참조할 수 있다.

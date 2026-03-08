@@ -36,7 +36,7 @@
 ## Validation steps
 1. `node --test tests/ui_rendering_module.test.cjs tests/lotd_gate_warning_ui.test.cjs tests/ui_wiring_module.test.cjs tests/virtual_refresh_resync.test.cjs tests/interop_bridge_module.test.cjs`
 2. `bash scripts/test.sh`
-3. `env VCPKG_ROOT=/mnt/c/Users/kdw73/vcpkg cmake --build --preset wsl-release`
+3. `env VCPKG_ROOT=/mnt/c/Users/<user>/vcpkg cmake --build --preset wsl-release`
 
 ## Risks
 - `index.html` currently mixes render helpers with interaction state, so extracting without changing behavior requires careful dependency injection

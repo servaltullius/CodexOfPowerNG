@@ -175,7 +175,7 @@ PrismaUI renderer code is intentionally split by responsibility so future work c
 See `AGENTS.md` for full build notes.
 
 ```bash
-export VCPKG_ROOT="/mnt/c/Users/kdw73/vcpkg"
+export VCPKG_ROOT="/mnt/c/Users/<user>/vcpkg"
 cmake --preset wsl-release
 cmake --build --preset wsl-release
 cmake --install build/wsl-release

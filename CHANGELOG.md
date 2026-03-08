@@ -9,6 +9,33 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.1.0-rc.4] - 2026-03-08 (Pre-release)
+
+### Added
+- Added `ui_i18n.js` so PrismaUI-local message tables and translator helpers are no longer embedded inline in `index.html`.
+- Added pure host-testable `Ops` seams for notified, reward-total, and serialization state stores:
+  - `include/CodexOfPowerNG/NotifiedStateStoreOps.h`
+  - `include/CodexOfPowerNG/RewardStateStoreOps.h`
+  - `include/CodexOfPowerNG/SerializationStateStoreOps.h`
+- Added host C++ regression tests for those seams:
+  - `tests/notified_state_store_ops.test.cpp`
+  - `tests/reward_state_store_ops.test.cpp`
+  - `tests/serialization_state_store_ops.test.cpp`
+- Added release packaging helpers:
+  - `scripts/package_release.sh`
+  - `scripts/check_release_zip.sh`
+
+### Changed
+- Completed the PrismaUI modularization track so `index.html` now acts as DOM skeleton + module assembly, while state, interactions, bootstrap, rendering, native bridge wiring, and UI-local i18n live in dedicated modules.
+- Refactored `NotifiedStateStore`, `RewardStateStore`, and `SerializationStateStore` implementations to delegate pure container mutations/copies to dedicated `Ops` helpers.
+- Expanded GitHub Actions validation with a release-smoke job that packages a staged archive and verifies required runtime/config/UI assets are present.
+- Updated README and release-note rules to document the current PrismaUI architecture and archive smoke validation flow.
+
+### Notes
+- Detailed release note: `docs/releases/v1.1.0-rc.4.md`
+- This pre-release focuses on maintainability, regression coverage, and packaging reliability rather than intended gameplay changes.
+- Save compatibility policy remains unchanged: Codex of Power / SVCollection is not compatible.
+
 ## [1.0.8] - 2026-02-23
 
 ### Fixed
@@ -215,7 +242,9 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.8...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.1.0-rc.4...HEAD
+[1.1.0-rc.4]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.1.0-rc.4
+[1.1.0-rc.3]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.1.0-rc.3
 [1.0.8]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.7...v1.0.8
 [1.0.8-rc.3]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.8-rc.3
 [1.0.8-rc.2]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.0.8-rc.2

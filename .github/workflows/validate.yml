@@ -20,3 +20,23 @@ jobs:
 
       - name: Run JS and host C++ regression checks
         run: bash scripts/test.sh
+
+  release-smoke:
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare release smoke stage
+        run: |
+          STAGE_DIR="$RUNNER_TEMP/copng-release-stage"
+          mkdir -p "$STAGE_DIR/SKSE/Plugins" "$STAGE_DIR/PrismaUI/views"
+          printf 'smoke placeholder dll\n' > "$STAGE_DIR/SKSE/Plugins/CodexOfPowerNG.dll"
+          cp -R SKSE/Plugins/CodexOfPowerNG "$STAGE_DIR/SKSE/Plugins/"
+          cp -R PrismaUI/views/codexofpowerng "$STAGE_DIR/PrismaUI/views/"
+          bash scripts/package_release.sh "$STAGE_DIR" "$RUNNER_TEMP/Codex of Power NG-smoke.zip"
+
+      - name: Validate release smoke archive
+        run: bash scripts/check_release_zip.sh "$RUNNER_TEMP/Codex of Power NG-smoke.zip"

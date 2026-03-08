@@ -1,5 +1,6 @@
 #include "CodexOfPowerNG/NotifiedStateStore.h"
 
+#include "CodexOfPowerNG/NotifiedStateStoreOps.h"
 #include "CodexOfPowerNG/State.h"
 
 #include <utility>
@@ -10,19 +11,14 @@ namespace CodexOfPowerNG::NotifiedStateStore
 	{
 		auto& state = GetState();
 		std::scoped_lock lock(state.mutex);
-		return state.notifiedItems.contains(primaryId) || state.notifiedItems.contains(secondaryId);
+		return Ops::ContainsAny(state.notifiedItems, primaryId, secondaryId);
 	}
 
 	void MarkPair(RE::FormID primaryId, RE::FormID secondaryId) noexcept
 	{
 		auto& state = GetState();
 		std::scoped_lock lock(state.mutex);
-		if (primaryId != 0) {
-			state.notifiedItems.insert(primaryId);
-		}
-		if (secondaryId != 0) {
-			state.notifiedItems.insert(secondaryId);
-		}
+		Ops::MarkPair(state.notifiedItems, primaryId, secondaryId);
 	}
 
 	void Clear() noexcept
@@ -36,20 +32,20 @@ namespace CodexOfPowerNG::NotifiedStateStore
 	{
 		auto& state = GetState();
 		std::scoped_lock lock(state.mutex);
-		state.notifiedItems = std::move(notifiedItems);
+		Ops::ReplaceAll(state.notifiedItems, std::move(notifiedItems));
 	}
 
 	std::unordered_set<RE::FormID> Snapshot() noexcept
 	{
 		auto& state = GetState();
 		std::scoped_lock lock(state.mutex);
-		return state.notifiedItems;
+		return Ops::Snapshot(state.notifiedItems);
 	}
 
 	std::size_t Count() noexcept
 	{
 		auto& state = GetState();
 		std::scoped_lock lock(state.mutex);
-		return state.notifiedItems.size();
+		return Ops::Count(state.notifiedItems);
 	}
 }

@@ -1,27 +1,15 @@
 #pragma once
 
+#include "CodexOfPowerNG/RewardStateStoreOps.h"
+
 #include <RE/Skyrim.h>
 
 #include <cstddef>
-#include <optional>
-#include <utility>
-#include <vector>
 
 namespace CodexOfPowerNG::RewardStateStore
 {
-	struct RewardTotalTransition
-	{
-		bool  existedBefore{ false };
-		float previousTotal{ 0.0f };
-		float nextTotal{ 0.0f };
-	};
-
-	struct RewardCapAdjustment
-	{
-		RE::ActorValue av;
-		float          before;
-		float          after;
-	};
+	using RewardTotalTransition = Ops::RewardTotalTransition<RE::ActorValue>;
+	using RewardCapAdjustment = Ops::RewardCapAdjustment<RE::ActorValue>;
 
 	[[nodiscard]] RewardTotalTransition AdjustClamped(RE::ActorValue av, float delta) noexcept;
 	[[nodiscard]] std::optional<float>  Get(RE::ActorValue av) noexcept;

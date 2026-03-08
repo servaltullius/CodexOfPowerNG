@@ -57,7 +57,7 @@ test("skill rewards store fractional progress but apply whole-level actor deltas
   assert.match(capsSrc, /ActorAppliedRewardTotal\(\s*RE::ActorValue av,\s*float total/);
   assert.match(capsSrc, /std::trunc\(snapped\)/);
 
-  assert.match(storeSrc, /struct RewardTotalTransition/);
+  assert.match(storeSrc, /using RewardTotalTransition = Ops::RewardTotalTransition<RE::ActorValue>/);
   assert.match(coreSrc, /ActorAppliedRewardTotal\(av,\s*transition\.nextTotal\)/);
   assert.match(coreSrc, /ActorAppliedRewardTotal\(av,\s*transition\.previousTotal\)/);
   assert.match(coreSrc, /CaptureAppliedRewardDelta\(av, outcome\.stateDelta\)/);

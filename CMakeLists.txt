@@ -67,6 +67,7 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     include/CodexOfPowerNG/Inventory.h
     include/CodexOfPowerNG/L10n.h
     include/CodexOfPowerNG/NotifiedStateStore.h
+    include/CodexOfPowerNG/NotifiedStateStoreOps.h
     include/CodexOfPowerNG/PrismaUIManager.h
     include/CodexOfPowerNG/Registration.h
     include/CodexOfPowerNG/RegistrationFormId.h
@@ -77,12 +78,14 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     include/CodexOfPowerNG/RegistrationUndoTypes.h
     include/CodexOfPowerNG/RewardCaps.h
     include/CodexOfPowerNG/RewardStateStore.h
+    include/CodexOfPowerNG/RewardStateStoreOps.h
     include/CodexOfPowerNG/Rewards.h
     include/CodexOfPowerNG/RewardsResync.h
     include/CodexOfPowerNG/RewardsSyncRuntime.h
     include/CodexOfPowerNG/RewardsSyncPolicy.h
     include/CodexOfPowerNG/Serialization.h
     include/CodexOfPowerNG/SerializationStateStore.h
+    include/CodexOfPowerNG/SerializationStateStoreOps.h
     include/CodexOfPowerNG/SerializationWriteFlow.h
     include/CodexOfPowerNG/State.h
     include/CodexOfPowerNG/TaskScheduler.h

@@ -160,6 +160,17 @@ If residue is detected, NG logs and shows an in-game warning.
 - Prisma UI: `Documents/My Games/Skyrim Special Edition/SKSE/PrismaUI.log`
 - Codex NG: `Documents/My Games/Skyrim Special Edition/SKSE/CodexOfPowerNG.log`
 
+## UI Architecture
+
+PrismaUI renderer code is intentionally split by responsibility so future work can stay local instead of reopening `index.html`.
+
+- `PrismaUI/views/codexofpowerng/index.html`: DOM skeleton + module assembly
+- `PrismaUI/views/codexofpowerng/ui_i18n.js`: UI-local message dictionaries and translator helpers
+- `PrismaUI/views/codexofpowerng/ui_state.js`: local UI state, toast, scale, keybind preference helpers
+- `PrismaUI/views/codexofpowerng/ui_interactions.js`: user input, settings actions, shortcut wiring
+- `PrismaUI/views/codexofpowerng/ui_bootstrap.js`: startup orchestration and bridge wiring
+- `PrismaUI/views/codexofpowerng/ui_rendering.js`: status/list/reward/settings rendering
+
 ## Build from Source (WSL -> Windows cross)
 See `AGENTS.md` for full build notes.
 
@@ -168,6 +179,10 @@ export VCPKG_ROOT="/mnt/c/Users/kdw73/vcpkg"
 cmake --preset wsl-release
 cmake --build --preset wsl-release
 cmake --install build/wsl-release
-cd dist/CodexOfPowerNG
-zip -r -FS "../../releases/Codex of Power NG.zip" .
+bash scripts/package_release.sh
+bash scripts/check_release_zip.sh
 ```
+
+`bash scripts/package_release.sh` assembles the release archive from the built DLL in `dist/CodexOfPowerNG/`, repo config files under `SKSE/Plugins/CodexOfPowerNG/`, and PrismaUI assets under `PrismaUI/views/codexofpowerng/`.
+
+`bash scripts/check_release_zip.sh` is a release smoke check for archive layout. It verifies that the packaged zip includes the native DLL, PrismaUI entrypoint, modularized UI scripts, and shipped config/lang files. It does not replace a real in-game or Windows runtime validation pass.

@@ -5,6 +5,7 @@ const path = require("node:path");
 
 const cmakePath = path.join(__dirname, "..", "CMakeLists.txt");
 const storeHeaderPath = path.join(__dirname, "..", "include", "CodexOfPowerNG", "RewardStateStore.h");
+const opsHeaderPath = path.join(__dirname, "..", "include", "CodexOfPowerNG", "RewardStateStoreOps.h");
 const storeImplPath = path.join(__dirname, "..", "src", "RewardStateStore.cpp");
 const corePath = path.join(__dirname, "..", "src", "RewardsCore.cpp");
 const enginePath = path.join(__dirname, "..", "src", "RewardsSyncEngine.cpp");
@@ -19,19 +20,27 @@ test("build graph includes reward state store module", () => {
   const cmake = read(cmakePath);
   assert.match(cmake, /src\/RewardStateStore\.cpp/);
   assert.match(cmake, /include\/CodexOfPowerNG\/RewardStateStore\.h/);
+  assert.match(cmake, /include\/CodexOfPowerNG\/RewardStateStoreOps\.h/);
 });
 
-test("reward state store exposes dedicated reward total helpers", () => {
+test("reward state store exposes dedicated helpers and delegates pure map operations", () => {
   const header = read(storeHeaderPath);
+  const opsHeader = read(opsHeaderPath);
   const impl = read(storeImplPath);
 
-  assert.match(header, /struct RewardTotalTransition/);
+  assert.match(header, /using RewardTotalTransition = Ops::RewardTotalTransition<RE::ActorValue>/);
   assert.match(header, /AdjustClamped\(RE::ActorValue av,\s*float delta\)/);
   assert.match(header, /std::optional<float>\s+Take\(RE::ActorValue av\)/);
   assert.match(header, /std::vector<RewardCapAdjustment>\s+ClampAll\(\)/);
+  assert.match(opsHeader, /template <class Key>\s+struct RewardTotalTransition/);
+  assert.match(opsHeader, /AdjustClamped\(/);
+  assert.match(opsHeader, /ClampAll\(/);
 
-  assert.match(impl, /state\.rewardTotals\.insert_or_assign/);
-  assert.match(impl, /state\.rewardTotals\.erase/);
+  assert.match(impl, /Ops::AdjustClamped\(/);
+  assert.match(impl, /Ops::Get\(state\.rewardTotals,\s*av\)/);
+  assert.match(impl, /Ops::Take\(state\.rewardTotals,\s*av\)/);
+  assert.match(impl, /Ops::Set\(state\.rewardTotals,\s*av,\s*total,\s*Rewards::kRewardCapEpsilon\)/);
+  assert.match(impl, /Ops::ClampAll\(/);
 });
 
 test("reward runtime paths use reward state store instead of direct rewardTotals access", () => {

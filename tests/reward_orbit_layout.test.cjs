@@ -6,9 +6,11 @@ const path = require("node:path");
 const viewPath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "index.html");
 const orbitModulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "reward_orbit.js");
 const uiWiringModulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "ui_wiring.js");
+const i18nModulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "ui_i18n.js");
 const html = fs.readFileSync(viewPath, "utf8");
 const orbitModuleSource = fs.readFileSync(orbitModulePath, "utf8");
 const uiWiringModuleSource = fs.readFileSync(uiWiringModulePath, "utf8");
+const i18nModuleSource = fs.readFileSync(i18nModulePath, "utf8");
 const rewardOrbit = require(orbitModulePath);
 
 test("rewards tab includes character image and orbit container", () => {
@@ -76,22 +78,22 @@ test("reward orbit updates on resize and handles image load errors", () => {
 
 test("reward orbit strings exist in both locales", () => {
   assert.match(
-    html,
+    i18nModuleSource,
     /"rewards\.imageMissing": "Character image missing: assets\/character\.png"/,
     "English locale should include image-missing text",
   );
   assert.match(
-    html,
+    i18nModuleSource,
     /"rewards\.imageMissing": "캐릭터 이미지 없음: assets\/character\.png"/,
     "Korean locale should include image-missing text",
   );
   assert.match(
-    html,
+    i18nModuleSource,
     /"rewards\.more": "\+\{n\} more"/,
     "English locale should include +{n} more label",
   );
   assert.match(
-    html,
+    i18nModuleSource,
     /"rewards\.more": "\+\{n\}개 더"/,
     "Korean locale should include +{n}개 더 label",
   );

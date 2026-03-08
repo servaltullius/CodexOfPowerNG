@@ -3,10 +3,10 @@
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/RewardCaps.h"
+#include "CodexOfPowerNG/RewardStateStore.h"
 #include "CodexOfPowerNG/RewardsResync.h"
 #include "CodexOfPowerNG/RewardsSyncRuntime.h"
 #include "CodexOfPowerNG/RewardsSyncPolicy.h"
-#include "CodexOfPowerNG/State.h"
 #include "CodexOfPowerNG/TaskScheduler.h"
 #include "CodexOfPowerNG/Util.h"
 
@@ -438,11 +438,7 @@ namespace CodexOfPowerNG::Rewards
 
 			Engine::NormalizeRewardCapsOnStateAndPlayer();
 			auto totals = Engine::SnapshotRewardTotals();
-		{
-			auto& state = GetState();
-			std::scoped_lock lock(state.mutex);
-			state.rewardTotals.clear();
-		}
+		RewardStateStore::Clear();
 
 		std::size_t cleared = 0;
 		for (const auto& [av, total] : totals) {
@@ -477,36 +473,23 @@ namespace CodexOfPowerNG::Rewards
 		std::vector<Registration::RewardDelta> actorAdjustments;
 		actorAdjustments.reserve(deltas.size());
 
-		{
-			auto& state = GetState();
-			std::scoped_lock lock(state.mutex);
+		for (const auto& deltaEntry : deltas) {
+			const auto av = deltaEntry.av;
+			const auto delta = deltaEntry.delta;
+			if (std::abs(delta) <= kRewardCapEpsilon) {
+				continue;
+			}
 
-			for (const auto& deltaEntry : deltas) {
-				const auto av = deltaEntry.av;
-				const auto delta = deltaEntry.delta;
-				if (std::abs(delta) <= kRewardCapEpsilon) {
-					continue;
-				}
+			const auto transition = RewardStateStore::AdjustClamped(av, -delta);
+			if (!transition.existedBefore) {
+				continue;
+			}
 
-				const auto it = state.rewardTotals.find(av);
-				if (it == state.rewardTotals.end()) {
-					continue;
-				}
-
-				const float previousTotal = it->second;
-				const float next = ClampRewardTotal(av, previousTotal - delta);
-				const float previousApplied = ActorAppliedRewardTotal(av, previousTotal);
-				const float nextApplied = ActorAppliedRewardTotal(av, next);
-				const float appliedActorDelta = nextApplied - previousApplied;
-				if (std::abs(next) <= kRewardCapEpsilon) {
-					state.rewardTotals.erase(it);
-				} else {
-					it->second = next;
-				}
-
-				if (std::abs(appliedActorDelta) > kRewardCapEpsilon) {
-					actorAdjustments.push_back(Registration::RewardDelta{ av, appliedActorDelta });
-				}
+			const float previousApplied = ActorAppliedRewardTotal(av, transition.previousTotal);
+			const float nextApplied = ActorAppliedRewardTotal(av, transition.nextTotal);
+			const float appliedActorDelta = nextApplied - previousApplied;
+			if (std::abs(appliedActorDelta) > kRewardCapEpsilon) {
+				actorAdjustments.push_back(Registration::RewardDelta{ av, appliedActorDelta });
 			}
 		}
 
@@ -523,5 +506,21 @@ namespace CodexOfPowerNG::Rewards
 		}
 
 		return actorAdjustments.size();
+	}
+
+	std::vector<std::pair<RE::ActorValue, float>> SnapshotRewardTotals() noexcept
+	{
+		std::vector<std::pair<RE::ActorValue, float>> totals;
+		for (const auto& [av, total] : RewardStateStore::Snapshot()) {
+			if (total != 0.0f) {
+				totals.emplace_back(av, total);
+			}
+		}
+		return totals;
+	}
+
+	std::size_t SnapshotTrackedRewardCount() noexcept
+	{
+		return RewardStateStore::Count();
 	}
 }

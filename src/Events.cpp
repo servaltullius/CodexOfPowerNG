@@ -3,8 +3,8 @@
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/EventsNotifyGate.h"
 #include "CodexOfPowerNG/L10n.h"
+#include "CodexOfPowerNG/NotifiedStateStore.h"
 #include "CodexOfPowerNG/Registration.h"
-#include "CodexOfPowerNG/State.h"
 #include "CodexOfPowerNG/TaskScheduler.h"
 #include "CodexOfPowerNG/Util.h"
 
@@ -90,24 +90,15 @@ namespace CodexOfPowerNG::Events
 					return RE::BSEventNotifyControl::kContinue;
 				}
 
-				{
-					auto& state = GetState();
-					std::scoped_lock lock(state.mutex);
-
-					const bool alreadyNotified =
-						state.notifiedItems.contains(regKeyId) ||
-						state.notifiedItems.contains(baseId);
-
-					const auto lastNotify = g_lastNotifyMs.load(std::memory_order_relaxed);
-					const auto decision =
-						DecideLootNotify(alreadyNotified, nowMs, lastNotify, kNotifyThrottleMs);
-					if (decision != LootNotifyDecision::kNotify) {
-						return RE::BSEventNotifyControl::kContinue;
-					}
-
-					state.notifiedItems.insert(regKeyId);
-					state.notifiedItems.insert(baseId);
+				const bool alreadyNotified = NotifiedStateStore::ContainsAny(regKeyId, baseId);
+				const auto lastNotify = g_lastNotifyMs.load(std::memory_order_relaxed);
+				const auto decision =
+					DecideLootNotify(alreadyNotified, nowMs, lastNotify, kNotifyThrottleMs);
+				if (decision != LootNotifyDecision::kNotify) {
+					return RE::BSEventNotifyControl::kContinue;
 				}
+
+				NotifiedStateStore::MarkPair(regKeyId, baseId);
 				g_lastNotifyMs.store(nowMs, std::memory_order_relaxed);
 
 				auto* regForm = RE::TESForm::LookupByID(regKeyId);

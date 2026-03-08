@@ -23,6 +23,7 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     src/main.cpp
     src/Config.cpp
     src/L10n.cpp
+    src/NotifiedStateStore.cpp
     src/Events.cpp
     src/Inventory.cpp
     src/PrismaUIManager.cpp
@@ -44,16 +45,19 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     src/RegistrationInternalMaps.cpp
     src/RegistrationInternal.cpp
     src/RegistrationInternalTcc.cpp
+    src/RegistrationQuickListBuilder.cpp
     src/RegistrationQuestGuard.cpp
     src/RegistrationQuickRegister.cpp
     src/RegistrationUndo.cpp
     src/Registration.cpp
+    src/RewardStateStore.cpp
     src/RewardsCore.cpp
     src/RewardsRandomTables.cpp
     src/RewardsSyncEngine.cpp
     src/Rewards.cpp
     src/SerializationSave.cpp
     src/SerializationLoad.cpp
+    src/SerializationStateStore.cpp
     src/Serialization.cpp
     src/State.cpp
     src/TaskScheduler.cpp
@@ -62,6 +66,7 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     include/CodexOfPowerNG/Events.h
     include/CodexOfPowerNG/Inventory.h
     include/CodexOfPowerNG/L10n.h
+    include/CodexOfPowerNG/NotifiedStateStore.h
     include/CodexOfPowerNG/PrismaUIManager.h
     include/CodexOfPowerNG/Registration.h
     include/CodexOfPowerNG/RegistrationFormId.h
@@ -71,11 +76,13 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     include/CodexOfPowerNG/RegistrationStateStore.h
     include/CodexOfPowerNG/RegistrationUndoTypes.h
     include/CodexOfPowerNG/RewardCaps.h
+    include/CodexOfPowerNG/RewardStateStore.h
     include/CodexOfPowerNG/Rewards.h
     include/CodexOfPowerNG/RewardsResync.h
     include/CodexOfPowerNG/RewardsSyncRuntime.h
     include/CodexOfPowerNG/RewardsSyncPolicy.h
     include/CodexOfPowerNG/Serialization.h
+    include/CodexOfPowerNG/SerializationStateStore.h
     include/CodexOfPowerNG/SerializationWriteFlow.h
     include/CodexOfPowerNG/State.h
     include/CodexOfPowerNG/TaskScheduler.h

@@ -4,8 +4,26 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const viewPath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "index.html");
+const nativeStateBridgeModulePath = path.join(
+  __dirname,
+  "..",
+  "PrismaUI",
+  "views",
+  "codexofpowerng",
+  "native_state_bridge.js",
+);
+const uiRenderingModulePath = path.join(
+  __dirname,
+  "..",
+  "PrismaUI",
+  "views",
+  "codexofpowerng",
+  "ui_rendering.js",
+);
 const virtualTablesModulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "virtual_tables.js");
 const html = fs.readFileSync(viewPath, "utf8");
+const nativeStateBridgeModuleSource = fs.readFileSync(nativeStateBridgeModulePath, "utf8");
+const uiRenderingModuleSource = fs.readFileSync(uiRenderingModulePath, "utf8");
 const virtualTablesModuleSource = fs.readFileSync(virtualTablesModulePath, "utf8");
 
 test("virtualized tables schedule a second forced pass after list refresh", () => {
@@ -17,20 +35,26 @@ test("virtualized tables schedule a second forced pass after list refresh", () =
 
   assert.match(
     html,
-    /function onNativeInventory\(nextInventoryPage\)\s*\{[\s\S]*renderQuick\(\);[\s\S]*schedulePostRefreshVirtualResync\(\);[\s\S]*\}/,
-    "Inventory native callback should trigger post-refresh virtual resync",
+    /const nativeHandlers = nativeStateBridgeApi\.createNativeStateBridge\(\{[\s\S]*schedulePostRefreshVirtualResync[\s\S]*\}\);/,
+    "Native state bridge wiring should receive the post-refresh virtual resync callback",
+  );
+
+  assert.match(
+    nativeStateBridgeModuleSource,
+    /onInventory\(nextInventoryPage\)\s*\{[\s\S]*renderQuick\(\);[\s\S]*schedulePostRefreshVirtualResync\(\);[\s\S]*\}/,
+    "Inventory native callback should trigger post-refresh virtual resync via native_state_bridge.js",
+  );
+
+  assert.match(
+    nativeStateBridgeModuleSource,
+    /onRegistered\(nextRegistered\)\s*\{[\s\S]*renderRegistered\(\);[\s\S]*schedulePostRefreshVirtualResync\(\);[\s\S]*\}/,
+    "Registered native callback should trigger post-refresh virtual resync via native_state_bridge.js",
   );
 
   assert.match(
     html,
-    /function onNativeRegistered\(nextRegistered\)\s*\{[\s\S]*renderRegistered\(\);[\s\S]*schedulePostRefreshVirtualResync\(\);[\s\S]*\}/,
-    "Registered native callback should trigger post-refresh virtual resync",
-  );
-
-  assert.match(
-    html,
-    /interopBridgeApi\.installNativeCallbacks\(\{[\s\S]*onInventory:\s*onNativeInventory[\s\S]*onRegistered:\s*onNativeRegistered[\s\S]*\}\);/,
-    "Interop bridge wiring should connect native inventory/registered callbacks",
+    /nativeBridgeBootstrapApi\.installNativeBridge\(\{[\s\S]*onInventory:\s*nativeHandlers\.onInventory[\s\S]*onRegistered:\s*nativeHandlers\.onRegistered[\s\S]*\}\);/,
+    "Native bridge bootstrap wiring should connect inventory/registered callbacks from native handlers",
   );
 
   assert.match(
@@ -41,14 +65,20 @@ test("virtualized tables schedule a second forced pass after list refresh", () =
 
   assert.match(
     html,
-    /function renderQuickVirtual\(\{ force = false \} = \{\}\)\s*\{[\s\S]*mgr\.renderQuickVirtual\(\{ force \}\);[\s\S]*\}/,
-    "Quick render should delegate to virtual table manager",
+    /const uiRendering = uiRenderingApi\.createUIRendering\(\{[\s\S]*getVirtualTableManager:\s*ensureVirtualTablesManager[\s\S]*\}\);/,
+    "ui_rendering wiring should receive the virtual table manager factory",
   );
 
   assert.match(
-    html,
-    /function renderRegisteredVirtual\(\{ force = false \} = \{\}\)\s*\{[\s\S]*mgr\.renderRegisteredVirtual\(\{ force \}\);[\s\S]*\}/,
-    "Registered render should delegate to virtual table manager",
+    uiRenderingModuleSource,
+    /function renderQuickVirtual\(opts\)\s*\{[\s\S]*mgr\.renderQuickVirtual\(opts \|\| \{ force: false \}\);[\s\S]*\}/,
+    "Quick render should delegate to virtual table manager via ui_rendering.js",
+  );
+
+  assert.match(
+    uiRenderingModuleSource,
+    /function renderRegisteredVirtual\(opts\)\s*\{[\s\S]*mgr\.renderRegisteredVirtual\(opts \|\| \{ force: false \}\);[\s\S]*\}/,
+    "Registered render should delegate to virtual table manager via ui_rendering.js",
   );
 
   assert.match(

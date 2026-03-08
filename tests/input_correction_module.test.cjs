@@ -5,8 +5,10 @@ const path = require("node:path");
 
 const viewPath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "index.html");
 const modulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "input_correction.js");
+const bootstrapModulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "ui_bootstrap.js");
 
 const html = fs.readFileSync(viewPath, "utf8");
+const bootstrapSource = fs.readFileSync(bootstrapModulePath, "utf8");
 const mod = require(modulePath);
 
 function makeEventTarget(initial = {}) {
@@ -39,6 +41,11 @@ test("view loads input correction module", () => {
     /<script src="input_correction\.js"><\/script>/,
     "index.html should load input_correction.js before inline script",
   );
+  assert.match(
+    html,
+    /<script src="ui_bootstrap\.js"><\/script>/,
+    "index.html should load ui_bootstrap.js before inline script",
+  );
 });
 
 test("input correction module exports expected APIs", () => {
@@ -49,14 +56,14 @@ test("input correction module exports expected APIs", () => {
 
 test("view keeps observable fallback when module loading fails", () => {
   assert.match(
-    html,
-    /installInputCorrectionFallback\(\)/,
-    "index.html should keep a fallback installer when input_correction.js is unavailable",
+    bootstrapSource,
+    /function installInputCorrectionFallback\(/,
+    "ui_bootstrap.js should keep a fallback installer when input_correction.js is unavailable",
   );
   assert.match(
-    html,
+    bootstrapSource,
     /input_correction\.js unavailable; using fallback input correction/,
-    "index.html should log a warning when fallback input correction is used",
+    "ui_bootstrap.js should log a warning when fallback input correction is used",
   );
 });
 

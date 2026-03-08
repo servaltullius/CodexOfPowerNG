@@ -3,8 +3,8 @@
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/PrismaUIManager.h"
 #include "CodexOfPowerNG/Registration.h"
+#include "CodexOfPowerNG/RegistrationStateStore.h"
 #include "CodexOfPowerNG/Rewards.h"
-#include "CodexOfPowerNG/State.h"
 #include "CodexOfPowerNG/TaskScheduler.h"
 #include "PrismaUIPayloads.h"
 
@@ -278,19 +278,8 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 	void QueueSendRewards() noexcept
 	{
 		auto gatherRewardState = []() {
-			std::size_t registeredCount = 0;
-			std::vector<std::pair<RE::ActorValue, float>> totals;
-			{
-				auto& state = GetState();
-				std::scoped_lock lock(state.mutex);
-				registeredCount = state.registeredItems.size();
-				totals.reserve(state.rewardTotals.size());
-				for (const auto& [av, total] : state.rewardTotals) {
-					if (total != 0.0f) {
-						totals.emplace_back(av, total);
-					}
-				}
-			}
+			const auto registeredCount = RegistrationStateStore::RegisteredCount();
+			auto totals = Rewards::SnapshotRewardTotals();
 			return std::make_pair(registeredCount, std::move(totals));
 		};
 

@@ -132,6 +132,20 @@ Payload:
 
 ## C++ → JS
 
+## Refresh Contract
+- `copng_registerItem` success/failure presentation invalidates:
+  - `copng_setState`
+  - `copng_setInventory`
+  - `copng_setRegistered`
+  - `copng_setRewards`
+  - `copng_setUndoList`
+- `copng_undoRegisterItem` follows the same invalidation set as register.
+- `copng_refundRewards` currently invalidates:
+  - `copng_setState`
+  - `copng_setRewards`
+- If the main-thread queue is temporarily unavailable during a refresh-producing operation, native code marks a pending refresh and replays the full core refresh on the next state/inventory request.
+- UI code should treat these refreshes as idempotent and should not assume only one panel updates at a time.
+
 ### `window.copng_setState(jsonOrString)`
 Called by native code via `Invoke()` (or `InteropCall()` for hot paths).
 

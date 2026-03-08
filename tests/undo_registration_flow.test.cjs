@@ -9,11 +9,17 @@ function read(relPath) {
 
 test("ui exposes undo tab and requests undo list", () => {
   const html = read("PrismaUI/views/codexofpowerng/index.html");
+  const bootstrapSrc = read("PrismaUI/views/codexofpowerng/ui_bootstrap.js");
+  const interactionsSrc = read("PrismaUI/views/codexofpowerng/ui_interactions.js");
   assert.match(html, /data-tab="tabUndo"/, "Undo tab button should exist");
   assert.match(html, /id="tabUndo"/, "Undo section should exist");
   assert.match(html, /id="undoBody"/, "Undo table body should exist");
-  assert.match(html, /safeCall\("copng_requestUndoList", \{\}\);/, "UI should request undo list at startup");
-  assert.match(html, /safeCall\("copng_undoRegisterItem", \{ actionId:/, "UI should call undo action listener");
+  assert.match(bootstrapSrc, /safeCall\("copng_requestUndoList", \{\}\);/, "Bootstrap should request undo list at startup");
+  assert.match(
+    interactionsSrc,
+    /safeCall\("copng_undoRegisterItem", \{ actionId: Math\.trunc\(actionId\) \}\);/,
+    "Interaction module should call undo action listener",
+  );
 });
 
 test("native listeners expose undo list and undo action endpoints", () => {
@@ -51,13 +57,14 @@ test("undo records are serialized and restored", () => {
   assert.match(loadSrc, /ResolveFormID\(oldFormId, newFormId\)/);
   assert.match(loadSrc, /if \(!regKeyResolved \|\| !formIdResolved\)/);
   assert.doesNotMatch(loadSrc, /falling back to regKey/);
-  assert.match(loadSrc, /state\.undoHistory/);
+  assert.match(loadSrc, /loadedState\.undoHistory/);
+  assert.match(loadSrc, /SerializationStateStore::ReplaceState\(std::move\(loadedState\)\)/);
 });
 
 test("undo reward rollback applies actual clamped delta to actor values", () => {
   const rewardsSrc = read("src/Rewards.cpp");
-  assert.match(rewardsSrc, /previousApplied = ActorAppliedRewardTotal\(av, previousTotal\)/);
-  assert.match(rewardsSrc, /nextApplied = ActorAppliedRewardTotal\(av, next\)/);
+  assert.match(rewardsSrc, /previousApplied = ActorAppliedRewardTotal\(av, transition\.previousTotal\)/);
+  assert.match(rewardsSrc, /nextApplied = ActorAppliedRewardTotal\(av, transition\.nextTotal\)/);
   assert.match(rewardsSrc, /appliedActorDelta = nextApplied - previousApplied/);
   assert.match(rewardsSrc, /RewardDelta\{ av, appliedActorDelta \}/);
 });

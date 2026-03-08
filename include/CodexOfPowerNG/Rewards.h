@@ -2,8 +2,11 @@
 
 #include "CodexOfPowerNG/RegistrationUndoTypes.h"
 
+#include <RE/Skyrim.h>
+
 #include <cstdint>
 #include <cstddef>
+#include <utility>
 #include <vector>
 
 namespace CodexOfPowerNG::Rewards
@@ -31,4 +34,10 @@ namespace CodexOfPowerNG::Rewards
 	// Rolls back reward deltas produced by a single registration action.
 	// Returns number of actor values actually adjusted.
 	[[nodiscard]] std::size_t RollbackRewardDeltas(const std::vector<Registration::RewardDelta>& deltas) noexcept;
+
+	// Snapshot reward totals for UI/reporting without exposing RuntimeState directly.
+	[[nodiscard]] std::vector<std::pair<RE::ActorValue, float>> SnapshotRewardTotals() noexcept;
+
+	// Returns the raw number of tracked reward actor values.
+	[[nodiscard]] std::size_t SnapshotTrackedRewardCount() noexcept;
 }

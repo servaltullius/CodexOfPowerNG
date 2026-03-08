@@ -4,18 +4,17 @@
 #include "CodexOfPowerNG/Inventory.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/RegistrationQuestGuard.h"
-#include "CodexOfPowerNG/RegistrationRules.h"
 #include "CodexOfPowerNG/RegistrationStateStore.h"
 #include "CodexOfPowerNG/Rewards.h"
 #include "CodexOfPowerNG/Util.h"
 
 #include "RegistrationInternal.h"
+#include "RegistrationQuickListBuilder.h"
 
 #include <algorithm>
 #include <atomic>
 #include <cstdint>
 #include <mutex>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -137,131 +136,15 @@ namespace CodexOfPowerNG::Registration
 		Internal::EnsureMapsLoaded();
 
 		const auto questProtected = QuestGuard::SnapshotProtectedForms();
-
 		const auto quickListState = RegistrationStateStore::SnapshotQuickList();
-		const auto& blocked = quickListState.blockedItems;
-		const auto& registered = quickListState.registeredKeys;
+		auto allEligible = Internal::BuildQuickListEligibleItems(
+			*player,
+			settings,
+			tccLists,
+			quickListState,
+			questProtected);
 
-		const auto isExcludedFast = [&](const RE::TESForm* item) noexcept -> bool {
-			if (!item) {
-				return true;
-			}
-
-			const auto id = item->GetFormID();
-			if (Internal::IsExcludedByMap(id) || blocked.contains(id)) {
-				return true;
-			}
-
-			if (RegistrationRules::IsIntrinsicExcluded(item)) {
-				return true;
-			}
-
-			return false;
-		};
-
-		const auto getDiscoveryGroupFast = [&](const RE::TESForm* item) noexcept -> std::uint32_t {
-			if (!item) {
-				return 255;
-			}
-
-			if (isExcludedFast(item)) {
-				return 255;
-			}
-
-			return RegistrationRules::GroupFromFormType(item->GetFormType());
-		};
-
-		// Phase 1: collect ALL eligible items (stable pagination requires full scan)
-		std::vector<ListItem> allEligible;
-		std::unordered_set<RE::FormID> seenRegKeys;
-
-		if (auto* changes = player->GetInventoryChanges(); changes && changes->entryList) {
-			for (auto* entry : *changes->entryList) {
-				if (!entry) {
-					continue;
-				}
-
-				if (entry->IsQuestObject()) {
-					continue;
-				}
-
-				auto* obj = entry->GetObject();
-				if (!obj) {
-					continue;
-				}
-
-				auto* regKey = Internal::GetRegisterKey(obj, settings);
-				if (!regKey) {
-					continue;
-				}
-
-				const auto group = getDiscoveryGroupFast(regKey);
-				if (group > 5) {
-					continue;
-				}
-
-				if (isExcludedFast(obj) || (regKey != obj && isExcludedFast(regKey))) {
-					continue;
-				}
-
-				const auto regKeyId = regKey->GetFormID();
-				const auto objId = obj->GetFormID();
-
-				if (questProtected.contains(regKeyId) || questProtected.contains(objId)) {
-					continue;
-				}
-
-				if (Internal::EvaluateTccGate(settings, tccLists, obj, regKey) != TccGateDecision::kAllow) {
-					continue;
-				}
-
-				if (registered.contains(regKeyId) || registered.contains(objId)) {
-					continue;
-				}
-
-				if (!seenRegKeys.insert(regKeyId).second) {
-					continue;
-				}
-
-				const auto totalCount = player->GetItemCount(obj);
-				if (totalCount <= 0) {
-					continue;
-				}
-
-				const auto removal =
-					Inventory::SelectSafeRemoval(entry, totalCount, settings.protectFavorites);
-				const auto safeCount = removal.safeCount;
-				if (safeCount <= 0) {
-					continue;
-				}
-
-				ListItem li{};
-				li.formId = objId;
-				li.regKey = regKeyId;
-				li.group = group;
-				li.totalCount = totalCount;
-				li.safeCount = safeCount;
-				li.excluded = false;
-				li.registered = false;
-				li.blocked = false;
-				li.name = Internal::BestItemName(regKey, obj);
-				if (li.name.empty()) {
-					li.name = L10n::T("ui.unnamed", "(unnamed)");
-				}
-
-				allEligible.push_back(std::move(li));
-			}
-		}
-
-		// Phase 2: sort ALL eligible items for stable ordering
-		std::sort(allEligible.begin(), allEligible.end(), [](const ListItem& a, const ListItem& b) {
-			if (a.group != b.group) {
-				return a.group < b.group;
-			}
-			return a.name < b.name;
-		});
-
-		// Phase 3: paginate and update short-lived cache
+		// Phase 2: paginate and update short-lived cache
 		FillQuickListPage(allEligible, offset, limit, result);
 		UpdateQuickListCache(std::move(allEligible), cacheGeneration, settingsMask, NowMs());
 

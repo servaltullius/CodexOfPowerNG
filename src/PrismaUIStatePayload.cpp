@@ -3,20 +3,15 @@
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/Registration.h"
-#include "CodexOfPowerNG/State.h"
+#include "CodexOfPowerNG/RegistrationStateStore.h"
+#include "CodexOfPowerNG/Rewards.h"
 
 namespace CodexOfPowerNG::PrismaUIManager::Internal
 {
 	json BuildRuntimeStatePayload()
 	{
-		std::size_t registeredCount = 0;
-		std::size_t rewardCount = 0;
-		{
-			auto& state = GetState();
-			std::scoped_lock lock(state.mutex);
-			registeredCount = state.registeredItems.size();
-			rewardCount = state.rewardTotals.size();
-		}
+		const auto registeredCount = RegistrationStateStore::RegisteredCount();
+		const auto rewardCount = Rewards::SnapshotTrackedRewardCount();
 
 		// Avoid querying PrismaUI view state on-demand here; Focus/Show timing can
 		// conflict with internal view task processing and appear as a stall.

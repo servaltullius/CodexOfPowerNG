@@ -4,6 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const capsPath = path.join(__dirname, "..", "include", "CodexOfPowerNG", "RewardCaps.h");
+const rewardStateStorePath = path.join(__dirname, "..", "include", "CodexOfPowerNG", "RewardStateStore.h");
 const corePath = path.join(__dirname, "..", "src", "RewardsCore.cpp");
 const rewardsPath = path.join(__dirname, "..", "src", "Rewards.cpp");
 const enginePath = path.join(__dirname, "..", "src", "RewardsSyncEngine.cpp");
@@ -31,13 +32,14 @@ test("reward cap table defines vanilla-safe thresholds", () => {
 
 test("grant path clamps totals against AV caps before applying reward", () => {
   const src = read(corePath);
-  assert.match(src, /const float clampedTotal = ClampRewardTotal\(av, total \+ delta\);/);
+  assert.match(src, /RewardStateStore::AdjustClamped\(av,\s*delta\)/);
   assert.match(src, /Reward cap applied:/);
   assert.match(src, /Reward grant skipped by cap:/);
 });
 
 test("skill rewards store fractional progress but apply whole-level actor deltas", () => {
   const capsSrc = read(capsPath);
+  const storeSrc = read(rewardStateStorePath);
   const coreSrc = read(corePath);
   const rewardsSrc = read(rewardsPath);
   const engineSrc = read(enginePath);
@@ -55,12 +57,14 @@ test("skill rewards store fractional progress but apply whole-level actor deltas
   assert.match(capsSrc, /ActorAppliedRewardTotal\(\s*RE::ActorValue av,\s*float total/);
   assert.match(capsSrc, /std::trunc\(snapped\)/);
 
-  assert.match(coreSrc, /actorDelta = ActorAppliedRewardTotal\(av, clampedTotal\) - ActorAppliedRewardTotal\(av, total\)/);
+  assert.match(storeSrc, /struct RewardTotalTransition/);
+  assert.match(coreSrc, /ActorAppliedRewardTotal\(av,\s*transition\.nextTotal\)/);
+  assert.match(coreSrc, /ActorAppliedRewardTotal\(av,\s*transition\.previousTotal\)/);
   assert.match(coreSrc, /CaptureAppliedRewardDelta\(av, outcome\.stateDelta\)/);
   assert.match(coreSrc, /RestoreActorValue\(RE::ACTOR_VALUE_MODIFIER::kPermanent,\s*av,\s*outcome\.actorDelta\)/);
 
-  assert.match(rewardsSrc, /const float previousApplied = ActorAppliedRewardTotal\(av, previousTotal\);/);
-  assert.match(rewardsSrc, /const float nextApplied = ActorAppliedRewardTotal\(av, next\);/);
+  assert.match(rewardsSrc, /const float previousApplied = ActorAppliedRewardTotal\(av, transition\.previousTotal\);/);
+  assert.match(rewardsSrc, /const float nextApplied = ActorAppliedRewardTotal\(av, transition\.nextTotal\);/);
   assert.match(rewardsSrc, /const float appliedActorDelta = nextApplied - previousApplied;/);
 
   assert.match(engineSrc, /const float applied = ActorAppliedRewardTotal\(av, clamped\);/);
@@ -162,6 +166,6 @@ test("reward sync runtime protects load boundary and readiness retries", () => {
   assert.match(engineSrc, /UpdateWeaponAbility\(/);
   assert.match(engineSrc, /RefreshEquippedWeaponAbilities\(\)/);
   assert.match(engineSrc, /MigrateLegacyAttackDamageMultReward/);
-  assert.match(engineSrc, /state\.rewardTotals\.erase\(it\)/);
+  assert.match(engineSrc, /RewardStateStore::Take\(RE::ActorValue::kAttackDamageMult\)/);
   assert.match(engineSrc, /ModActorValue\(RE::ActorValue::kAttackDamageMult,\s*-removable\)/);
 });

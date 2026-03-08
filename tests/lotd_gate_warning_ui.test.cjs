@@ -4,9 +4,14 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const viewPath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "index.html");
+const renderingPath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "ui_rendering.js");
 
 function readView() {
   return fs.readFileSync(viewPath, "utf8");
+}
+
+function readRendering() {
+  return fs.readFileSync(renderingPath, "utf8");
 }
 
 test("status bar includes LOTD gate pill and localized labels", () => {
@@ -19,11 +24,11 @@ test("status bar includes LOTD gate pill and localized labels", () => {
 });
 
 test("renderStatus handles LOTD gate blocking and toast", () => {
-  const html = readView();
-  assert.match(html, /state\s*&&\s*state\.lotdGate/);
-  assert.match(html, /lotdGateBlockingToastShown/);
-  assert.match(html, /toast\.lotdGateBlocked/);
-  assert.match(html, /classList\.toggle\("warn",\s*blocking\)/);
+  const rendering = readRendering();
+  assert.match(rendering, /state\s*&&\s*state\.lotdGate/);
+  assert.match(rendering, /getLotdGateBlockingToastShown/);
+  assert.match(rendering, /toast\.lotdGateBlocked/);
+  assert.match(rendering, /classList\.toggle\("warn",\s*blocking\)/);
 });
 
 test("settings tab includes LOTD gate warning banner and localized text", () => {
@@ -35,7 +40,7 @@ test("settings tab includes LOTD gate warning banner and localized text", () => 
 });
 
 test("renderStatus toggles settings warning banner visibility by gate state", () => {
-  const html = readView();
-  assert.match(html, /lotdGateWarnBannerEl/);
-  assert.match(html, /lotdGateWarnBannerEl\.style\.display\s*=\s*enabled\s*&&\s*blocking\s*\?\s*""\s*:\s*"none"/);
+  const rendering = readRendering();
+  assert.match(rendering, /lotdGateWarnBannerEl/);
+  assert.match(rendering, /style\.display\s*=\s*enabled\s*&&\s*blocking\s*\?\s*""\s*:\s*"none"/);
 });

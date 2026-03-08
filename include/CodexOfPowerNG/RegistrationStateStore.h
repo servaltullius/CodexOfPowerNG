@@ -38,6 +38,7 @@ public:
 
 		[[nodiscard]] virtual QuickListSnapshot SnapshotQuickList() noexcept = 0;
 		[[nodiscard]] virtual std::vector<std::pair<RE::FormID, std::uint32_t>> SnapshotRegisteredItems() noexcept = 0;
+		[[nodiscard]] virtual std::size_t RegisteredCount() noexcept = 0;
 	};
 
 	[[nodiscard]] IRegistrationStateStore& GetStore() noexcept;
@@ -58,4 +59,5 @@ public:
 
 	[[nodiscard]] QuickListSnapshot SnapshotQuickList() noexcept;
 	[[nodiscard]] std::vector<std::pair<RE::FormID, std::uint32_t>> SnapshotRegisteredItems() noexcept;
+	[[nodiscard]] std::size_t RegisteredCount() noexcept;
 }

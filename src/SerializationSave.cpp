@@ -2,8 +2,8 @@
 
 #include "CodexOfPowerNG/Constants.h"
 #include "CodexOfPowerNG/Registration.h"
+#include "CodexOfPowerNG/SerializationStateStore.h"
 #include "CodexOfPowerNG/SerializationWriteFlow.h"
-#include "CodexOfPowerNG/State.h"
 
 #include <SKSE/Interfaces.h>
 #include <SKSE/Logger.h>
@@ -12,7 +12,8 @@ namespace CodexOfPowerNG::Serialization::Internal
 {
 	namespace
 	{
-		[[nodiscard]] bool WriteRegisteredRecord(SKSE::SerializationInterface* a_intfc, const RuntimeState& state) noexcept
+		[[nodiscard]] bool WriteRegisteredRecord(SKSE::SerializationInterface* a_intfc,
+			const SerializationStateStore::Snapshot& state) noexcept
 		{
 			if (!a_intfc->OpenRecord(kRecordRegisteredItems, kSerializationVersion)) {
 				SKSE::log::error("Failed to open co-save record REGI");
@@ -34,7 +35,8 @@ namespace CodexOfPowerNG::Serialization::Internal
 			return true;
 		}
 
-		[[nodiscard]] bool WriteBlockedRecord(SKSE::SerializationInterface* a_intfc, const RuntimeState& state) noexcept
+		[[nodiscard]] bool WriteBlockedRecord(SKSE::SerializationInterface* a_intfc,
+			const SerializationStateStore::Snapshot& state) noexcept
 		{
 			if (!a_intfc->OpenRecord(kRecordBlockedItems, kSerializationVersion)) {
 				SKSE::log::error("Failed to open co-save record BLCK");
@@ -54,7 +56,8 @@ namespace CodexOfPowerNG::Serialization::Internal
 			return true;
 		}
 
-		[[nodiscard]] bool WriteNotifiedRecord(SKSE::SerializationInterface* a_intfc, const RuntimeState& state) noexcept
+		[[nodiscard]] bool WriteNotifiedRecord(SKSE::SerializationInterface* a_intfc,
+			const SerializationStateStore::Snapshot& state) noexcept
 		{
 			if (!a_intfc->OpenRecord(kRecordNotifiedItems, kSerializationVersion)) {
 				SKSE::log::error("Failed to open co-save record NTFY");
@@ -74,7 +77,8 @@ namespace CodexOfPowerNG::Serialization::Internal
 			return true;
 		}
 
-		[[nodiscard]] bool WriteRewardsRecord(SKSE::SerializationInterface* a_intfc, const RuntimeState& state) noexcept
+		[[nodiscard]] bool WriteRewardsRecord(SKSE::SerializationInterface* a_intfc,
+			const SerializationStateStore::Snapshot& state) noexcept
 		{
 			if (!a_intfc->OpenRecord(kRecordRewards, kSerializationVersion)) {
 				SKSE::log::error("Failed to open co-save record RWDS");
@@ -96,7 +100,8 @@ namespace CodexOfPowerNG::Serialization::Internal
 			return true;
 		}
 
-		[[nodiscard]] bool WriteUndoRecord(SKSE::SerializationInterface* a_intfc, const RuntimeState& state) noexcept
+		[[nodiscard]] bool WriteUndoRecord(SKSE::SerializationInterface* a_intfc,
+			const SerializationStateStore::Snapshot& state) noexcept
 		{
 			if (!a_intfc->OpenRecord(kRecordUndoHistory, kSerializationVersion)) {
 				SKSE::log::error("Failed to open co-save record UNDO");
@@ -134,21 +139,13 @@ namespace CodexOfPowerNG::Serialization::Internal
 
 	void Revert(SKSE::SerializationInterface* /*a_intfc*/) noexcept
 	{
-		auto& state = GetState();
-		std::scoped_lock lock(state.mutex);
-		state.registeredItems.clear();
-		state.blockedItems.clear();
-		state.notifiedItems.clear();
-		state.rewardTotals.clear();
-		state.undoHistory.clear();
-		state.undoNextActionId = 1;
+		SerializationStateStore::Clear();
 		Registration::InvalidateQuickRegisterCache();
 	}
 
 	void Save(SKSE::SerializationInterface* a_intfc) noexcept
 	{
-		auto& state = GetState();
-		std::scoped_lock lock(state.mutex);
+		const auto state = SerializationStateStore::SnapshotState();
 
 		const bool allOk = ExecuteAllSaveWriters(
 			[&]() { return WriteRegisteredRecord(a_intfc, state); },

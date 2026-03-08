@@ -11,16 +11,12 @@ function readLoad() {
 
 test("serialization load stages records before committing runtime state", () => {
   const src = readLoad();
-  assert.match(src, /loadedRegisteredItems/);
-  assert.match(src, /loadedBlockedItems/);
-  assert.match(src, /loadedNotifiedItems/);
-  assert.match(src, /loadedRewardTotals/);
-  assert.match(src, /loadedUndoHistory/);
-
-  assert.match(src, /state\.registeredItems = std::move\(loadedRegisteredItems\)/);
-  assert.match(src, /state\.blockedItems = std::move\(loadedBlockedItems\)/);
-  assert.match(src, /state\.notifiedItems = std::move\(loadedNotifiedItems\)/);
-  assert.match(src, /state\.rewardTotals = std::move\(loadedRewardTotals\)/);
-  assert.match(src, /state\.undoHistory = std::move\(loadedUndoHistory\)/);
-  assert.match(src, /state\.undoNextActionId = loadedUndoNextActionId/);
+  assert.match(src, /SerializationStateStore::Snapshot loadedState\{\};/);
+  assert.match(src, /loadedState\.registeredItems/);
+  assert.match(src, /loadedState\.blockedItems/);
+  assert.match(src, /loadedState\.notifiedItems/);
+  assert.match(src, /loadedState\.rewardTotals/);
+  assert.match(src, /loadedState\.undoHistory/);
+  assert.match(src, /loadedState\.undoNextActionId/);
+  assert.match(src, /SerializationStateStore::ReplaceState\(std::move\(loadedState\)\);/);
 });

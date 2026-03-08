@@ -920,7 +920,13 @@
     <script src="lang_ui.js"></script>
     <script src="virtual_tables.js"></script>
     <script src="ui_wiring.js"></script>
+    <script src="ui_state.js"></script>
+    <script src="ui_interactions.js"></script>
+    <script src="ui_bootstrap.js"></script>
     <script src="interop_bridge.js"></script>
+    <script src="ui_rendering.js"></script>
+    <script src="native_state_bridge.js"></script>
+    <script src="native_bridge_bootstrap.js"></script>
     <script src="input_shortcuts.js"></script>
     <script src="reward_orbit.js"></script>
     <script src="input_correction.js"></script>
@@ -938,13 +944,11 @@
       const LANGUI = window.COPNG_LANGUI || null;
       const toggleKeyResolvedEl = document.getElementById("toggleKeyResolved");
       const btnCaptureToggleKeyEl = document.getElementById("btnCaptureToggleKey");
-      let captureToggleKey = false;
 
       const langSelectEl = document.getElementById("setLang");
       const langBtnEl = document.getElementById("langBtn");
       const langBtnLabelEl = document.getElementById("langBtnLabel");
       const langMenuEl = document.getElementById("langMenu");
-      let langMenuOpen = false;
 
       const uiScaleModeEl = document.getElementById("setUiScaleMode");
       const uiScaleRangeEl = document.getElementById("setUiScaleRange");
@@ -972,8 +976,6 @@
       const toastEl = document.getElementById("toast");
       const toastMetaEl = document.getElementById("toastMeta");
       const toastMsgEl = document.getElementById("toastMsg");
-      let toastTimer = null;
-      let lotdGateBlockingToastShown = false;
 
       const I18N = {
         en: {
@@ -1228,48 +1230,20 @@
         },
       };
 
-      let uiLang = "en";
+      let uiState = null;
+
       function t(key, fallback) {
-        const table = (uiLang && I18N[uiLang]) || I18N.en;
+        const currentLang = uiState ? uiState.getUiLang() : "en";
+        const table = (currentLang && I18N[currentLang]) || I18N.en;
         if (table && Object.prototype.hasOwnProperty.call(table, key)) return table[key];
         return fallback !== undefined ? fallback : key;
       }
       function tFmt(key, fallback, vars) {
         const base = String(t(key, fallback));
         if (!vars || typeof vars !== "object") return base;
-        return base.replace(/\{([a-zA-Z0-9_]+)\}/g, (m, k) => (Object.prototype.hasOwnProperty.call(vars, k) ? String(vars[k]) : m));
-      }
-
-      function sanitizeI18nHtml(raw) {
-        return String(raw)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/&lt;(\/?(span|br)\b[^&]*?)&gt;/gi, "<$1>");
-      }
-
-      function applyI18n() {
-        document.querySelectorAll("[data-i18n-html]").forEach((el) => {
-          const key = el.getAttribute("data-i18n-html");
-          if (!key) return;
-          el.innerHTML = sanitizeI18nHtml(t(key, el.innerHTML));
-        });
-        document.querySelectorAll("[data-i18n]").forEach((el) => {
-          const key = el.getAttribute("data-i18n");
-          if (!key) return;
-          el.textContent = t(key, el.textContent);
-        });
-        document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
-          const key = el.getAttribute("data-i18n-placeholder");
-          if (!key) return;
-          el.setAttribute("placeholder", t(key, el.getAttribute("placeholder") || ""));
-        });
-
-        // Dynamic labels (not driven by data-i18n)
-        syncLangDropdown();
-        updateToggleKeyResolved();
-        renderUndo();
-        renderRewards();
+        return base.replace(/\{([a-zA-Z0-9_]+)\}/g, (m, k) =>
+          Object.prototype.hasOwnProperty.call(vars, k) ? String(vars[k]) : m,
+        );
       }
 
       const QUICK_ROW_BASE_PX = 78;
@@ -1278,139 +1252,17 @@
       const VIRTUAL_MIN_ROWS = 24;
       const virtualTablesApi = (typeof window !== "undefined" && window.COPNGVirtualTables) || null;
       const uiWiringApi = (typeof window !== "undefined" && window.COPNGUIWiring) || null;
+      const uiStateApi = (typeof window !== "undefined" && window.COPNGUIState) || null;
+      const uiInteractionsApi = (typeof window !== "undefined" && window.COPNGUIInteractions) || null;
+      const uiBootstrapApi = (typeof window !== "undefined" && window.COPNGUIBootstrap) || null;
       const interopBridgeApi = (typeof window !== "undefined" && window.COPNGInteropBridge) || null;
+      const uiRenderingApi = (typeof window !== "undefined" && window.COPNGUIRendering) || null;
+      const nativeStateBridgeApi = (typeof window !== "undefined" && window.COPNGNativeStateBridge) || null;
+      const nativeBridgeBootstrapApi =
+        (typeof window !== "undefined" && window.COPNGNativeBridgeBootstrap) || null;
       const inputShortcutsApi = (typeof window !== "undefined" && window.COPNGInputShortcuts) || null;
       const rewardOrbitApi = (typeof window !== "undefined" && window.COPNGRewardOrbit) || null;
       const inputCorrectionApi = (typeof window !== "undefined" && window.COPNGInputCorrection) || null;
-
-      let state = {};
-      let inventoryPage = { page: 0, pageSize: 200, total: 0, hasMore: false, items: [] };
-      let quickSelectedId = 0;
-      let quickVisibleIds = [];
-      const quickVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
-      let registered = [];
-      let undoItems = [];
-      const regVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
-      let rewards = { totals: [] };
-      let settings = null;
-
-      const UI_SCALE_MODE_KEY = "copng.ui.scaleMode";
-      const UI_SCALE_MANUAL_KEY = "copng.ui.manualScale";
-      let uiScaleMode = "auto"; // "auto" | "manual"
-      let uiScaleManual = 1.0;
-
-      // Performance mode (cursor smoothness)
-      const PERF_MODE_KEY = "copng.ui.perfMode";
-      let perfMode = "auto"; // "auto" | "off" | "on"
-
-      // Input coordinate correction (high DPI / Windows scaling)
-      const INPUT_SCALE_KEY = "copng.ui.inputScale";
-      let inputScale = 1.0;
-      let inputScaleHasLocal = false;
-
-      function loadInputScalePref() {
-        try {
-          const storedRaw = String(localStorage.getItem(INPUT_SCALE_KEY) || "");
-          const stored = parseFloat(storedRaw);
-          if (isFinite(stored) && stored > 0) {
-            // settings.json is authoritative; local storage only tracks unsaved in-session tweaks
-            // and should not override values delivered from native settings payloads.
-            inputScaleHasLocal = true;
-          }
-        } catch {}
-      }
-
-      function saveInputScalePref() {
-        try {
-          localStorage.setItem(INPUT_SCALE_KEY, String(inputScale));
-        } catch {}
-      }
-
-      function syncInputScaleControls() {
-        if (inputScaleRangeEl) inputScaleRangeEl.value = String(clamp(inputScale, 0.5, 3.0));
-        if (inputScaleNumberEl) inputScaleNumberEl.value = String(Math.round(clamp(inputScale, 0.5, 3.0) * 100) / 100);
-        if (inputScalePresetEl) {
-          const presets = [1.0, 1.25, 1.5, 1.75, 2.0];
-          let nearest = presets[0];
-          let best = Math.abs(inputScale - nearest);
-          for (const p of presets) {
-            const d = Math.abs(inputScale - p);
-            if (d < best) {
-              best = d;
-              nearest = p;
-            }
-          }
-          inputScalePresetEl.value = String(nearest);
-        }
-        if (inputScalePillEl) inputScalePillEl.textContent = `Input: ${inputScale.toFixed(2)}`;
-      }
-
-      function setInputScale(next, { persist = true, toast = false } = {}) {
-        const v = parseFloat(String(next));
-        if (!isFinite(v) || v <= 0) return;
-        inputScale = clamp(v, 0.5, 3.0);
-        inputScaleHasLocal = !!persist;
-        if (persist) {
-          saveInputScalePref();
-        }
-        syncInputScaleControls();
-        if (uiScaleMode === "auto") scheduleAutoUiScale();
-        applyPerfModeFromPrefs();
-        if (toast) showToast("info", `Input scale: ${inputScale.toFixed(2)}`);
-      }
-
-      function loadPerfModePref() {
-        try {
-          const stored = String(localStorage.getItem(PERF_MODE_KEY) || "auto");
-          perfMode = stored === "on" || stored === "off" ? stored : "auto";
-        } catch {
-          perfMode = "auto";
-        }
-      }
-
-      function savePerfModePref() {
-        try {
-          localStorage.setItem(PERF_MODE_KEY, perfMode);
-        } catch {}
-      }
-
-      function getEffectiveDpr() {
-        const w = Number(window.innerWidth || 0);
-        const h = Number(window.innerHeight || 0);
-        const dpr = Number(window.devicePixelRatio || 1);
-        const sw = Number((window.screen && window.screen.width) || 0);
-        const sh = Number((window.screen && window.screen.height) || 0);
-
-        const dprRaw = isFinite(dpr) && dpr > 0 ? dpr : 1;
-        const dprHint = isFinite(inputScale) && inputScale > 0 ? inputScale : 1;
-
-        const screenScaleW = sw > 0 && w > 0 ? sw / w : 1;
-        const screenScaleH = sh > 0 && h > 0 ? sh / h : 1;
-        const screenScale = Math.max(screenScaleW, screenScaleH);
-
-        let effectiveDpr = dprRaw;
-        if (effectiveDpr < 1.01) {
-          if (isFinite(screenScale) && screenScale > 1.01) effectiveDpr = Math.max(effectiveDpr, screenScale);
-          if (dprHint > 1.01) effectiveDpr = Math.max(effectiveDpr, dprHint);
-        }
-        return clamp(effectiveDpr, 1.0, 3.0);
-      }
-
-      function shouldEnableLowFx() {
-        if (perfMode === "on") return true;
-        if (perfMode === "off") return false;
-
-        const scale = getCurrentUiScale();
-        const effectiveDpr = getEffectiveDpr();
-        return scale >= 2.0 || effectiveDpr >= 1.6;
-      }
-
-      function applyPerfModeFromPrefs() {
-        document.documentElement.classList.toggle("lowfx", shouldEnableLowFx());
-      }
-
-      loadInputScalePref();
-      loadPerfModePref();
 
       function safeCall(name, payloadObj) {
         const fn = window[name];
@@ -1443,27 +1295,31 @@
         return Number(re.top || 0) - Number(rr.top || 0) + Number(rootEl.scrollTop || 0);
       }
 
-      let keyNavRaf = 0;
-      const VIRTUAL_RENDER_THROTTLE_MS = 32; // ~30fps cap for scroll-driven renders
+      const VIRTUAL_RENDER_THROTTLE_MS = 32;
       let virtualTablesManager = null;
 
       function ensureVirtualTablesManager() {
         if (virtualTablesManager) return virtualTablesManager;
-        if (!virtualTablesApi || typeof virtualTablesApi.createVirtualTableManager !== "function") return null;
+        if (!virtualTablesApi || typeof virtualTablesApi.createVirtualTableManager !== "function" || !uiState) return null;
+
+        const escapeHtml =
+          uiRenderingApi && typeof uiRenderingApi.escapeHtml === "function"
+            ? uiRenderingApi.escapeHtml
+            : (value) => String(value == null ? "" : value);
 
         virtualTablesManager = virtualTablesApi.createVirtualTableManager({
           rootScrollEl,
           quickBody,
           regBody,
-          quickVirtual,
-          regVirtual,
+          quickVirtual: uiState.getQuickVirtual(),
+          regVirtual: uiState.getRegVirtual(),
           quickRowBasePx: QUICK_ROW_BASE_PX,
           regRowBasePx: REG_ROW_BASE_PX,
           overscan: VIRTUAL_OVERSCAN,
           minRows: VIRTUAL_MIN_ROWS,
           renderThrottleMs: VIRTUAL_RENDER_THROTTLE_MS,
-          getCurrentUiScale,
-          getQuickSelectedId: () => quickSelectedId,
+          getCurrentUiScale: uiState.getCurrentUiScale,
+          getQuickSelectedId: uiState.getQuickSelectedId,
           escapeHtml,
           t,
           coalesce,
@@ -1504,1048 +1360,216 @@
         requestAnimationFrame(() => scheduleVirtualRender({ force: true }));
       }
 
-      // Auto UI scaling (resolution aware)
-      let uiScaleTimer = null;
-      function getCurrentUiScale() {
-        const raw = String(getComputedStyle(document.documentElement).getPropertyValue("--uiScale") || "").trim();
-        const v = parseFloat(raw);
-        return isFinite(v) && v > 0 ? v : 1;
-      }
-
-      function computeAutoUiScale() {
-        const w = Number(window.innerWidth || 0);
-        const h = Number(window.innerHeight || 0);
-        const sw = Number((window.screen && window.screen.width) || 0);
-        const sh = Number((window.screen && window.screen.height) || 0);
-        const effectiveDpr = getEffectiveDpr();
-        const viewportPx = Math.min(w, h) * effectiveDpr;
-        const screenPx = Math.min(sw, sh);
-        const minDim = Math.max(viewportPx, screenPx);
-        if (!isFinite(minDim) || minDim <= 0) return 1;
-
-        // Base on 1080p vertical; 4K typically lands around ~2.0x.
-        const ratio = minDim / 1080;
-        const scale = Math.max(0.0, ratio);
-        return clamp(scale, 1.0, 3.0);
-      }
-
-      function loadUiScalePrefs() {
-        try {
-          const mode = String(localStorage.getItem(UI_SCALE_MODE_KEY) || "auto");
-          uiScaleMode = mode === "manual" ? "manual" : "auto";
-
-          const stored = parseFloat(String(localStorage.getItem(UI_SCALE_MANUAL_KEY) || ""));
-          uiScaleManual = isFinite(stored) && stored > 0 ? clamp(stored, 1.0, 3.0) : 1.9;
-        } catch {
-          uiScaleMode = "auto";
-          uiScaleManual = 1.9;
-        }
-      }
-
-      function saveUiScalePrefs() {
-        try {
-          localStorage.setItem(UI_SCALE_MODE_KEY, uiScaleMode);
-          localStorage.setItem(UI_SCALE_MANUAL_KEY, String(uiScaleManual));
-        } catch {}
-      }
-
-      function syncUiScaleControls() {
-        if (!uiScaleModeEl || !uiScaleRangeEl || !uiScaleNumberEl) return;
-
-        uiScaleModeEl.value = uiScaleMode;
-
-        const manualEnabled = uiScaleMode === "manual";
-        uiScaleRangeEl.disabled = !manualEnabled;
-        uiScaleNumberEl.disabled = !manualEnabled;
-
-        const shown = manualEnabled ? uiScaleManual : getCurrentUiScale();
-        uiScaleRangeEl.value = String(clamp(shown, 1.0, 3.0));
-        uiScaleNumberEl.value = String(Math.round(clamp(shown, 1.0, 3.0) * 100) / 100);
-      }
-
-      function applyManualUiScale() {
-        document.documentElement.style.setProperty("--uiScale", String(clamp(uiScaleManual, 1.0, 3.0)));
-        scheduleVirtualRender({ force: true });
-      }
-
-      function applyUiScaleFromPrefs() {
-        if (uiScaleMode === "manual") {
-          applyManualUiScale();
-          syncUiScaleControls();
-          applyPerfModeFromPrefs();
-          safeCall("copng_log", { level: "info", message: `UI scale -> ${getCurrentUiScale().toFixed(3)} (manual)` });
-          return;
-        }
-
-        applyAutoUiScale();
-        syncUiScaleControls();
-        applyPerfModeFromPrefs();
-      }
-
-      function applyAutoUiScale() {
-        if (uiScaleMode !== "auto") return;
-
-        const w = Number(window.innerWidth || 0);
-        const h = Number(window.innerHeight || 0);
-        const dpr = Number(window.devicePixelRatio || 1);
-        const sw = Number((window.screen && window.screen.width) || 0);
-        const sh = Number((window.screen && window.screen.height) || 0);
-        const dprRaw = isFinite(dpr) && dpr > 0 ? dpr : 1;
-        const dprHint = isFinite(inputScale) && inputScale > 0 ? inputScale : 1;
-        const screenScaleW = sw > 0 && w > 0 ? sw / w : 1;
-        const screenScaleH = sh > 0 && h > 0 ? sh / h : 1;
-        const screenScale = Math.max(screenScaleW, screenScaleH);
-        const effectiveDpr = getEffectiveDpr();
-        const scale = computeAutoUiScale();
-        document.documentElement.style.setProperty("--uiScale", String(scale));
-        safeCall("copng_log", {
-          level: "info",
-          message: `UI scale -> ${scale.toFixed(3)} (viewport ${w}x${h}, screen ${sw}x${sh}, dpr ${dprRaw} (effective ${effectiveDpr}, screenScale ${screenScale.toFixed(
-            2
-          )}, inputScale ${dprHint}))`,
-        });
-
-        applyPerfModeFromPrefs();
-        scheduleVirtualRender({ force: true });
-      }
-
-      function scheduleAutoUiScale() {
-        if (uiScaleMode !== "auto") return;
-        if (uiScaleTimer) clearTimeout(uiScaleTimer);
-        uiScaleTimer = setTimeout(applyAutoUiScale, 150);
-      }
-
-      function showToast(level, message) {
-        if (toastTimer) clearTimeout(toastTimer);
-        const lvl = String(level || "info").toLowerCase();
-        toastMetaEl.textContent = t("toast." + lvl, lvl);
-        toastMsgEl.textContent = message || "";
-        toastEl.classList.add("show");
-        toastTimer = setTimeout(() => toastEl.classList.remove("show"), 2500);
-      }
-
-      function showConfirm(message) {
-        return new Promise((resolve) => {
-          const overlay = document.getElementById("confirmOverlay");
-          const msgEl = document.getElementById("confirmMsg");
-          const okBtn = document.getElementById("confirmOk");
-          const cancelBtn = document.getElementById("confirmCancel");
-          if (!overlay || !msgEl || !okBtn || !cancelBtn) { resolve(false); return; }
-          msgEl.textContent = message || "";
-          overlay.style.display = "";
-          function cleanup(result) {
-            overlay.style.display = "none";
-            okBtn.removeEventListener("click", onOk);
-            cancelBtn.removeEventListener("click", onCancel);
-            resolve(result);
-          }
-          function onOk() { cleanup(true); }
-          function onCancel() { cleanup(false); }
-          okBtn.addEventListener("click", onOk);
-          cancelBtn.addEventListener("click", onCancel);
-        });
-      }
-
-      function getToggleKeyDik() {
-        if (settings && isFinite(settings.toggleKeyCode)) return (settings.toggleKeyCode >>> 0) & 0xff;
-        if (state && isFinite(state.toggleKeyCode)) return (state.toggleKeyCode >>> 0) & 0xff;
-        return 0x3e;
-      }
-
-      function formatToggleKeyLabel(dik) {
-        const name = KC && KC.dikToKeyName ? KC.dikToKeyName(dik) : null;
-        if (name) return name;
-        const hex = KC && KC.dikToHex ? KC.dikToHex(dik) : null;
-        return hex || toHex32(dik >>> 0);
-      }
-
-      function formatToggleKeyDisplay(dik) {
-        const formatted = KC && KC.formatDikDisplay ? KC.formatDikDisplay(dik) : null;
-        if (formatted) return formatted;
-        const hex = KC && KC.dikToHex ? KC.dikToHex(dik) : null;
-        return hex || toHex32(dik >>> 0);
-      }
-
-      function updateToggleKeyResolved() {
-        if (!toggleKeyResolvedEl) return;
-        const raw = (document.getElementById("setToggleKey").value || "").trim();
-        const parsed = KC && KC.parseKeybindInput ? KC.parseKeybindInput(raw) : null;
-        if (parsed == null) {
-          toggleKeyResolvedEl.textContent = `${t("settings.resolved", "Resolved")}: ${t("settings.invalid", "invalid")}`;
-          return;
-        }
-        toggleKeyResolvedEl.textContent = `${t("settings.resolved", "Resolved")}: ${formatToggleKeyDisplay(parsed)}`;
-      }
-
-      function setToggleKeyInputFromDik(dik) {
-        const input = document.getElementById("setToggleKey");
-        if (!input) return;
-        input.value = formatToggleKeyLabel(dik);
-        updateToggleKeyResolved();
-      }
-
-      function closeLangMenu() {
-        langMenuOpen = false;
-        if (langMenuEl) langMenuEl.classList.remove("open");
-      }
-
-      function syncLangDropdown() {
-        if (!langSelectEl || !langBtnLabelEl) return;
-        const v = LANGUI && LANGUI.normalizeLanguageValue ? LANGUI.normalizeLanguageValue(langSelectEl.value) : (langSelectEl.value || "auto");
-        if (langSelectEl.value !== v) langSelectEl.value = v;
-        langBtnLabelEl.textContent = t("lang." + v, v);
-      }
-
-      function openLangMenu() {
-        if (!langMenuEl) return;
-        const items = LANGUI && LANGUI.getLanguageItems ? LANGUI.getLanguageItems(t) : [
-          { value: "auto", label: t("lang.auto", "auto") },
-          { value: "en", label: t("lang.en", "en") },
-          { value: "ko", label: t("lang.ko", "ko") },
-        ];
-
-        const current = langSelectEl ? String(langSelectEl.value || "auto") : "auto";
-
-        langMenuEl.innerHTML = items
-          .map((it) => {
-            const active = it.value === current;
-            const cls = "dropdownItem" + (active ? " active" : "");
-            return `<button type="button" class="${cls}" data-value="${escapeHtml(it.value)}">${escapeHtml(it.label)}</button>`;
-          })
-          .join("");
-
-        langMenuEl.querySelectorAll("button[data-value]").forEach((btn) => {
-          btn.addEventListener("click", () => {
-            const v = btn.getAttribute("data-value") || "auto";
-            if (langSelectEl) langSelectEl.value = v;
-            syncLangDropdown();
-            closeLangMenu();
-          });
-        });
-
-        langMenuOpen = true;
-        langMenuEl.classList.add("open");
-      }
-
-      function setTab(tabId) {
-        document.querySelectorAll(".tabs button").forEach((btn) => btn.classList.toggle("active", btn.dataset.tab === tabId));
-        document.querySelectorAll(".section").forEach((sec) => sec.classList.toggle("active", sec.id === tabId));
-        scheduleVirtualRender({ force: true });
-      }
-
-      function renderStatus() {
-        const ui = state.ui || {};
-        statusEl.textContent = `${t("status.ui", "UI")}: ${ui.ready ? t("status.ready", "ready") : t("status.loading", "loading")} | ${
-          ui.hidden ? t("status.hidden", "hidden") : t("status.shown", "shown")
-        } | ${ui.focused ? t("status.focus", "focus") : t("status.noFocus", "no-focus")}`;
-        countsEl.textContent = `${t("status.registered", "Registered")}: ${coalesce(state.registeredCount, 0)}`;
-        langEl.textContent = `${t("status.lang", "Lang")}: ${coalesce(state.language, "?")}`;
-        hotkeyEl.textContent = `${t("status.hotkey", "Hotkey")}: ${formatToggleKeyDisplay(coalesce(state.toggleKeyCode, 0) >>> 0)}`;
-        if (inputScalePillEl) inputScalePillEl.textContent = `Input: ${inputScale.toFixed(2)}`;
-
-        if (lotdGatePillEl) {
-          const gate = (state && state.lotdGate) || {};
-          const enabled = !!gate.requireTccDisplayed;
-          const blocking = !!gate.blocking;
-
-          if (!enabled) {
-            lotdGatePillEl.style.display = "none";
-            lotdGatePillEl.classList.remove("warn", "ok");
-            lotdGateBlockingToastShown = false;
-          } else {
-            lotdGatePillEl.style.display = "";
-            lotdGatePillEl.classList.toggle("warn", blocking);
-            lotdGatePillEl.classList.toggle("ok", !blocking);
-            lotdGatePillEl.textContent = `${t("status.lotdGate", "LOTD Gate")}: ${
-              blocking ? t("status.lotdBlocked", "TCC missing") : t("status.lotdOk", "TCC ready")
-            }`;
-
-            if (blocking && !lotdGateBlockingToastShown) {
-              showToast("warn", t("toast.lotdGateBlocked", "LOTD Display gate is enabled, but TCC lists are unavailable. Registration is blocked."));
-              lotdGateBlockingToastShown = true;
-            } else if (!blocking) {
-              lotdGateBlockingToastShown = false;
-            }
-          }
-        }
-
-        if (lotdGateWarnBannerEl) {
-          const gate = (state && state.lotdGate) || {};
-          const enabled = !!gate.requireTccDisplayed;
-          const blocking = !!gate.blocking;
-          lotdGateWarnBannerEl.style.display = enabled && blocking ? "" : "none";
-        }
-      }
-
-      function renderQuickVirtual({ force = false } = {}) {
-        const mgr = ensureVirtualTablesManager();
-        if (!mgr) return;
-        mgr.renderQuickVirtual({ force });
-      }
-
-      function renderRegisteredVirtual({ force = false } = {}) {
-        const mgr = ensureVirtualTablesManager();
-        if (!mgr) return;
-        mgr.renderRegisteredVirtual({ force });
-      }
-
-      function renderQuick() {
-        const q = (document.getElementById("quickFilter").value || "").toLowerCase();
-        const items = (inventoryPage && inventoryPage.items) || [];
-        const rows = items.filter((it) => !q || (it.name || "").toLowerCase().indexOf(q) !== -1);
-        quickVirtual.rows = rows;
-        quickVisibleIds = rows.map((it) => (Number(it.formId) >>> 0));
-        if (quickSelectedId && quickVisibleIds.indexOf(quickSelectedId) === -1) {
-          quickSelectedId = 0;
-        }
-        scheduleVirtualRender({ force: true });
-
-        const page = coalesce(inventoryPage.page, 0);
-        const pageSize = coalesce(inventoryPage.pageSize, 0);
-        const total = coalesce(inventoryPage.total, 0);
-        const totalPages = total > 0 && pageSize > 0 ? Math.max(1, Math.ceil(total / pageSize)) : 0;
-        if (invMetaEl) {
-          const pagesText = totalPages > 0 ? `${page + 1}/${totalPages}` : `${page + 1}/${t("inv.unknown", "unknown")}`;
-          const totalText = total > 0 ? String(total) : t("inv.unknown", "unknown");
-          invMetaEl.textContent = `${t("inv.inventory", "Inventory")}: ${t("inv.page", "page")} ${pagesText} (${t(
-            "inv.showing",
-            "showing"
-          )} ${rows.length}/${items.length}, ${t("inv.total", "total")} ${totalText})`;
-        }
-        if (invPageSizeEl) {
-          const shownSize = String(pageSize > 0 ? pageSize : 200);
-          if (invPageSizeEl.value !== shownSize) {
-            invPageSizeEl.value = shownSize;
-          }
-        }
-        if (btnInvPrev) btnInvPrev.disabled = page <= 0;
-        if (btnInvNext) {
-          btnInvNext.disabled = totalPages > 0 ? page + 1 >= totalPages : !inventoryPage.hasMore;
-        }
-      }
-
-      function renderRegistered() {
-        const q = (document.getElementById("regFilter").value || "").toLowerCase();
-        const rows = registered.filter((it) => !q || (it.name || "").toLowerCase().indexOf(q) !== -1);
-        regVirtual.rows = rows;
-        scheduleVirtualRender({ force: true });
-      }
-
-      function renderUndo() {
-        if (!undoBody) return;
-        const rows = Array.isArray(undoItems) ? undoItems : [];
-
-        if (undoMetaEl) {
-          undoMetaEl.textContent = `${t("undo.meta", "Recent registrations (latest first)")} (${rows.length}/${10})`;
-        }
-
-        undoBody.innerHTML =
-          rows.length === 0
-            ? `<tr><td colspan="4" class="small">${escapeHtml(t("undo.none", "(No recent registrations)"))}</td></tr>`
-            : rows
-                .map((it, idx) => {
-                  const actionId = Number(it.actionId || 0);
-                  const canUndo = !!it.canUndo;
-                  const rewardText = it.hasRewardDelta ? t("undo.rewarded", "rewarded") : t("undo.noReward", "no reward");
-                  const btnText = canUndo ? t("btn.undo", "Undo") : t("undo.onlyLatest", "Latest only");
-                  const disabled = canUndo ? "" : " disabled";
-                  const actionClass = canUndo ? "danger" : "";
-                  return `
-          <tr class="dataRow ${idx % 2 === 0 ? "rowOdd" : ""}">
-            <td class="colGroup"><span class="pill">${escapeHtml(it.groupName || String(it.group || ""))}</span></td>
-            <td>
-              <span class="itemName">${escapeHtml(it.name || "(unnamed)")}</span>
-              <span class="small mono">${escapeHtml(rewardText)}</span>
-            </td>
-            <td class="colFormId mono">${toHex32(Number(it.formId || 0) >>> 0)}</td>
-            <td class="colAction"><button class="${actionClass}" data-action="undo" data-id="${actionId}"${disabled}><span class="btnLabel">${escapeHtml(
-                    btnText
-                  )}</span></button></td>
-          </tr>`;
-                })
-                .join("");
-      }
-
-      function syncRewardCharacterImageState() {
-        if (rewardOrbitApi && typeof rewardOrbitApi.syncRewardCharacterImageState === "function") {
-          rewardOrbitApi.syncRewardCharacterImageState({
-            characterImgEl: rewardCharacterImgEl,
-            fallbackEl: rewardImageFallbackEl,
-          });
-          return;
-        }
-        if (!rewardCharacterImgEl || !rewardImageFallbackEl) return;
-        const loaded = !!(rewardCharacterImgEl.complete && rewardCharacterImgEl.naturalWidth > 0);
-        rewardCharacterImgEl.style.display = loaded ? "" : "none";
-        rewardImageFallbackEl.classList.toggle("show", !loaded);
-      }
-
-      function renderRewardOrbit(rows) {
-        if (!rewardOrbitEl) return;
-        if (rewardOrbitApi && typeof rewardOrbitApi.renderRewardOrbit === "function") {
-          rewardOrbitApi.renderRewardOrbit({
-            orbitEl: rewardOrbitEl,
-            rows,
-            scale: getCurrentUiScale(),
-            viewportW: Number(window.innerWidth || 0),
-            escapeHtml,
-            t,
-            tFmt,
-            coalesce,
-            onAfterRender: syncRewardCharacterImageState,
-          });
-          return;
-        }
-
-        const srcRows = Array.isArray(rows) ? rows : [];
-        rewardOrbitEl.style.setProperty("--rewardNodeWidth", "188px");
-        if (srcRows.length === 0) {
-          rewardOrbitEl.innerHTML = `<div class="rewardOrbitEmpty small">${escapeHtml(t("rewards.none", "(No rewards yet)"))}</div>`;
-          syncRewardCharacterImageState();
-          return;
-        }
-        rewardOrbitEl.innerHTML = "";
-        syncRewardCharacterImageState();
-      }
-
-      function renderRewards() {
-        const meta = `${t("rewards.rolls", "Rolls")}: ${coalesce(rewards.rolls, 0)} | ${t("rewards.every", "Every")}: ${coalesce(
-          rewards.rewardEvery,
-          "?"
-        )} | ${t("rewards.mult", "Mult")}: ${coalesce(rewards.rewardMultiplier, "?")}`;
-        rewardMeta.textContent = meta;
-        const rows = (rewards.totals || []).slice().sort((a, b) => (a.label || "").localeCompare(b.label || ""));
-        renderRewardOrbit(rows);
-        rewardsBody.innerHTML =
-          rows.length === 0
-            ? `<tr><td colspan="2" class="small">${escapeHtml(t("rewards.none", "(No rewards yet)"))}</td></tr>`
-            : rows
-                .map(
-                  (it, idx) => `
-          <tr class="dataRow ${idx % 2 === 0 ? "rowOdd" : ""}">
-            <td>${escapeHtml(it.label || "Unknown")}</td>
-            <td class="mono colCount">${escapeHtml(it.display || String(coalesce(it.total, 0)))}</td>
-          </tr>`
-                )
-                .join("");
-      }
-
-      function renderSettings() {
-        if (!settings) return;
-        setToggleKeyInputFromDik(coalesce(settings.toggleKeyCode, 0) >>> 0);
-        if (langSelectEl) {
-          langSelectEl.value = coalesce(settings.languageOverride, "auto");
-          syncLangDropdown();
-        }
-        document.getElementById("setPauseGame").checked = !!settings.uiPauseGame;
-        document.getElementById("setDisableFocusMenu").checked = !!settings.uiDisableFocusMenu;
-        document.getElementById("setDestroyOnClose").checked = !!settings.uiDestroyOnClose;
-        document.getElementById("setNormalize").checked = !!settings.normalizeRegistration;
-        document.getElementById("setRequireTccDisplayed").checked = !!settings.requireTccDisplayed;
-        document.getElementById("setProtectFav").checked = !!settings.protectFavorites;
-        document.getElementById("setLootNotify").checked = !!settings.enableLootNotify;
-        document.getElementById("setRewardsEnabled").checked = !!settings.enableRewards;
-        document.getElementById("setRewardEvery").value = coalesce(settings.rewardEvery, 5);
-        document.getElementById("setRewardMult").value = coalesce(settings.rewardMultiplier, 1.0);
-        document.getElementById("setSkillRewards").checked = !!settings.allowSkillRewards;
-
-        // Input scale: settings payload value is authoritative.
-        const desiredInputScale = parseFloat(String(coalesce(settings.uiInputScale, 1.0)));
-        setInputScale(isFinite(desiredInputScale) && desiredInputScale > 0 ? desiredInputScale : 1.0, { persist: false });
-        // If auto UI scaling is enabled, re-apply using the updated inputScale hint.
-        applyUiScaleFromPrefs();
-
-        if (perfModeEl) perfModeEl.value = perfMode;
-        applyPerfModeFromPrefs();
-      }
-
-      function escapeHtml(s) {
-        return String(s)
-          .replace(/&/g, "&amp;")
-          .replace(/</g, "&lt;")
-          .replace(/>/g, "&gt;")
-          .replace(/\"/g, "&quot;")
-          .replace(/'/g, "&#39;");
-      }
-
-      // Native callbacks (C++ -> JS)
-      function onNativeState(nextState) {
-        state = nextState || {};
-        uiLang = typeof state.language === "string" ? state.language : uiLang;
-        document.documentElement.lang = uiLang === "ko" ? "ko" : "en";
-        applyI18n();
-        renderStatus();
-        renderQuick();
-        renderRegistered();
-        renderUndo();
-        renderRewards();
-      }
-
-      function onNativeInventory(nextInventoryPage) {
-        inventoryPage = nextInventoryPage;
-        resetVirtualWindow(quickVirtual);
-        renderQuick();
-        schedulePostRefreshVirtualResync();
-      }
-
-      function onNativeRegistered(nextRegistered) {
-        registered = nextRegistered;
-        resetVirtualWindow(regVirtual);
-        renderRegistered();
-        schedulePostRefreshVirtualResync();
-      }
-
-      function onNativeRewards(nextRewards) {
-        rewards = nextRewards && typeof nextRewards === "object" ? nextRewards : { totals: [] };
-        renderRewards();
-      }
-
-      function onNativeUndoList(nextUndoItems) {
-        undoItems = Array.isArray(nextUndoItems) ? nextUndoItems : [];
-        renderUndo();
-      }
-
-      function onNativeSettings(nextSettings) {
-        settings = nextSettings;
-        renderSettings();
-
-        // If the user explicitly overrides the language, apply UI i18n immediately
-        // (state.language may update slightly later after native localization reload).
-        const o = settings && typeof settings.languageOverride === "string" ? settings.languageOverride : "";
-        if (o === "en" || o === "ko") {
-          uiLang = o;
-          document.documentElement.lang = uiLang === "ko" ? "ko" : "en";
-          applyI18n();
-        }
-      }
-
-      function onNativeToast(toastPayload) {
-        const payload = toastPayload || {};
-        showToast(payload.level || "info", payload.message || "");
-      }
-
-      if (interopBridgeApi && typeof interopBridgeApi.installNativeCallbacks === "function") {
-        interopBridgeApi.installNativeCallbacks({
-          windowObj: window,
-          coalesce,
-          onState: onNativeState,
-          onInventory: onNativeInventory,
-          onRegistered: onNativeRegistered,
-          onRewards: onNativeRewards,
-          onUndoList: onNativeUndoList,
-          onSettings: onNativeSettings,
-          onToast: onNativeToast,
-        });
-      } else {
-        // Fallback when interop module is unavailable.
-        window.copng_setState = (jsonStr) => {
-          let payload = {};
-          try {
-            payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-          } catch {}
-          onNativeState(payload || {});
-        };
-        window.copng_setInventory = (jsonStr) => {
-          let payload = null;
-          try {
-            payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-          } catch {}
-          if (Array.isArray(payload)) {
-            onNativeInventory({ page: 0, pageSize: payload.length, total: payload.length, hasMore: false, items: payload });
-          } else if (payload && typeof payload === "object") {
-            onNativeInventory({
-              page: coalesce(payload.page, 0) >>> 0,
-              pageSize: coalesce(payload.pageSize, 200) >>> 0,
-              total: coalesce(payload.total, 0) >>> 0,
-              hasMore: !!payload.hasMore,
-              items: Array.isArray(payload.items) ? payload.items : [],
-            });
-          } else {
-            onNativeInventory({ page: 0, pageSize: 200, total: 0, hasMore: false, items: [] });
-          }
-        };
-        window.copng_setRegistered = (jsonStr) => {
-          let payload = [];
-          try {
-            payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-          } catch {}
-          onNativeRegistered(Array.isArray(payload) ? payload : []);
-        };
-        window.copng_setRewards = (jsonStr) => {
-          let payload = { totals: [] };
-          try {
-            payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-          } catch {}
-          onNativeRewards(payload);
-        };
-        window.copng_setUndoList = (jsonStr) => {
-          let payload = [];
-          try {
-            payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-          } catch {}
-          onNativeUndoList(Array.isArray(payload) ? payload : []);
-        };
-        window.copng_setSettings = (jsonStr) => {
-          let payload = null;
-          try {
-            payload = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-          } catch {}
-          onNativeSettings(payload);
-        };
-        window.copng_toast = (jsonStr) => {
-          try {
-            const obj = typeof jsonStr === "string" ? JSON.parse(jsonStr) : jsonStr;
-            onNativeToast({ level: obj.level || "info", message: obj.message || "" });
-          } catch {
-            onNativeToast({ level: "info", message: String(jsonStr || "") });
-          }
-        };
-      }
-
-      // UI wiring
-      function requestInventoryPage(page) {
-        const pageSize = coalesce(inventoryPage.pageSize, 200) >>> 0;
-        safeCall("copng_requestInventory", { page: page >>> 0, pageSize: pageSize > 0 ? pageSize : 200 });
-      }
-
-      let quickRenderTimer = null;
-      let regRenderTimer = null;
-      function scheduleRenderQuick() {
-        if (quickRenderTimer) clearTimeout(quickRenderTimer);
-        quickRenderTimer = setTimeout(() => {
-          quickRenderTimer = null;
-          renderQuick();
-        }, 70);
-      }
-      function scheduleRenderRegistered() {
-        if (regRenderTimer) clearTimeout(regRenderTimer);
-        regRenderTimer = setTimeout(() => {
-          regRenderTimer = null;
-          renderRegistered();
-        }, 70);
-      }
-
-      function setQuickSelected(nextId) {
-        const id = Number(nextId) >>> 0;
-        if (!id) return;
-        if (quickSelectedId === id) return;
-        const prev = quickSelectedId;
-        quickSelectedId = id;
-        if (prev) {
-          const prevRow = quickBody.querySelector(`tr[data-row-id="${prev}"]`);
-          if (prevRow) prevRow.classList.remove("selected");
-        }
-        const row = quickBody.querySelector(`tr[data-row-id="${id}"]`);
-        if (row) row.classList.add("selected");
-      }
-
-      function scrollQuickIndexIntoView(idx) {
-        if (!rootScrollEl || !quickBody) return;
-        if (isFinite(idx)) idx = Number(idx);
-        if (!isFinite(quickVirtual.tbodyTopPx) || !isFinite(quickVirtual.rowHeightPx) || quickVirtual.rowHeightPx <= 0) {
-          const s = getCurrentUiScale();
-          quickVirtual.rowHeightPx = QUICK_ROW_BASE_PX * s;
-          quickVirtual.tbodyTopPx = getOffsetTopInRoot(rootScrollEl, quickBody);
-        }
-
-        const uiScale = getCurrentUiScale();
-        const rowHeight = quickVirtual.rowHeightPx;
-        const tbodyTop = quickVirtual.tbodyTopPx;
-        const rowTop = tbodyTop + idx * rowHeight;
-        const rowBottom = rowTop + rowHeight;
-        const viewTop = Number(rootScrollEl.scrollTop || 0);
-        const viewBottom = viewTop + Number(rootScrollEl.clientHeight || 900);
-
-        if (rowTop < viewTop) rootScrollEl.scrollTop = Math.max(0, rowTop - 4 * uiScale);
-        else if (rowBottom > viewBottom) rootScrollEl.scrollTop = Math.max(0, rowBottom - Number(rootScrollEl.clientHeight || 900) + 4 * uiScale);
-      }
-
-      function onQuickBodyClick(e) {
-        // Ultralight/PrismaUI may dispatch clicks with a Text node target; parentElement isn't always available.
-        // Walk via parentNode and only read tagName when it's an Element node.
-        let node = e.target;
-        while (node && node !== quickBody) {
-          if (node.nodeType === 1) {
-            const el = node;
-            if (el.tagName === "BUTTON" && el.getAttribute("data-action") === "reg") {
-              const id = Number(el.getAttribute("data-id"));
-              if (isFinite(id) && id > 0) {
-                setQuickSelected(id);
-                safeCall("copng_log", { level: "info", message: `UI register click: ${toHex32(id >>> 0)}` });
-                safeCall("copng_registerItem", { formId: id >>> 0 });
-              }
-              return;
-            }
-            if (el.tagName === "TR" && el.getAttribute("data-row-id")) {
-              const id = Number(el.getAttribute("data-row-id"));
-              if (isFinite(id) && id > 0) {
-                setQuickSelected(id);
-              }
-              return;
-            }
-          }
-          node = node.parentNode;
-        }
-      }
-
-      function onUndoBodyClick(e) {
-        let node = e.target;
-        while (node && node !== undoBody) {
-          if (node.nodeType === 1) {
-            const el = node;
-            if (el.tagName === "BUTTON" && el.getAttribute("data-action") === "undo") {
-              if (el.disabled) {
-                return;
-              }
-
-              const actionId = Number(el.getAttribute("data-id"));
-              if (Number.isFinite(actionId) && actionId > 0) {
-                safeCall("copng_undoRegisterItem", { actionId: Math.trunc(actionId) });
-              }
-              return;
-            }
-          }
-          node = node.parentNode;
-        }
-      }
-      // (renderSettings/escapeHtml/native callbacks/wiring moved earlier)
-
-      function saveSettingsFromUi() {
-        const keyRaw = (document.getElementById("setToggleKey").value || "").trim();
-        let key = KC && KC.parseKeybindInput ? KC.parseKeybindInput(keyRaw) : null;
-        if (key == null) {
-          key = getToggleKeyDik();
-          setToggleKeyInputFromDik(key);
-          showToast("warn", `${t("toast.bindKeyUnknown", "Unsupported key.")}`);
-        }
-        const rewardEveryInput = parseInt(document.getElementById("setRewardEvery").value, 10);
-        const rewardMultInput = parseFloat(document.getElementById("setRewardMult").value);
-        const payload = {
-          toggleKeyCode: (key >>> 0) & 0xff,
-          languageOverride: document.getElementById("setLang").value,
-          uiPauseGame: document.getElementById("setPauseGame").checked,
-          uiDisableFocusMenu: document.getElementById("setDisableFocusMenu").checked,
-          uiDestroyOnClose: document.getElementById("setDestroyOnClose").checked,
-          uiInputScale: clamp(inputScale, 0.5, 3.0),
-          normalizeRegistration: document.getElementById("setNormalize").checked,
-          requireTccDisplayed: document.getElementById("setRequireTccDisplayed").checked,
-          protectFavorites: document.getElementById("setProtectFav").checked,
-          enableLootNotify: document.getElementById("setLootNotify").checked,
-          enableRewards: document.getElementById("setRewardsEnabled").checked,
-          rewardEvery: Number.isFinite(rewardEveryInput) && rewardEveryInput > 0 ? rewardEveryInput : 5,
-          rewardMultiplier: Number.isFinite(rewardMultInput) ? rewardMultInput : 1.0,
-          allowSkillRewards: document.getElementById("setSkillRewards").checked,
-        };
-        safeCall("copng_saveSettings", payload);
-      }
-
-      const onManualScaleChange = (raw) => {
-        uiScaleMode = "manual";
-        const v = parseFloat(String(raw || ""));
-        uiScaleManual = isFinite(v) && v > 0 ? clamp(v, 1.0, 3.0) : uiScaleManual;
-        applyManualUiScale();
-        saveUiScalePrefs();
-        syncUiScaleControls();
-      };
-
-      // Input scale (click/hitbox correction)
-      const onInputScaleChange = (raw, { toast = false } = {}) => {
-        setInputScale(raw, { persist: true, toast: toast });
-      };
-
-      function onPerfModeChanged(raw) {
-        const v = String(raw || "");
-        perfMode = v === "on" || v === "off" ? v : "auto";
-        savePerfModePref();
-        applyPerfModeFromPrefs();
-      }
-
-      function onUiScaleModeChanged(raw) {
-        uiScaleMode = raw === "manual" ? "manual" : "auto";
-        if (uiScaleMode === "manual") {
-          uiScaleManual = clamp(getCurrentUiScale(), 1.0, 3.0);
-        }
-        saveUiScalePrefs();
-        applyUiScaleFromPrefs();
-      }
-
-      if (uiWiringApi && typeof uiWiringApi.installUIWiring === "function") {
-        uiWiringApi.installUIWiring({
-          documentObj: document,
-          windowObj: window,
-          rootScrollEl,
-          quickBody,
-          undoBody,
-          rewardCharacterImgEl,
-          invPageSizeEl,
-          btnInvPrev,
-          btnInvNext,
-          btnCaptureToggleKeyEl,
-          langBtnEl,
-          langMenuEl,
-          langSelectEl,
+      uiState = uiStateApi.createUIState({
+        documentObj: document,
+        windowObj: window,
+        localStorageObj: window.localStorage,
+        refs: {
+          toggleKeyResolvedEl,
           uiScaleModeEl,
           uiScaleRangeEl,
           uiScaleNumberEl,
-          perfModeEl,
           inputScaleRangeEl,
           inputScaleNumberEl,
           inputScalePresetEl,
-          safeCall,
-          setTab,
-          syncRewardCharacterImageState,
-          requestInventoryPage,
-          getInventoryPage: () => inventoryPage,
-          setInventoryPageSize: (next) => {
-            inventoryPage.pageSize = next;
-          },
-          showConfirm,
-          t,
-          scheduleRenderQuick,
-          scheduleRenderRegistered,
-          renderUndo,
-          scheduleVirtualRender,
-          renderRewards,
-          onQuickBodyClick,
-          onUndoBodyClick,
-          onSaveSettings: saveSettingsFromUi,
-          updateToggleKeyResolved,
-          setCaptureToggleKey: (next) => {
-            captureToggleKey = !!next;
-          },
-          showToast,
-          closeLangMenu,
-          openLangMenu,
-          syncLangDropdown,
-          isLangMenuOpen: () => langMenuOpen,
-          loadUiScalePrefs,
-          syncUiScaleControls,
-          applyUiScaleFromPrefs,
-          syncInputScaleControls,
-          scheduleAutoUiScale,
-          getPerfMode: () => perfMode,
-          onPerfModeChanged,
-          onUiScaleModeChanged,
-          onManualScaleChange,
-          onInputScaleChange,
+          inputScalePillEl,
+          toastEl,
+          toastMetaEl,
+          toastMsgEl,
+        },
+        t,
+        KC,
+        safeCall,
+        clamp,
+        coalesce,
+        toHex32,
+        scheduleVirtualRender,
+      });
+
+      const uiRendering = uiRenderingApi.createUIRendering({
+        documentObj: document,
+        refs: {
+          statusEl,
+          countsEl,
+          langEl,
+          hotkeyEl,
+          inputScalePillEl,
+          lotdGatePillEl,
+          lotdGateWarnBannerEl,
+          langSelectEl,
+          langBtnLabelEl,
+          langMenuEl,
+          invMetaEl,
+          invPageSizeEl,
+          btnInvPrev,
+          btnInvNext,
+          quickVirtual: uiState.getQuickVirtual(),
+          regVirtual: uiState.getRegVirtual(),
+          undoBody,
+          undoMetaEl,
+          rewardOrbitEl,
+          rewardCharacterImgEl,
+          rewardImageFallbackEl,
+          rewardMetaEl: rewardMeta,
+          rewardsBody,
+          perfModeEl,
+        },
+        langUiApi: LANGUI,
+        rewardOrbitApi,
+        t,
+        tFmt,
+        coalesce,
+        clamp,
+        toHex32,
+        showToast: uiState.showToast,
+        updateToggleKeyResolved: uiState.updateToggleKeyResolved,
+        setToggleKeyInputFromDik: uiState.setToggleKeyInputFromDik,
+        setInputScale: uiState.setInputScale,
+        applyUiScaleFromPrefs: uiState.applyUiScaleFromPrefs,
+        applyPerfModeFromPrefs: uiState.applyPerfModeFromPrefs,
+        scheduleVirtualRender,
+        getCurrentUiScale: uiState.getCurrentUiScale,
+        getVirtualTableManager: ensureVirtualTablesManager,
+        getUiLang: uiState.getUiLang,
+        getState: uiState.getState,
+        getInventoryPage: uiState.getInventoryPage,
+        getQuickSelectedId: uiState.getQuickSelectedId,
+        setQuickSelectedId: uiState.setQuickSelectedId,
+        setQuickVisibleIds: uiState.setQuickVisibleIds,
+        getRegistered: uiState.getRegistered,
+        getUndoItems: uiState.getUndoItems,
+        getRewards: uiState.getRewards,
+        getSettings: uiState.getSettings,
+        getInputScale: uiState.getInputScale,
+        getLangMenuOpen: uiState.getLangMenuOpen,
+        setLangMenuOpen: uiState.setLangMenuOpen,
+        getLotdGateBlockingToastShown: uiState.getLotdGateBlockingToastShown,
+        setLotdGateBlockingToastShown: uiState.setLotdGateBlockingToastShown,
+        formatToggleKeyDisplay: uiState.formatToggleKeyDisplay,
+        getPerfMode: uiState.getPerfMode,
+      });
+
+      const {
+        applyI18n,
+        closeLangMenu,
+        syncLangDropdown,
+        openLangMenu,
+        setTab,
+        renderStatus,
+        renderQuickVirtual,
+        renderRegisteredVirtual,
+        renderQuick,
+        renderRegistered,
+        renderUndo,
+        syncRewardCharacterImageState,
+        renderRewards,
+        renderSettings,
+      } = uiRendering;
+
+      const nativeHandlers = nativeStateBridgeApi.createNativeStateBridge({
+        documentObj: document,
+        getUiLang: uiState.getUiLang,
+        setUiLang: uiState.setUiLang,
+        setStateValue: uiState.setState,
+        setInventoryPage: uiState.setInventoryPage,
+        setRegisteredItems: uiState.setRegistered,
+        setRewardsValue: uiState.setRewards,
+        setUndoItems: uiState.setUndoItems,
+        setSettingsValue: uiState.setSettings,
+        applyI18n,
+        renderStatus,
+        renderQuick,
+        renderRegistered,
+        renderUndo,
+        renderRewards,
+        renderSettings,
+        showToast: uiState.showToast,
+        resetQuickVirtualWindow: () => resetVirtualWindow(uiState.getQuickVirtual()),
+        resetRegisteredVirtualWindow: () => resetVirtualWindow(uiState.getRegVirtual()),
+        schedulePostRefreshVirtualResync,
+      });
+
+      if (nativeBridgeBootstrapApi && typeof nativeBridgeBootstrapApi.installNativeBridge === "function") {
+        nativeBridgeBootstrapApi.installNativeBridge({
+          interopBridgeApi,
+          windowObj: window,
+          coalesce,
+          onState: nativeHandlers.onState,
+          onInventory: nativeHandlers.onInventory,
+          onRegistered: nativeHandlers.onRegistered,
+          onRewards: nativeHandlers.onRewards,
+          onUndoList: nativeHandlers.onUndoList,
+          onSettings: nativeHandlers.onSettings,
+          onToast: nativeHandlers.onToast,
         });
-      }
-
-      function installInputCorrectionFallback() {
-        const rootEl = rootScrollEl;
-        if (!rootEl) return;
-
-        const INTERACTIVE_SEL = "button, input, select, textarea, a, [role='button'], [data-action], tr[data-row-id]";
-        const isElementNode = (node) => !!(node && node.nodeType === 1);
-        const pickInteractiveElement = (el) => {
-          if (!isElementNode(el)) return null;
-          if (el.matches && el.matches(INTERACTIVE_SEL)) return el;
-          if (el.closest) return el.closest(INTERACTIVE_SEL);
-          return null;
-        };
-        const makeMouseEventLike = (e, pt) =>
-          new MouseEvent("click", {
-            bubbles: true,
-            cancelable: true,
-            composed: true,
-            view: window,
-            detail: e.detail || 0,
-            screenX: e.screenX || 0,
-            screenY: e.screenY || 0,
-            clientX: pt.x,
-            clientY: pt.y,
-            button: e.button || 0,
-            buttons: e.buttons || 1,
-            ctrlKey: !!e.ctrlKey,
-            shiftKey: !!e.shiftKey,
-            altKey: !!e.altKey,
-            metaKey: !!e.metaKey,
-          });
-
-        let lastWheelTs = 0;
-        const wheelNow = (e) => {
-          const ts = typeof e.timeStamp === "number" && isFinite(e.timeStamp) ? e.timeStamp : 0;
-          if (ts > 0) return ts;
-          if (typeof performance !== "undefined" && performance.now) return performance.now();
-          return Date.now();
-        };
-        const normalizeWheelDelta = (e, container) => {
-          let dy = Number(e.deltaY || 0);
-          if (!isFinite(dy) || dy === 0) return 0;
-
-          const mode = Number(e.deltaMode || 0);
-          if (mode === 1) dy *= 16;
-          else if (mode === 2) dy *= Number(container.clientHeight || 800);
-
-          const uiScale = clamp(getCurrentUiScale(), 1.0, 3.0);
-          const abs = Math.abs(dy);
-          const now = wheelNow(e);
-          const dt = lastWheelTs > 0 ? now - lastWheelTs : 999;
-          lastWheelTs = now;
-
-          if (abs > 0 && abs < 12 && dt > 24) dy = Math.sign(dy) * 80 * uiScale;
-          else if (abs < 40) dy = dy * 1.5 * uiScale;
-          else dy = dy * uiScale;
-
-          const maxStep = Number(container.clientHeight || 800) * 0.45;
-          return clamp(dy, -maxStep, maxStep);
-        };
-
-        rootEl.addEventListener(
-          "wheel",
-          (e) => {
-            if (!e || e.isTrusted === false) return;
-            const maxScroll = Math.max(0, rootEl.scrollHeight - rootEl.clientHeight);
-            if (maxScroll <= 0) return;
-            const deltaPx = normalizeWheelDelta(e, rootEl);
-            if (!isFinite(deltaPx) || deltaPx === 0) return;
-            if (e.preventDefault) e.preventDefault();
-            if (e.stopPropagation) e.stopPropagation();
-            rootEl.scrollTop = clamp(rootEl.scrollTop + deltaPx, 0, maxScroll);
-          },
-          { passive: false }
-        );
-
-        let lastMouseupFixed = { t: 0, x: -9999, y: -9999 };
-        const nowMs = () => {
+      } else {
+        const parseJsonOr = (raw, fallback) => {
           try {
-            return Date.now();
+            return typeof raw === "string" ? JSON.parse(raw) : raw;
           } catch {
-            return 0;
+            return fallback;
           }
         };
 
-        document.addEventListener(
-          "mouseup",
-          (e) => {
-            if (!e || e.isTrusted === false) return;
-            if (e.button !== undefined && e.button !== 0) return;
-            if (isElementNode(e.target)) return;
-
-            const w = Number(window.innerWidth || 0);
-            const h = Number(window.innerHeight || 0);
-            if (!isFinite(w) || !isFinite(h) || w <= 0 || h <= 0) return;
-
-            const sx = clamp(inputScale, 0.5, 3.0);
-            const needsScale = isFinite(sx) && Math.abs(sx - 1.0) >= 0.01;
-            const cx = Number(e.clientX || 0);
-            const cy = Number(e.clientY || 0);
-            const clampPt = (pt) => ({
-              x: clamp(Math.round(pt.x), 0, Math.max(0, w - 1)),
-              y: clamp(Math.round(pt.y), 0, Math.max(0, h - 1)),
-            });
-
-            const candidates = [{ pt: clampPt({ x: cx, y: cy }) }];
-            if (needsScale) {
-              candidates.push({ pt: clampPt({ x: cx * sx, y: cy * sx }) });
-              candidates.push({ pt: clampPt({ x: cx / sx, y: cy / sx }) });
-            }
-
-            let best = null;
-            for (const c of candidates) {
-              const raw = document.elementFromPoint(c.pt.x, c.pt.y);
-              const picked = pickInteractiveElement(raw);
-              if (!picked) continue;
-              if (!rootEl.contains(picked)) continue;
-              best = { target: picked, pt: c.pt };
-              break;
-            }
-            if (!best) return;
-
-            lastMouseupFixed = { t: nowMs(), x: Math.round(cx), y: Math.round(cy) };
-            best.target.dispatchEvent(makeMouseEventLike(e, best.pt));
-          },
-          true
-        );
-
-        document.addEventListener(
-          "click",
-          (e) => {
-            const fixedAge = nowMs() - (lastMouseupFixed.t || 0);
-            if (fixedAge < 0 || fixedAge >= 250) return;
-
-            const cx0 = Math.round(Number(e.clientX || 0));
-            const cy0 = Math.round(Number(e.clientY || 0));
-            if (Math.abs(cx0 - lastMouseupFixed.x) <= 1 && Math.abs(cy0 - lastMouseupFixed.y) <= 1) {
-              if (e.preventDefault) e.preventDefault();
-              if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-              else if (e.stopPropagation) e.stopPropagation();
-            }
-          },
-          true
-        );
+        window.copng_setState = (jsonStr) => nativeHandlers.onState(parseJsonOr(jsonStr, {}) || {});
+        window.copng_setInventory = (jsonStr) =>
+          nativeHandlers.onInventory(parseJsonOr(jsonStr, { page: 0, pageSize: 200, total: 0, hasMore: false, items: [] }));
+        window.copng_setRegistered = (jsonStr) => nativeHandlers.onRegistered(parseJsonOr(jsonStr, []));
+        window.copng_setRewards = (jsonStr) => nativeHandlers.onRewards(parseJsonOr(jsonStr, { totals: [] }));
+        window.copng_setUndoList = (jsonStr) => nativeHandlers.onUndoList(parseJsonOr(jsonStr, []));
+        window.copng_setSettings = (jsonStr) => nativeHandlers.onSettings(parseJsonOr(jsonStr, null));
+        window.copng_toast = (jsonStr) => nativeHandlers.onToast({ level: "info", message: String(jsonStr || "") });
       }
 
-      // Initial pull
-      safeCall("copng_requestState", {});
-      safeCall("copng_getSettings", {});
-      safeCall("copng_requestUndoList", {});
-      // High DPI click correction + direct wheel scrolling are isolated in a
-      // dedicated module to keep this bootstrap script focused on state/render.
-      if (inputCorrectionApi && typeof inputCorrectionApi.installInputCorrection === "function") {
-        inputCorrectionApi.installInputCorrection({
-          documentObj: document,
-          windowObj: window,
-          rootEl: rootScrollEl,
-          clamp,
-          getCurrentUiScale,
-          getInputScale: () => inputScale,
-        });
-      } else {
-        safeCall("copng_log", {
-          level: "warn",
-          message: "input_correction.js unavailable; using fallback input correction",
-        });
-        installInputCorrectionFallback();
-      }
+      const uiInteractions = uiInteractionsApi.createUIInteractions({
+        documentObj: document,
+        rootScrollEl,
+        quickBody,
+        undoBody,
+        stateApi: uiState,
+        safeCall,
+        t,
+        KC,
+        renderQuick,
+        renderRegistered,
+        clamp,
+        getOffsetTopInRoot,
+        quickRowBasePx: QUICK_ROW_BASE_PX,
+      });
 
-      // Emergency close + hotkeys/shortcuts live in a separate module to keep index.html maintainable.
-      if (inputShortcutsApi && typeof inputShortcutsApi.installKeydownHandler === "function") {
-        inputShortcutsApi.installKeydownHandler({
-          KC,
-          t,
-          showToast,
-          safeCall,
-          setTab,
-          setInputScale,
-          getInputScale: () => inputScale,
-          getToggleKeyDik,
-          setToggleKeyInputFromDik,
-          formatToggleKeyDisplay,
-          getCaptureToggleKey: () => captureToggleKey,
-          setCaptureToggleKey: (next) => {
-            captureToggleKey = !!next;
-          },
-          isLangMenuOpen: () => langMenuOpen,
-          closeLangMenu,
-          getQuickVisibleIds: () => quickVisibleIds,
-          getQuickSelectedId: () => quickSelectedId,
-          setQuickSelected,
-          scrollQuickIndexIntoView,
-          scheduleVirtualRender,
-          getKeyNavRaf: () => keyNavRaf,
-          setKeyNavRaf: (next) => {
-            keyNavRaf = next;
-          },
-          toHex32,
-          documentObj: document,
-          windowObj: window,
-          requestAnimationFrameFn: requestAnimationFrame,
-        });
-      } else {
-        // Last-resort fallback: keep ESC close available even if module loading fails.
-        window.addEventListener("keydown", (e) => {
-          const key = String((e && e.key) || "");
-          const code = String((e && e.code) || "");
-          const keyCode = Number((e && (e.keyCode || e.which)) || 0) || 0;
-          const isEscape = key === "Escape" || code === "Escape" || keyCode === 27;
-          if (!isEscape) return;
-          if (e && e.preventDefault) e.preventDefault();
-          safeCall("copng_requestToggle", {});
-        });
-      }
-
-      safeCall("copng_log", { level: "info", message: "UI loaded" });
+      uiBootstrapApi.initializeUI({
+        uiWiringApi,
+        inputCorrectionApi,
+        inputShortcutsApi,
+        stateApi: uiState,
+        interactionsApi: uiInteractions,
+        renderingApi: uiRendering,
+        safeCall,
+        documentObj: document,
+        windowObj: window,
+        rootScrollEl,
+        quickBody,
+        undoBody,
+        rewardCharacterImgEl,
+        invPageSizeEl,
+        btnInvPrev,
+        btnInvNext,
+        btnCaptureToggleKeyEl,
+        langBtnEl,
+        langMenuEl,
+        langSelectEl,
+        uiScaleModeEl,
+        uiScaleRangeEl,
+        uiScaleNumberEl,
+        perfModeEl,
+        inputScaleRangeEl,
+        inputScaleNumberEl,
+        inputScalePresetEl,
+        t,
+        KC,
+        scheduleVirtualRender,
+        requestAnimationFrameFn: requestAnimationFrame,
+      });
     </script>
   </body>
 </html>

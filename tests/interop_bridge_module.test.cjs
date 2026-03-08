@@ -5,15 +5,48 @@ const path = require("node:path");
 
 const viewPath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "index.html");
 const modulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "interop_bridge.js");
+const nativeBridgeBootstrapModulePath = path.join(
+  __dirname,
+  "..",
+  "PrismaUI",
+  "views",
+  "codexofpowerng",
+  "native_bridge_bootstrap.js",
+);
+const nativeStateBridgeModulePath = path.join(
+  __dirname,
+  "..",
+  "PrismaUI",
+  "views",
+  "codexofpowerng",
+  "native_state_bridge.js",
+);
 
 const html = fs.readFileSync(viewPath, "utf8");
 const mod = require(modulePath);
+const nativeBridgeBootstrap = require(nativeBridgeBootstrapModulePath);
+const nativeStateBridge = require(nativeStateBridgeModulePath);
 
 test("view loads interop bridge module", () => {
   assert.match(
     html,
     /<script src="interop_bridge\.js"><\/script>/,
     "index.html should load interop_bridge.js before inline script",
+  );
+  assert.match(
+    html,
+    /<script src="ui_rendering\.js"><\/script>/,
+    "index.html should load ui_rendering.js before inline script",
+  );
+  assert.match(
+    html,
+    /<script src="native_bridge_bootstrap\.js"><\/script>/,
+    "index.html should load native_bridge_bootstrap.js before inline script",
+  );
+  assert.match(
+    html,
+    /<script src="native_state_bridge\.js"><\/script>/,
+    "index.html should load native_state_bridge.js before inline script",
   );
 });
 
@@ -22,6 +55,7 @@ test("interop bridge exports expected API", () => {
   assert.equal(typeof mod.normalizeInventoryPayload, "function");
   assert.equal(typeof mod.normalizeToastPayload, "function");
   assert.equal(typeof mod.installNativeCallbacks, "function");
+  assert.equal(typeof nativeStateBridge.createNativeStateBridge, "function");
 });
 
 test("inventory normalization supports array/object/fallback", () => {
@@ -121,4 +155,33 @@ test("installNativeCallbacks wires global callbacks and forwards normalized payl
   detach();
   assert.equal(win.copng_setState, undefined);
   assert.equal(win.copng_setInventory, undefined);
+});
+
+test("native bridge bootstrap falls back when interop helper is unavailable", () => {
+  const win = {};
+  const received = {
+    inventory: null,
+    toast: null,
+  };
+
+  const detach = nativeBridgeBootstrap.installNativeBridge({
+    windowObj: win,
+    interopBridgeApi: null,
+    onInventory: (v) => {
+      received.inventory = v;
+    },
+    onToast: (v) => {
+      received.toast = v;
+    },
+  });
+
+  win.copng_setInventory('[{"formId":4660}]');
+  win.copng_toast("fallback toast");
+
+  assert.equal(received.inventory.total, 1);
+  assert.deepEqual(received.toast, { level: "info", message: "fallback toast" });
+
+  detach();
+  assert.equal(win.copng_setInventory, undefined);
+  assert.equal(win.copng_toast, undefined);
 });

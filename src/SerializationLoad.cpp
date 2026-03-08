@@ -4,7 +4,7 @@
 #include "CodexOfPowerNG/Registration.h"
 #include "CodexOfPowerNG/RewardCaps.h"
 #include "CodexOfPowerNG/Rewards.h"
-#include "CodexOfPowerNG/State.h"
+#include "CodexOfPowerNG/SerializationStateStore.h"
 
 #include <SKSE/Interfaces.h>
 #include <SKSE/Logger.h>
@@ -96,12 +96,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 		std::uint32_t type{};
 		std::uint32_t version{};
 		std::uint32_t length{};
-		std::unordered_map<RE::FormID, std::uint32_t>                 loadedRegisteredItems;
-		std::unordered_set<RE::FormID>                                loadedBlockedItems;
-		std::unordered_set<RE::FormID>                                loadedNotifiedItems;
-		std::unordered_map<RE::ActorValue, float, ActorValueHash>     loadedRewardTotals;
-		std::deque<Registration::UndoRecord>                          loadedUndoHistory;
-		std::uint64_t                                                 loadedUndoNextActionId{ 1 };
+		SerializationStateStore::Snapshot loadedState{};
 
 		while (a_intfc->GetNextRecordInfo(type, version, length)) {
 			switch (type) {
@@ -135,7 +130,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 							continue;
 						}
 
-						loadedRegisteredItems.emplace(newId, kGroupUnknown);
+					loadedState.registeredItems.emplace(newId, kGroupUnknown);
 					}
 				} else if (version == 2) {
 					const auto entrySize = static_cast<std::uint32_t>(sizeof(RE::FormID) + sizeof(std::uint32_t));
@@ -158,7 +153,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 							continue;
 						}
 
-						loadedRegisteredItems.emplace(newId, group);
+						loadedState.registeredItems.emplace(newId, group);
 					}
 				} else {
 					SKSE::log::warn("Unsupported REGI version {}", version);
@@ -197,9 +192,9 @@ namespace CodexOfPowerNG::Serialization::Internal
 					}
 
 					if (type == kRecordBlockedItems) {
-						loadedBlockedItems.insert(newId);
+						loadedState.blockedItems.insert(newId);
 					} else {
-						loadedNotifiedItems.insert(newId);
+						loadedState.notifiedItems.insert(newId);
 					}
 				}
 
@@ -248,7 +243,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 							total,
 							clamped);
 					}
-					loadedRewardTotals.insert_or_assign(av, clamped);
+					loadedState.rewardTotals.insert_or_assign(av, clamped);
 				}
 
 				const auto skippedEntries = readableCount - readCount;
@@ -279,7 +274,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 					sizeof(std::uint64_t) + sizeof(RE::FormID) + sizeof(RE::FormID) + sizeof(std::uint32_t) + sizeof(std::uint32_t));
 				const auto rewardDeltaSize = static_cast<std::uint32_t>(sizeof(std::uint32_t) + sizeof(float));
 
-				loadedUndoHistory.clear();
+				loadedState.undoHistory.clear();
 				for (std::uint32_t i = 0; i < count && remaining >= undoHeaderSize; ++i) {
 					Registration::UndoRecord entry{};
 					std::uint32_t            rewardCount{};
@@ -349,17 +344,17 @@ namespace CodexOfPowerNG::Serialization::Internal
 					entry.regKey = newRegKey;
 					entry.formId = newFormId;
 
-					loadedUndoHistory.push_back(std::move(entry));
-					while (loadedUndoHistory.size() > Registration::kUndoHistoryLimit) {
-						loadedUndoHistory.pop_front();
+					loadedState.undoHistory.push_back(std::move(entry));
+					while (loadedState.undoHistory.size() > Registration::kUndoHistoryLimit) {
+						loadedState.undoHistory.pop_front();
 					}
 				}
 
-				if (!loadedUndoHistory.empty()) {
-					const auto maxActionId = loadedUndoHistory.back().actionId + 1;
-					loadedUndoNextActionId = (std::max)(nextActionId, maxActionId);
+				if (!loadedState.undoHistory.empty()) {
+					const auto maxActionId = loadedState.undoHistory.back().actionId + 1;
+					loadedState.undoNextActionId = (std::max)(nextActionId, maxActionId);
 				} else {
-					loadedUndoNextActionId = (std::max)(nextActionId, std::uint64_t{ 1 });
+					loadedState.undoNextActionId = (std::max)(nextActionId, std::uint64_t{ 1 });
 				}
 
 				if (remaining > 0) {
@@ -374,16 +369,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 			}
 		}
 
-		auto& state = GetState();
-		{
-			std::scoped_lock lock(state.mutex);
-			state.registeredItems = std::move(loadedRegisteredItems);
-			state.blockedItems = std::move(loadedBlockedItems);
-			state.notifiedItems = std::move(loadedNotifiedItems);
-			state.rewardTotals = std::move(loadedRewardTotals);
-			state.undoHistory = std::move(loadedUndoHistory);
-			state.undoNextActionId = loadedUndoNextActionId;
-		}
+		SerializationStateStore::ReplaceState(std::move(loadedState));
 		Registration::InvalidateQuickRegisterCache();
 	}
 }

@@ -1,6 +1,7 @@
 #include "RewardsSyncEngine.h"
 
 #include "CodexOfPowerNG/RewardCaps.h"
+#include "CodexOfPowerNG/RewardStateStore.h"
 #include "CodexOfPowerNG/RewardsResync.h"
 #include "CodexOfPowerNG/RewardsSyncPolicy.h"
 
@@ -31,12 +32,7 @@ namespace CodexOfPowerNG::Rewards::Engine
 			float delta{ 0.0f };
 		};
 
-		struct RewardCapAdjustment
-		{
-			RE::ActorValue av;
-			float          before;
-			float          after;
-		};
+		using RewardCapAdjustment = RewardStateStore::RewardCapAdjustment;
 
 		[[nodiscard]] RE::ExtraDataList* PickFirstExtraDataList(RE::InventoryEntryData* entry) noexcept
 		{
@@ -85,17 +81,11 @@ namespace CodexOfPowerNG::Rewards::Engine
 
 		void MigrateLegacyAttackDamageMultReward(RewardSyncPassState& passState) noexcept
 		{
-			float legacyTotal = 0.0f;
-			{
-				auto& state = GetState();
-				std::scoped_lock lock(state.mutex);
-				const auto it = state.rewardTotals.find(RE::ActorValue::kAttackDamageMult);
-				if (it == state.rewardTotals.end()) {
-					return;
-				}
-				legacyTotal = it->second;
-				state.rewardTotals.erase(it);
+			const auto legacyTotalOpt = RewardStateStore::Take(RE::ActorValue::kAttackDamageMult);
+			if (!legacyTotalOpt) {
+				return;
 			}
+			const float legacyTotal = *legacyTotalOpt;
 
 			if (std::abs(legacyTotal) <= kRewardCapEpsilon) {
 				return;
@@ -192,20 +182,7 @@ namespace CodexOfPowerNG::Rewards::Engine
 
 		[[nodiscard]] std::vector<RewardCapAdjustment> ClampRewardTotalsInState() noexcept
 		{
-			std::vector<RewardCapAdjustment> adjustments;
-			auto& state = GetState();
-			std::scoped_lock lock(state.mutex);
-			adjustments.reserve(state.rewardTotals.size());
-			for (auto& [av, total] : state.rewardTotals) {
-				const float clamped = ClampRewardTotal(av, total);
-				if (std::abs(clamped - total) <= kRewardCapEpsilon) {
-					continue;
-				}
-
-				adjustments.push_back(RewardCapAdjustment{ av, total, clamped });
-				total = clamped;
-			}
-			return adjustments;
+			return RewardStateStore::ClampAll();
 		}
 
 		void ApplyRewardCapAdjustmentsToPlayer(const std::vector<RewardCapAdjustment>& adjustments) noexcept
@@ -269,14 +246,12 @@ namespace CodexOfPowerNG::Rewards::Engine
 
 	float SnapshotRewardTotalForActorValue(RE::ActorValue av) noexcept
 	{
-		auto& state = GetState();
-		std::scoped_lock lock(state.mutex);
-		const auto it = state.rewardTotals.find(av);
-		if (it == state.rewardTotals.end()) {
+		const auto totalOpt = RewardStateStore::Get(av);
+		if (!totalOpt) {
 			return 0.0f;
 		}
 
-		const float clamped = ClampRewardTotal(av, it->second);
+		const float clamped = ClampRewardTotal(av, *totalOpt);
 		const float applied = ActorAppliedRewardTotal(av, clamped);
 		return (std::abs(applied) > kRewardCapEpsilon) ? applied : 0.0f;
 	}
@@ -290,10 +265,7 @@ namespace CodexOfPowerNG::Rewards::Engine
 	std::vector<std::pair<RE::ActorValue, float>> SnapshotRewardTotals() noexcept
 	{
 		std::vector<std::pair<RE::ActorValue, float>> totals;
-		auto& state = GetState();
-		std::scoped_lock lock(state.mutex);
-		totals.reserve(state.rewardTotals.size());
-		for (const auto& [av, total] : state.rewardTotals) {
+		for (const auto& [av, total] : RewardStateStore::Snapshot()) {
 			const float clamped = ClampRewardTotal(av, total);
 			const float applied = ActorAppliedRewardTotal(av, clamped);
 			if (std::abs(applied) > kRewardCapEpsilon) {

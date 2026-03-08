@@ -7,6 +7,7 @@ const rulesPath = path.join(__dirname, "..", "src", "RegistrationRules.cpp");
 const regPaths = [
   path.join(__dirname, "..", "src", "Registration.cpp"),
   path.join(__dirname, "..", "src", "RegistrationQuickRegister.cpp"),
+  path.join(__dirname, "..", "src", "RegistrationQuickListBuilder.cpp"),
 ];
 
 test("ammo is grouped as weapons for discovery categories", () => {
@@ -31,7 +32,10 @@ test("quick register list uses live inventory count API", () => {
 });
 
 test("quick register excludes quest objects both in the list and at consume time", () => {
-  const src = fs.readFileSync(path.join(__dirname, "..", "src", "RegistrationQuickRegister.cpp"), "utf8");
+  const src = regPaths
+    .filter((p) => fs.existsSync(p))
+    .map((p) => fs.readFileSync(p, "utf8"))
+    .join("\n");
   const questChecks = src.match(/IsQuestObject\(\)/g) || [];
 
   assert.ok(

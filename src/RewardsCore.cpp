@@ -3,8 +3,8 @@
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/RewardCaps.h"
+#include "CodexOfPowerNG/RewardStateStore.h"
 #include "CodexOfPowerNG/Rewards.h"
-#include "CodexOfPowerNG/State.h"
 
 #include <RE/Skyrim.h>
 
@@ -52,13 +52,11 @@ namespace CodexOfPowerNG::Rewards::Internal
 			return outcome;
 		}
 
-		auto& state = GetState();
-		std::scoped_lock lock(state.mutex);
-		auto& total = state.rewardTotals[av];
-		const float clampedTotal = ClampRewardTotal(av, total + delta);
-		outcome.stateDelta = clampedTotal - total;
-		outcome.actorDelta = ActorAppliedRewardTotal(av, clampedTotal) - ActorAppliedRewardTotal(av, total);
-		total = clampedTotal;
+		const auto transition = RewardStateStore::AdjustClamped(av, delta);
+		outcome.stateDelta = transition.nextTotal - transition.previousTotal;
+		outcome.actorDelta =
+			ActorAppliedRewardTotal(av, transition.nextTotal) -
+			ActorAppliedRewardTotal(av, transition.previousTotal);
 		if (std::abs(outcome.stateDelta) <= kRewardCapEpsilon) {
 			outcome.stateDelta = 0.0f;
 		}

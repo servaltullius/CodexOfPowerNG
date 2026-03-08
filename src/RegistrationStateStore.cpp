@@ -158,6 +158,13 @@ namespace CodexOfPowerNG::RegistrationStateStore
 				}
 				return out;
 			}
+
+			std::size_t RegisteredCount() noexcept override
+			{
+				auto& state = GetState();
+				std::scoped_lock lock(state.mutex);
+				return state.registeredItems.size();
+			}
 		};
 
 		RuntimeRegistrationStateStore           g_runtimeStore;
@@ -235,5 +242,10 @@ namespace CodexOfPowerNG::RegistrationStateStore
 	std::vector<std::pair<RE::FormID, std::uint32_t>> SnapshotRegisteredItems() noexcept
 	{
 		return GetStore().SnapshotRegisteredItems();
+	}
+
+	std::size_t RegisteredCount() noexcept
+	{
+		return GetStore().RegisteredCount();
 	}
 }

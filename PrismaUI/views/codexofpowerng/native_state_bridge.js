@@ -42,6 +42,7 @@
     const resetQuickVirtualWindow = asFn(options.resetQuickVirtualWindow, noop);
     const resetRegisteredVirtualWindow = asFn(options.resetRegisteredVirtualWindow, noop);
     const schedulePostRefreshVirtualResync = asFn(options.schedulePostRefreshVirtualResync, noop);
+    const isTabActive = asFn(options.isTabActive, () => true);
 
     function syncLanguage(nextLang) {
       const resolved = nextLang === "ko" ? "ko" : "en";
@@ -57,34 +58,34 @@
         syncLanguage(typeof resolvedState.language === "string" ? resolvedState.language : getUiLang());
         applyI18n();
         renderStatus();
-        renderQuick();
-        renderRegistered();
-        renderUndo();
-        renderRewards();
       },
 
       onInventory(nextInventoryPage) {
         setInventoryPage(nextInventoryPage);
         resetQuickVirtualWindow();
-        renderQuick();
-        schedulePostRefreshVirtualResync();
+        if (isTabActive("tabQuick")) {
+          renderQuick();
+          schedulePostRefreshVirtualResync();
+        }
       },
 
       onRegistered(nextRegistered) {
         setRegisteredItems(nextRegistered);
         resetRegisteredVirtualWindow();
-        renderRegistered();
-        schedulePostRefreshVirtualResync();
+        if (isTabActive("tabRegistered")) {
+          renderRegistered();
+          schedulePostRefreshVirtualResync();
+        }
       },
 
       onRewards(nextRewards) {
         setRewardsValue(normalizeRewardsPayload(nextRewards));
-        renderRewards();
+        if (isTabActive("tabRewards")) renderRewards();
       },
 
       onUndoList(nextUndoItems) {
         setUndoItems(normalizeUndoItems(nextUndoItems));
-        renderUndo();
+        if (isTabActive("tabUndo")) renderUndo();
       },
 
       onSettings(nextSettings) {

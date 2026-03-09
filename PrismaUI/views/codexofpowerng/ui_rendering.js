@@ -190,6 +190,17 @@
       langMenuEl.classList.add("open");
     }
 
+    function getActiveTabId() {
+      if (!documentObj || typeof documentObj.querySelector !== "function") return "tabQuick";
+      const activeSection = documentObj.querySelector(".section.active");
+      const activeTabId = activeSection && typeof activeSection.id === "string" ? activeSection.id : "";
+      return activeTabId || "tabQuick";
+    }
+
+    function isTabActive(tabId) {
+      return getActiveTabId() === String(tabId || "");
+    }
+
     function setTab(tabId) {
       if (!documentObj) return;
       documentObj.querySelectorAll(".tabs button").forEach((btn) =>
@@ -198,6 +209,7 @@
       documentObj.querySelectorAll(".section").forEach((sec) =>
         sec.classList.toggle("active", sec.id === tabId),
       );
+      renderTab(tabId);
       scheduleVirtualRender({ force: true });
     }
 
@@ -414,6 +426,31 @@
       applyPerfModeFromPrefs();
     }
 
+    function renderTab(tabId) {
+      const nextTabId = String(tabId || "");
+      if (nextTabId === "tabRegistered") {
+        renderRegistered();
+        return;
+      }
+      if (nextTabId === "tabUndo") {
+        renderUndo();
+        return;
+      }
+      if (nextTabId === "tabRewards") {
+        renderRewards();
+        return;
+      }
+      if (nextTabId === "tabSettings") {
+        renderSettings();
+        return;
+      }
+      renderQuick();
+    }
+
+    function renderActiveTab() {
+      renderTab(getActiveTabId());
+    }
+
     function applyI18n() {
       if (!documentObj) return;
       documentObj.querySelectorAll("[data-i18n-html]").forEach((el) => {
@@ -434,8 +471,7 @@
 
       syncLangDropdown();
       updateToggleKeyResolved();
-      renderUndo();
-      renderRewards();
+      renderActiveTab();
     }
 
     return Object.freeze({
@@ -444,7 +480,11 @@
       closeLangMenu,
       syncLangDropdown,
       openLangMenu,
+      getActiveTabId,
+      isTabActive,
       setTab,
+      renderTab,
+      renderActiveTab,
       renderStatus,
       renderQuickVirtual,
       renderRegisteredVirtual,

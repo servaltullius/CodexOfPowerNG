@@ -9,6 +9,21 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-03-09
+
+### Changed
+- Finalized the 1.1.0 release track by carrying the PrismaUI modularization, host-testable state-store seams, and release packaging validation work from the pre-release line into the stable release.
+- Made PrismaUI native refresh handling tab-aware so inventory, registered-list, reward, and undo updates only re-render the active tab instead of refreshing every panel on each native payload.
+- Tuned virtualized list defaults to use a slightly wider overscan window and a faster render throttle for smoother refresh convergence in the Quick/Register views.
+
+### Fixed
+- Reduced redundant cross-tab refresh and post-refresh resync work that could occur after native inventory/registration updates, improving UI responsiveness without changing gameplay rules.
+
+### Notes
+- Detailed release note: `docs/releases/v1.1.0.md`
+- This stable release consolidates the 1.1.0 pre-release track and adds final PrismaUI refresh/virtualization polish.
+- Save compatibility policy remains unchanged: Codex of Power / SVCollection is not compatible.
+
 ## [1.1.0-rc.4] - 2026-03-08 (Pre-release)
 
 ### Added
@@ -242,7 +257,8 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 - Reduced frame hitches by queueing settings writes and localization reloads off the hot path.
 - Added defensive handling for stale legacy MCM/keybind files that can interfere with NG startup/runtime behavior.
 
-[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.1.0-rc.4...HEAD
+[Unreleased]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.1.0-rc.4...v1.1.0
 [1.1.0-rc.4]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.1.0-rc.4
 [1.1.0-rc.3]: https://github.com/servaltullius/CodexOfPowerNG/releases/tag/v1.1.0-rc.3
 [1.0.8]: https://github.com/servaltullius/CodexOfPowerNG/compare/v1.0.7...v1.0.8

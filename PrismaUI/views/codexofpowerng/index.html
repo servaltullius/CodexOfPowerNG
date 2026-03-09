@@ -986,7 +986,7 @@
 
       const QUICK_ROW_BASE_PX = 78;
       const REG_ROW_BASE_PX = 54;
-      const VIRTUAL_OVERSCAN = 15;
+      const VIRTUAL_OVERSCAN = 24;
       const VIRTUAL_MIN_ROWS = 24;
       const virtualTablesApi = (typeof window !== "undefined" && window.COPNGVirtualTables) || null;
       const uiWiringApi = (typeof window !== "undefined" && window.COPNGUIWiring) || null;
@@ -1033,7 +1033,7 @@
         return Number(re.top || 0) - Number(rr.top || 0) + Number(rootEl.scrollTop || 0);
       }
 
-      const VIRTUAL_RENDER_THROTTLE_MS = 32;
+      const VIRTUAL_RENDER_THROTTLE_MS = 16;
       let virtualTablesManager = null;
 
       function ensureVirtualTablesManager() {
@@ -1221,6 +1221,7 @@
         renderUndo,
         renderRewards,
         renderSettings,
+        isTabActive: uiRendering.isTabActive,
         showToast: uiState.showToast,
         resetQuickVirtualWindow: () => resetVirtualWindow(uiState.getQuickVirtual()),
         resetRegisteredVirtualWindow: () => resetVirtualWindow(uiState.getRegVirtual()),

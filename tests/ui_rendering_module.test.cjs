@@ -38,7 +38,11 @@ test("index delegates render layer to ui_rendering module", () => {
 
 test("ui_rendering module owns i18n, tab, and list/reward/settings renderers", () => {
   assert.match(moduleSource, /function applyI18n\(/);
+  assert.match(moduleSource, /function getActiveTabId\(/);
+  assert.match(moduleSource, /function isTabActive\(/);
   assert.match(moduleSource, /function setTab\(/);
+  assert.match(moduleSource, /function renderTab\(/);
+  assert.match(moduleSource, /function renderActiveTab\(/);
   assert.match(moduleSource, /function renderStatus\(/);
   assert.match(moduleSource, /function renderQuick\(/);
   assert.match(moduleSource, /function renderRegistered\(/);

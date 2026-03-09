@@ -35,20 +35,20 @@ test("virtualized tables schedule a second forced pass after list refresh", () =
 
   assert.match(
     html,
-    /const nativeHandlers = nativeStateBridgeApi\.createNativeStateBridge\(\{[\s\S]*schedulePostRefreshVirtualResync[\s\S]*\}\);/,
-    "Native state bridge wiring should receive the post-refresh virtual resync callback",
+    /const nativeHandlers = nativeStateBridgeApi\.createNativeStateBridge\(\{[\s\S]*isTabActive:\s*uiRendering\.isTabActive,[\s\S]*schedulePostRefreshVirtualResync[\s\S]*\}\);/,
+    "Native state bridge wiring should receive active-tab gating and post-refresh virtual resync callbacks",
   );
 
   assert.match(
     nativeStateBridgeModuleSource,
-    /onInventory\(nextInventoryPage\)\s*\{[\s\S]*renderQuick\(\);[\s\S]*schedulePostRefreshVirtualResync\(\);[\s\S]*\}/,
-    "Inventory native callback should trigger post-refresh virtual resync via native_state_bridge.js",
+    /onInventory\(nextInventoryPage\)\s*\{[\s\S]*if \(isTabActive\("tabQuick"\)\) \{[\s\S]*renderQuick\(\);[\s\S]*schedulePostRefreshVirtualResync\(\);[\s\S]*\}[\s\S]*\}/,
+    "Inventory native callback should only re-render and resync when the quick tab is active",
   );
 
   assert.match(
     nativeStateBridgeModuleSource,
-    /onRegistered\(nextRegistered\)\s*\{[\s\S]*renderRegistered\(\);[\s\S]*schedulePostRefreshVirtualResync\(\);[\s\S]*\}/,
-    "Registered native callback should trigger post-refresh virtual resync via native_state_bridge.js",
+    /onRegistered\(nextRegistered\)\s*\{[\s\S]*if \(isTabActive\("tabRegistered"\)\) \{[\s\S]*renderRegistered\(\);[\s\S]*schedulePostRefreshVirtualResync\(\);[\s\S]*\}[\s\S]*\}/,
+    "Registered native callback should only re-render and resync when the registered tab is active",
   );
 
   assert.match(

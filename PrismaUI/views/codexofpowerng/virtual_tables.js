@@ -61,9 +61,9 @@
 
     const quickRowBasePx = Number.isFinite(Number(options.quickRowBasePx)) ? Number(options.quickRowBasePx) : 78;
     const regRowBasePx = Number.isFinite(Number(options.regRowBasePx)) ? Number(options.regRowBasePx) : 54;
-    const overscan = Number.isFinite(Number(options.overscan)) ? Number(options.overscan) : 15;
+    const overscan = Number.isFinite(Number(options.overscan)) ? Number(options.overscan) : 24;
     const minRows = Number.isFinite(Number(options.minRows)) ? Number(options.minRows) : 24;
-    const renderThrottleMs = Number.isFinite(Number(options.renderThrottleMs)) ? Number(options.renderThrottleMs) : 32;
+    const renderThrottleMs = Number.isFinite(Number(options.renderThrottleMs)) ? Number(options.renderThrottleMs) : 16;
 
     const documentObj = options.documentObj || (global && global.document) || null;
     const requestAnimationFrameFn =

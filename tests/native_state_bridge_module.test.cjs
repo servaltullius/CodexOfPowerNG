@@ -31,6 +31,7 @@ test("native state bridge exports expected API", () => {
 
 test("native state bridge updates state, language, renders, and refresh resync hooks", () => {
   const documentObj = { documentElement: { lang: "en" } };
+  let activeTabId = "tabQuick";
   const recorded = {
     uiLang: "en",
     state: null,
@@ -79,30 +80,34 @@ test("native state bridge updates state, language, renders, and refresh resync h
     resetQuickVirtualWindow: () => recorded.order.push("resetQuick"),
     resetRegisteredVirtualWindow: () => recorded.order.push("resetRegistered"),
     schedulePostRefreshVirtualResync: () => recorded.order.push("resync"),
+    isTabActive: (tabId) => activeTabId === tabId,
   });
 
   bridge.onState({ language: "ko", registeredCount: 3 });
   assert.equal(recorded.uiLang, "ko");
   assert.equal(documentObj.documentElement.lang, "ko");
-  assert.deepEqual(recorded.order.slice(0, 6), [
-    "applyI18n",
-    "renderStatus",
-    "renderQuick",
-    "renderRegistered",
-    "renderUndo",
-    "renderRewards",
-  ]);
+  assert.deepEqual(recorded.order.slice(0, 2), ["applyI18n", "renderStatus"]);
 
   bridge.onInventory({ page: 2, items: [] });
+  activeTabId = "tabQuick";
+  bridge.onInventory({ page: 3, items: [{ formId: 1 }] });
+  activeTabId = "tabRegistered";
   bridge.onRegistered([{ formId: 1 }]);
-  assert.deepEqual(recorded.inventory, { page: 2, items: [] });
-  assert.deepEqual(recorded.registered, [{ formId: 1 }]);
+  activeTabId = "tabQuick";
+  bridge.onRegistered([{ formId: 2 }]);
+  assert.deepEqual(recorded.inventory, { page: 3, items: [{ formId: 1 }] });
+  assert.deepEqual(recorded.registered, [{ formId: 2 }]);
   assert.ok(recorded.order.includes("resetQuick"));
   assert.ok(recorded.order.includes("resetRegistered"));
-  assert.equal(recorded.order.filter((x) => x === "resync").length, 2);
+  assert.equal(recorded.order.filter((x) => x === "resync").length, 3);
+  assert.equal(recorded.order.filter((x) => x === "renderQuick").length, 2);
+  assert.equal(recorded.order.filter((x) => x === "renderRegistered").length, 1);
 
+  activeTabId = "tabQuick";
   bridge.onRewards(null);
+  activeTabId = "tabUndo";
   bridge.onUndoList({ nope: true });
+  activeTabId = "tabQuick";
   bridge.onSettings({ languageOverride: "en" });
   bridge.onToast({ level: "warn", message: "toast" });
 
@@ -111,5 +116,7 @@ test("native state bridge updates state, language, renders, and refresh resync h
   assert.equal(recorded.uiLang, "en");
   assert.equal(documentObj.documentElement.lang, "en");
   assert.deepEqual(recorded.toast, { level: "warn", message: "toast" });
+  assert.equal(recorded.order.filter((x) => x === "renderRewards").length, 0);
+  assert.equal(recorded.order.filter((x) => x === "renderUndo").length, 1);
   assert.ok(recorded.order.includes("renderSettings"));
 });

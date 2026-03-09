@@ -13,10 +13,12 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ### Changed
 - Finalized the 1.1.0 release track by carrying the PrismaUI modularization, host-testable state-store seams, and release packaging validation work from the pre-release line into the stable release.
+- Expanded the quick-register safety path so active quest items are filtered more conservatively both when building the list and immediately before consumption/registration.
 - Made PrismaUI native refresh handling tab-aware so inventory, registered-list, reward, and undo updates only re-render the active tab instead of refreshing every panel on each native payload.
 - Tuned virtualized list defaults to use a slightly wider overscan window and a faster render throttle for smoother refresh convergence in the Quick/Register views.
 
 ### Fixed
+- Hardened quick-register quest-item protection after user feedback about items that could still appear in the list or slip through during registration timing races.
 - Reduced redundant cross-tab refresh and post-refresh resync work that could occur after native inventory/registration updates, improving UI responsiveness without changing gameplay rules.
 
 ### Notes

@@ -12,6 +12,26 @@ namespace CodexOfPowerNG::Registration::Internal
 {
 	namespace
 	{
+		[[nodiscard]] std::string DetermineDisabledReason(
+			bool questProtected,
+			TccGateDecision tccGate,
+			const Inventory::RemoveSelection& removal) noexcept
+		{
+			if (questProtected) {
+				return "quest_protected";
+			}
+			if (tccGate != TccGateDecision::kAllow) {
+				return "not_actionable";
+			}
+			if (removal.safeCount > 0) {
+				return {};
+			}
+			if (removal.blockedByFavorite) {
+				return "favorite_protected";
+			}
+			return "not_actionable";
+		}
+
 		[[nodiscard]] bool IsExcludedFast(
 			const RegistrationStateStore::QuickListSnapshot& quickListState,
 			const RE::TESForm* item) noexcept
@@ -49,10 +69,6 @@ namespace CodexOfPowerNG::Registration::Internal
 			RE::InventoryEntryData& entry,
 			std::vector<ListItem>& allEligible)
 		{
-			if (entry.IsQuestObject()) {
-				return;
-			}
-
 			auto* obj = entry.GetObject();
 			if (!obj) {
 				return;
@@ -75,14 +91,6 @@ namespace CodexOfPowerNG::Registration::Internal
 			const auto regKeyId = regKey->GetFormID();
 			const auto objId = obj->GetFormID();
 
-			if (questProtected.contains(regKeyId) || questProtected.contains(objId)) {
-				return;
-			}
-
-			if (Internal::EvaluateTccGate(settings, tccLists, obj, regKey) != TccGateDecision::kAllow) {
-				return;
-			}
-
 			if (quickListState.registeredKeys.contains(regKeyId) || quickListState.registeredKeys.contains(objId)) {
 				return;
 			}
@@ -97,10 +105,11 @@ namespace CodexOfPowerNG::Registration::Internal
 			}
 
 			const auto removal = Inventory::SelectSafeRemoval(&entry, totalCount, settings.protectFavorites);
-			if (removal.safeCount <= 0) {
-				return;
-			}
-
+			const bool isQuestProtected =
+				entry.IsQuestObject() ||
+				questProtected.contains(regKeyId) ||
+				questProtected.contains(objId);
+			const auto tccGate = Internal::EvaluateTccGate(settings, tccLists, obj, regKey);
 			ListItem item{};
 			item.formId = objId;
 			item.regKey = regKeyId;
@@ -110,6 +119,11 @@ namespace CodexOfPowerNG::Registration::Internal
 			item.excluded = false;
 			item.registered = false;
 			item.blocked = false;
+			item.disabledReason = DetermineDisabledReason(isQuestProtected, tccGate, removal);
+			if (!item.disabledReason.empty()) {
+				item.safeCount = 0;
+				item.blocked = true;
+			}
 			item.name = Internal::BestItemName(regKey, obj);
 			if (item.name.empty()) {
 				item.name = L10n::T("ui.unnamed", "(unnamed)");

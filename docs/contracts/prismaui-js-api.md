@@ -220,7 +220,7 @@ Example payload:
 ```
 
 ### `window.copng_setInventory(jsonOrString)`
-Quick-register inventory list (safe-to-consume entries only).
+Quick-register inventory list (register-relevant entries, including temporarily protected disabled rows).
 Implementation note: native side may serve this from a short-lived internal cache.
 
 Example:
@@ -256,6 +256,16 @@ Example:
           "safeCount": 2,
           "actionable": true,
           "disabledReason": null
+        },
+        {
+          "formId": 51234,
+          "regKey": 51234,
+          "name": "Quest Blade",
+          "discipline": "attack",
+          "totalCount": 1,
+          "safeCount": 0,
+          "actionable": false,
+          "disabledReason": "quest_protected"
         }
       ]
     }

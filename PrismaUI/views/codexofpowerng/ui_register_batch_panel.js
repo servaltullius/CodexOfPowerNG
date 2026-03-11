@@ -66,6 +66,7 @@
     const rows = [];
     const disabledRows = [];
     const viewSections = [];
+    const viewSectionByDiscipline = new Map();
 
     for (const section of sections) {
       const discipline = String((section && section.discipline) || "utility").toLowerCase();
@@ -111,11 +112,17 @@
       }
 
       if (nextSectionRows.length > 0) {
-        viewSections.push({
-          discipline,
-          label: humanizeDiscipline(discipline),
-          rows: nextSectionRows,
-        });
+        let viewSection = viewSectionByDiscipline.get(discipline);
+        if (!viewSection) {
+          viewSection = {
+            discipline,
+            label: humanizeDiscipline(discipline),
+            rows: [],
+          };
+          viewSectionByDiscipline.set(discipline, viewSection);
+          viewSections.push(viewSection);
+        }
+        viewSection.rows.push(...nextSectionRows);
       }
     }
 

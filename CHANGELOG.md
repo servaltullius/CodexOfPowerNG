@@ -9,6 +9,29 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.2.0-rc.1] - 2026-03-11 (Pre-release)
+
+### Added
+- Reworked progression into a build system with `Attack / Defense / Utility` disciplines, persistent unlocks, and active slot selection instead of the old always-on random reward flow.
+- Added build-focused PrismaUI flows for option browsing, slot activation, batch registration, and grouped quick-register sections.
+- Added migration support that reconstructs build scores from historical registration data while preserving legacy save continuity.
+- Added native/UI regression coverage for grouped inventory sections and disabled-reason propagation in the build-era quick-register flow.
+
+### Changed
+- Quick-register inventory now exposes register-relevant rows, including temporarily protected entries, so players can see why an item is unavailable before batch registration.
+- Legacy reward settings are no longer surfaced in the PrismaUI settings contract; old keys are still read for compatibility but are no longer written back as active controls.
+- Release packaging guidance now documents `scripts/test.sh` as the host-safe fast gate and keeps full native verification separate.
+
+### Fixed
+- Merged duplicated `Utility` headers in the grouped batch-register view by sectioning inventory payloads on build discipline instead of legacy discovery group boundaries.
+- Forwarded concrete disabled reasons such as quest protection and favorite protection from the native quick-register scan into the PrismaUI payload.
+- Hardened release artifact staging by verifying the packaged archive from a clean install tree instead of relying on stale `dist/` contents.
+
+### Notes
+- Detailed release note: `docs/releases/v1.2.0-rc.1.md`
+- This pre-release intentionally changes gameplay progression and balance expectations; feedback should focus on build choice quality, migration correctness, and batch registration UX.
+- Save compatibility policy remains unchanged: Codex of Power / SVCollection is not compatible.
+
 ## [1.1.0] - 2026-03-09
 
 ### Changed

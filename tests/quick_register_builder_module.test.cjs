@@ -19,7 +19,7 @@ test("quick register delegates eligible-item scan to builder module", () => {
   assert.doesNotMatch(quickRegisterSrc, /std::unordered_set<RE::FormID>\s+seenRegKeys/);
 });
 
-test("quick register builder owns quest filtering, TCC gating, and stable sorting", () => {
+test("quick register builder owns quest protection, TCC gating, and stable sorting", () => {
   const builderSrc = read("src/RegistrationQuickListBuilder.cpp");
   assert.match(builderSrc, /entry\.IsQuestObject\(\)/);
   assert.match(builderSrc, /Internal::EvaluateTccGate\(settings, tccLists, obj, regKey\)/);

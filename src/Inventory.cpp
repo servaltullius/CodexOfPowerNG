@@ -25,6 +25,8 @@ namespace CodexOfPowerNG::Inventory
 
 				const bool worn = xList->HasType<RE::ExtraWorn>() || xList->HasType<RE::ExtraWornLeft>();
 				const bool hotkey = protectFavorites && xList->HasType<RE::ExtraHotkey>();
+				out.blockedByWorn = out.blockedByWorn || worn;
+				out.blockedByFavorite = out.blockedByFavorite || hotkey;
 				if (worn || hotkey) {
 					continue;
 				}

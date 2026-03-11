@@ -20,18 +20,19 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 		{
 			json sections = json::array();
 			json* currentSection = nullptr;
-			std::uint32_t currentGroup = 255u;
+			std::string_view currentDiscipline{};
 
 			for (const auto& it : pageData.items) {
-				if (!currentSection || currentGroup != it.group) {
+				const auto discipline = std::string_view{ GroupToDiscipline(it.group) };
+				if (!currentSection || currentDiscipline != discipline) {
 					sections.push_back({
 						{ "group", it.group },
 						{ "groupName", Registration::GetDiscoveryGroupName(it.group) },
-						{ "discipline", GroupToDiscipline(it.group) },
+						{ "discipline", discipline },
 						{ "rows", json::array() },
 					});
 					currentSection = &sections.back();
-					currentGroup = it.group;
+					currentDiscipline = discipline;
 				}
 
 				(*currentSection)["rows"].push_back({
@@ -40,11 +41,11 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 					{ "name", it.name },
 					{ "group", it.group },
 					{ "groupName", Registration::GetDiscoveryGroupName(it.group) },
-					{ "discipline", GroupToDiscipline(it.group) },
+					{ "discipline", discipline },
 					{ "totalCount", it.totalCount },
 					{ "safeCount", it.safeCount },
-					{ "actionable", it.safeCount > 0 },
-					{ "disabledReason", nullptr },
+					{ "actionable", it.safeCount > 0 && it.disabledReason.empty() },
+					{ "disabledReason", it.disabledReason.empty() ? json(nullptr) : json(it.disabledReason) },
 				});
 			}
 

@@ -20,6 +20,7 @@ namespace CodexOfPowerNG::Registration
 		bool            excluded{ false };
 		bool            registered{ false };
 		bool            blocked{ false };
+		std::string     disabledReason;
 		std::string     name;
 	};
 
@@ -74,7 +75,7 @@ namespace CodexOfPowerNG::Registration
 	// Returns whether a FormID is discoverable (group 0..5 and not excluded).
 	[[nodiscard]] bool IsDiscoverable(RE::FormID formId) noexcept;
 
-	// Quick-register inventory: unregistered + owned + registerable + safe to consume.
+	// Quick-register inventory: unregistered + owned + registerable, including temporarily protected rows.
 	[[nodiscard]] QuickRegisterList BuildQuickRegisterList(std::size_t offset, std::size_t limit);
 	void InvalidateQuickRegisterCache() noexcept;
 

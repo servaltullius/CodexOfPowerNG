@@ -31,7 +31,7 @@ test("quick register list uses live inventory count API", () => {
   );
 });
 
-test("quick register excludes quest objects both in the list and at consume time", () => {
+test("quick register consults quest-object protection in both the list and consume path", () => {
   const src = regPaths
     .filter((p) => fs.existsSync(p))
     .map((p) => fs.readFileSync(p, "utf8"))

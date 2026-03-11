@@ -45,3 +45,38 @@ test("grouped batch register view model preserves disabled reasons and one-row s
   assert.equal(viewModel.disabledRows[0].reasonTag, "quest_protected");
   assert.equal(viewModel.disabledRows[1].reasonTag, "favorite_protected");
 });
+
+test("grouped batch register view model merges duplicate discipline sections into one bucket", () => {
+  const viewModel = mod.buildRegisterBatchViewModel(
+    {
+      sections: [
+        {
+          discipline: "attack",
+          rows: [{ formId: 1, regKey: 1, name: "Iron Sword", discipline: "attack", totalCount: 1, safeCount: 1, actionable: true, disabledReason: null }],
+        },
+        {
+          discipline: "utility",
+          rows: [{ formId: 2, regKey: 2, name: "Potion", discipline: "utility", totalCount: 2, safeCount: 2, actionable: true, disabledReason: null }],
+        },
+        {
+          discipline: "utility",
+          rows: [{ formId: 3, regKey: 3, name: "Soul Gem", discipline: "utility", totalCount: 1, safeCount: 1, actionable: true, disabledReason: null }],
+        },
+      ],
+    },
+    [2, 3],
+    {
+      actionableOnly: false,
+      query: "",
+    },
+  );
+
+  assert.equal(viewModel.sections.length, 2);
+  assert.equal(viewModel.sections[1].discipline, "utility");
+  assert.equal(viewModel.sections[1].rows.length, 2);
+  assert.deepEqual(
+    viewModel.sections[1].rows.map((row) => row.name),
+    ["Potion", "Soul Gem"],
+  );
+  assert.deepEqual(viewModel.summary.disciplineGain, { attack: 0, defense: 0, utility: 2 });
+});

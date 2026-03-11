@@ -26,3 +26,4 @@ zip -r -FS "../../releases/Codex of Power NG.zip" .
 - Runtime settings are layered as `settings.json` plus `settings.user.json`.
 - Release notes live under `docs/releases/` and should remain Korean, while `CHANGELOG.md` stays English.
 - TypeScript language server is not installed here; JS verification relies on Node tests.
+- `scripts/test.sh` is the fast host-safe regression gate; use `ctest --test-dir build/wsl-release --output-on-failure` for the full WSL/native test sweep.

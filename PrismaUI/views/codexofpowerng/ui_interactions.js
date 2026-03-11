@@ -21,15 +21,21 @@
     const rootScrollEl = options.rootScrollEl || null;
     const quickBody = options.quickBody || null;
     const undoBody = options.undoBody || null;
+    const buildPanelEl = options.buildPanelEl || null;
     const stateApi = options.stateApi;
     const safeCall = asFn(options.safeCall, noop);
     const t = asFn(options.t, (_key, fallback) => fallback);
     const KC = options.KC || null;
     const renderQuick = asFn(options.renderQuick, noop);
     const renderRegistered = asFn(options.renderRegistered, noop);
+    const registerBatchPanelApi = options.registerBatchPanelApi || null;
     const clamp = asFn(options.clamp, (value, lo, hi) => Math.max(lo, Math.min(hi, value)));
     const getOffsetTopInRoot = asFn(options.getOffsetTopInRoot, () => 0);
     const QUICK_ROW_BASE_PX = Number(options.quickRowBasePx || 78);
+    const getQuickBatchSelectedIds = asFn(stateApi && stateApi.getQuickBatchSelectedIds, () => []);
+    const setQuickBatchSelectedIds = asFn(stateApi && stateApi.setQuickBatchSelectedIds, noop);
+    const getQuickActionableOnly = asFn(stateApi && stateApi.getQuickActionableOnly, () => false);
+    const setQuickActionableOnly = asFn(stateApi && stateApi.setQuickActionableOnly, noop);
 
     let quickRenderTimer = null;
     let regRenderTimer = null;
@@ -103,6 +109,13 @@
       while (node && node !== quickBody) {
         if (node.nodeType === 1) {
           const el = node;
+          if (el.getAttribute("data-action") === "batch-toggle") {
+            const id = Number(el.getAttribute("data-id"));
+            if (Number.isFinite(id) && id > 0) {
+              toggleQuickBatchSelection(id);
+            }
+            return;
+          }
           if (el.tagName === "BUTTON" && el.getAttribute("data-action") === "reg") {
             const id = Number(el.getAttribute("data-id"));
             if (Number.isFinite(id) && id > 0) {
@@ -124,6 +137,57 @@
       }
     }
 
+    function buildQuickBatchSummary() {
+      if (registerBatchPanelApi && typeof registerBatchPanelApi.buildRegisterBatchViewModel === "function") {
+        const viewModel = registerBatchPanelApi.buildRegisterBatchViewModel(
+          stateApi.getInventoryPage ? stateApi.getInventoryPage() : {},
+          getQuickBatchSelectedIds(),
+          {
+            actionableOnly: getQuickActionableOnly(),
+            query:
+              documentObj && typeof documentObj.getElementById === "function"
+                ? String(((documentObj.getElementById("quickFilter") || {}).value) || "")
+                : "",
+          },
+        );
+        return viewModel && viewModel.summary
+          ? viewModel.summary
+          : { selectedRows: 0, disciplineGain: { attack: 0, defense: 0, utility: 0 }, formIds: [] };
+      }
+
+      const ids = getQuickBatchSelectedIds();
+      return {
+        selectedRows: ids.length,
+        disciplineGain: { attack: 0, defense: 0, utility: 0 },
+        formIds: ids.slice(),
+      };
+    }
+
+    function toggleQuickBatchSelection(nextId) {
+      const id = Number(nextId) >>> 0;
+      if (!id) return;
+      const prev = getQuickBatchSelectedIds();
+      const has = prev.indexOf(id) !== -1;
+      setQuickBatchSelectedIds(has ? prev.filter((value) => value !== id) : prev.concat(id));
+      renderQuick();
+    }
+
+    function clearQuickBatchSelection() {
+      setQuickBatchSelectedIds([]);
+      renderQuick();
+    }
+
+    function onBatchRegisterClick() {
+      const summary = buildQuickBatchSummary();
+      if (!summary || !Array.isArray(summary.formIds) || summary.formIds.length === 0) return;
+      safeCall("copng_requestRegisterBatch", { formIds: summary.formIds.slice() });
+    }
+
+    function onQuickActionableOnlyChanged(next) {
+      setQuickActionableOnly(next);
+      renderQuick();
+    }
+
     function onUndoBodyClick(e) {
       let node = e.target;
       while (node && node !== undoBody) {
@@ -142,6 +206,41 @@
       }
     }
 
+    function onBuildPanelClick(e) {
+      let node = e.target;
+      while (node && node !== buildPanelEl) {
+        if (node.nodeType === 1) {
+          const el = node;
+          const action = el.getAttribute("data-action");
+          if (action === "build-activate") {
+            const optionId = String(el.getAttribute("data-option-id") || "");
+            const slotId = String(el.getAttribute("data-slot-id") || "");
+            if (optionId && slotId) {
+              safeCall("copng_activateBuildOption", { optionId, slotId });
+            }
+            return;
+          }
+          if (action === "build-deactivate") {
+            const slotId = String(el.getAttribute("data-slot-id") || "");
+            if (slotId) {
+              safeCall("copng_deactivateBuildOption", { slotId });
+            }
+            return;
+          }
+          if (action === "build-swap") {
+            const optionId = String(el.getAttribute("data-option-id") || "");
+            const fromSlotId = String(el.getAttribute("data-from-slot-id") || "");
+            const toSlotId = String(el.getAttribute("data-to-slot-id") || "");
+            if (optionId && fromSlotId && toSlotId) {
+              safeCall("copng_swapBuildOption", { optionId, fromSlotId, toSlotId });
+            }
+            return;
+          }
+        }
+        node = node.parentNode;
+      }
+    }
+
     function saveSettingsFromUi() {
       if (!documentObj || typeof documentObj.getElementById !== "function") return;
       const keyRaw = String((documentObj.getElementById("setToggleKey") || {}).value || "").trim();
@@ -151,8 +250,6 @@
         stateApi.setToggleKeyInputFromDik(key);
         stateApi.showToast("warn", `${t("toast.bindKeyUnknown", "Unsupported key.")}`);
       }
-      const rewardEveryInput = parseInt(documentObj.getElementById("setRewardEvery").value, 10);
-      const rewardMultInput = parseFloat(documentObj.getElementById("setRewardMult").value);
       const payload = {
         toggleKeyCode: (key >>> 0) & 0xff,
         languageOverride: documentObj.getElementById("setLang").value,
@@ -164,10 +261,6 @@
         requireTccDisplayed: documentObj.getElementById("setRequireTccDisplayed").checked,
         protectFavorites: documentObj.getElementById("setProtectFav").checked,
         enableLootNotify: documentObj.getElementById("setLootNotify").checked,
-        enableRewards: documentObj.getElementById("setRewardsEnabled").checked,
-        rewardEvery: Number.isFinite(rewardEveryInput) && rewardEveryInput > 0 ? rewardEveryInput : 5,
-        rewardMultiplier: Number.isFinite(rewardMultInput) ? rewardMultInput : 1.0,
-        allowSkillRewards: documentObj.getElementById("setSkillRewards").checked,
       };
       safeCall("copng_saveSettings", payload);
     }
@@ -207,8 +300,14 @@
       scheduleRenderRegistered,
       setQuickSelected,
       scrollQuickIndexIntoView,
+      buildQuickBatchSummary,
+      toggleQuickBatchSelection,
+      clearQuickBatchSelection,
       onQuickBodyClick,
       onUndoBodyClick,
+      onBuildPanelClick,
+      onBatchRegisterClick,
+      onQuickActionableOnlyChanged,
       saveSettingsFromUi,
       onManualScaleChange,
       onInputScaleChange,

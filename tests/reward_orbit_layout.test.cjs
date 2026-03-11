@@ -4,97 +4,90 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const viewPath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "index.html");
-const orbitModulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "reward_orbit.js");
+const buildPanelModulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "ui_build_panel.js");
 const uiWiringModulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "ui_wiring.js");
 const i18nModulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "ui_i18n.js");
 const html = fs.readFileSync(viewPath, "utf8");
-const orbitModuleSource = fs.readFileSync(orbitModulePath, "utf8");
+const buildPanelModuleSource = fs.readFileSync(buildPanelModulePath, "utf8");
 const uiWiringModuleSource = fs.readFileSync(uiWiringModulePath, "utf8");
 const i18nModuleSource = fs.readFileSync(i18nModulePath, "utf8");
-const rewardOrbit = require(orbitModulePath);
+const buildPanel = require(buildPanelModulePath);
 
-test("rewards tab includes character image and orbit container", () => {
-  assert.match(
-    html,
-    /id="rewardCharacterImg"[\s\S]*src="assets\/character\.png"/,
-    "Rewards view should reference assets/character.png",
-  );
-
-  assert.match(
-    html,
-    /id="rewardOrbit"/,
-    "Rewards view should include rewardOrbit container",
-  );
+test("build tab includes slot and option containers", () => {
+  assert.match(html, /id="buildSlotsPanel"/, "Build view should include active slots panel");
+  assert.match(html, /id="buildCardsPanel"/, "Build view should include option card panel");
 });
 
-test("rewards view loads reward orbit module", () => {
+test("build view loads build panel module", () => {
   assert.match(
+    html,
+    /<script src="ui_build_panel\.js"><\/script>/,
+    "Build view should load ui_build_panel.js before inline script",
+  );
+  assert.doesNotMatch(
     html,
     /<script src="reward_orbit\.js"><\/script>/,
-    "Rewards view should load reward_orbit.js before inline script",
+    "Active UI bundle should no longer depend on reward_orbit.js",
   );
 });
 
-test("reward orbit module has high-DPI compact mode and dynamic node width", () => {
-  assert.match(
-    orbitModuleSource,
-    /function getRewardOrbitLayout\([^)]*\)\s*\{[\s\S]*scale >= 2\.0 \|\| viewportW < 1280[\s\S]*positions:\s*REWARD_ORBIT_POSITIONS_COMPACT[\s\S]*nodeWidthPx:\s*162[\s\S]*positions:\s*REWARD_ORBIT_POSITIONS_REGULAR[\s\S]*nodeWidthPx:\s*188[\s\S]*\}/,
-    "Reward orbit should switch to compact layout for high DPI or smaller viewport",
-  );
+test("build panel module renders slot actions and grouped discipline sections", () => {
+  assert.match(buildPanelModuleSource, /function renderBuildPanelHtml\(/);
 
-  assert.match(
-    orbitModuleSource,
-    /function renderRewardOrbit\([^)]*\)\s*\{[\s\S]*getRewardOrbitLayout\([\s\S]*\)[\s\S]*style\.setProperty\("--rewardNodeWidth", `\$\{layout\.nodeWidthPx\}px`\)[\s\S]*const maxNodes = layout\.positions\.length;[\s\S]*\}/,
-    "Reward orbit renderer should apply dynamic node width and cap visible nodes by selected layout",
+  const htmlOut = buildPanel.renderBuildPanelHtml(
+    {
+      disciplines: {
+        attack: { score: 12, unlockedBaselineCount: 1 },
+        defense: { score: 4, unlockedBaselineCount: 0 },
+        utility: { score: 7, unlockedBaselineCount: 0 },
+      },
+      options: [],
+      activeSlots: [
+        { slotId: "attack_1", slotKind: "attack", optionId: "build.attack.ferocity", occupied: true },
+        { slotId: "attack_2", slotKind: "attack", optionId: null, occupied: false },
+        { slotId: "defense_1", slotKind: "defense", optionId: null, occupied: false },
+        { slotId: "utility_1", slotKind: "utility", optionId: null, occupied: false },
+        { slotId: "utility_2", slotKind: "utility", optionId: null, occupied: false },
+        { slotId: "wildcard_1", slotKind: "wildcard", optionId: null, occupied: false },
+      ],
+      migrationNotice: {
+        needsNotice: false,
+        legacyRewardsMigrated: false,
+        unresolvedHistoricalRegistrations: 0,
+      },
+    },
+    {
+      t: (_key, fallback) => fallback,
+      tFmt: (_key, fallback, vars) =>
+        String(fallback).replace(/\{([a-zA-Z0-9_]+)\}/g, (_, name) => String(vars[name])),
+      escapeHtml: (value) => String(value == null ? "" : value),
+    },
   );
+  assert.match(htmlOut, /Active Slots/);
+  assert.match(htmlOut, /Attack/);
+  assert.match(htmlOut, /Deactivate|Swap/);
 });
 
-test("reward orbit module exports behavior helpers", () => {
-  assert.equal(typeof rewardOrbit.getRewardOrbitLayout, "function");
-  assert.equal(typeof rewardOrbit.renderRewardOrbit, "function");
-  assert.equal(typeof rewardOrbit.syncRewardCharacterImageState, "function");
-
-  const regular = rewardOrbit.getRewardOrbitLayout({ scale: 1.0, viewportW: 1920 });
-  const compact = rewardOrbit.getRewardOrbitLayout({ scale: 2.0, viewportW: 1920 });
-  assert.equal(regular.nodeWidthPx, 188);
-  assert.equal(compact.nodeWidthPx, 162);
-  assert.equal(regular.positions.length, 8);
-  assert.equal(compact.positions.length, 6);
-});
-
-test("reward orbit updates on resize and handles image load errors", () => {
+test("build panel rerenders on resize", () => {
   assert.match(
     uiWiringModuleSource,
-    /addListener\(win, "resize", function \(\) \{[\s\S]*scheduleVirtualRender\(\{ force: true \}\);[\s\S]*renderRewards\(\);[\s\S]*\}\);/,
-    "UI wiring should rerender rewards on resize so orbit layout reflows",
-  );
-
-  assert.match(
-    uiWiringModuleSource,
-    /addListener\(rewardCharacterImgEl, "load", syncRewardCharacterImageState\);[\s\S]*addListener\(rewardCharacterImgEl, "error", syncRewardCharacterImageState\);/,
-    "Character image should toggle fallback on both load and error",
+    /addListener\(win, "resize", function \(\) \{[\s\S]*scheduleVirtualRender\(\{ force: true \}\);[\s\S]*renderBuild\(\);[\s\S]*\}\);/,
+    "UI wiring should rerender build panel on resize",
   );
 });
 
-test("reward orbit strings exist in both locales", () => {
+test("build panel strings exist in both locales", () => {
+  assert.match(i18nModuleSource, /"build\.activeSlots": "Active Slots"/);
+  assert.match(i18nModuleSource, /"build\.activeSlots": "활성 슬롯"/);
+  assert.match(i18nModuleSource, /"build\.activate": "Activate"/);
+  assert.match(i18nModuleSource, /"build\.activate": "활성화"/);
   assert.match(
     i18nModuleSource,
-    /"rewards\.imageMissing": "Character image missing: assets\/character\.png"/,
-    "English locale should include image-missing text",
+    /"build\.help": "Build score opens options permanently, but only your active slots apply to the current build\."/,
   );
   assert.match(
     i18nModuleSource,
-    /"rewards\.imageMissing": "캐릭터 이미지 없음: assets\/character\.png"/,
-    "Korean locale should include image-missing text",
+    /"build\.help": "빌드 점수로 해금한 옵션은 영구 보유되지만, 현재 빌드에는 활성 슬롯에 넣은 효과만 적용됩니다\."/,
   );
-  assert.match(
-    i18nModuleSource,
-    /"rewards\.more": "\+\{n\} more"/,
-    "English locale should include +{n} more label",
-  );
-  assert.match(
-    i18nModuleSource,
-    /"rewards\.more": "\+\{n\}개 더"/,
-    "Korean locale should include +{n}개 더 label",
-  );
+  assert.match(html, /data-i18n="build\.help"/);
 });

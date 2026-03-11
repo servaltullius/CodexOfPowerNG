@@ -38,10 +38,12 @@ test("request ops route undo payload and refresh relevant panels", () => {
   assert.doesNotMatch(src, /QueueSendInventory\(InventoryRequest\{\}\)/);
 });
 
-test("registration path records undo metadata using exact applied reward deltas", () => {
+test("registration path records build contribution metadata for undo", () => {
   const src = read("src/RegistrationQuickRegister.cpp");
-  assert.match(src, /auto rewardDeltas = Rewards::MaybeGrantRegistrationReward\(group, static_cast<std::int32_t>\(totalRegistered\)\);/);
-  assert.match(src, /undoRecord\.rewardDeltas = std::move\(rewardDeltas\);/);
+  assert.match(src, /const auto buildContribution = BuildProgression::MakeRegistrationContribution\(group\);/);
+  assert.match(src, /if \(buildContribution\.has_value\(\)\)/);
+  assert.match(src, /BuildProgression::ApplyRegistrationContribution\(buildContribution\.value\(\)\);/);
+  assert.match(src, /undoRecord\.buildContribution = buildContribution;/);
   assert.doesNotMatch(src, /SnapshotRewardTotals\(\)/);
   assert.doesNotMatch(src, /BuildRewardDeltas\(/);
   assert.match(src, /RegistrationStateStore::PushUndoRecord\(std::move\(undoRecord\)\)/);
@@ -52,7 +54,14 @@ test("undo records are serialized and restored", () => {
   const loadSrc = read("src/SerializationLoad.cpp");
   assert.match(saveSrc, /kRecordUndoHistory/);
   assert.match(saveSrc, /WriteUndoRecord/);
+  assert.match(saveSrc, /hasBuildContribution/);
+  assert.match(saveSrc, /disciplineRaw/);
+  assert.match(saveSrc, /scoreDelta/);
   assert.match(loadSrc, /case kRecordUndoHistory:/);
+  assert.match(loadSrc, /hasBuildContribution/);
+  assert.match(loadSrc, /buildDisciplineRaw/);
+  assert.match(loadSrc, /buildScoreDelta/);
+  assert.match(loadSrc, /entry\.buildContribution = Registration::BuildScoreContribution/);
   assert.match(loadSrc, /ResolveFormID\(oldRegKey, newRegKey\)/);
   assert.match(loadSrc, /ResolveFormID\(oldFormId, newFormId\)/);
   assert.match(loadSrc, /if \(!regKeyResolved \|\| !formIdResolved\)/);
@@ -71,7 +80,11 @@ test("undo reward rollback applies actual clamped delta to actor values", () => 
 
 test("undo checks rollback result and emits warning path when no actor deltas were applied", () => {
   const undoSrc = read("src/RegistrationUndo.cpp");
-  assert.match(undoSrc, /const auto rollbackApplied = Rewards::RollbackRewardDeltas\(record\.rewardDeltas\);/);
-  assert.match(undoSrc, /if \(hadRollbackTarget && rollbackApplied == 0\)/);
+  assert.match(undoSrc, /if \(record\.buildContribution\.has_value\(\)\)/);
+  assert.match(undoSrc, /const auto rollbackResult =/);
+  assert.match(undoSrc, /BuildProgression::RollbackRegistrationContributionDetailed\(record\.buildContribution\.value\(\)\)/);
+  assert.match(undoSrc, /rollbackApplied = rollbackResult\.scoreChanged \|\| rollbackResult\.deactivatedSlots > 0u;/);
+  assert.match(undoSrc, /const auto legacyRollbackApplied = Rewards::RollbackRewardDeltas\(record\.rewardDeltas\);/);
+  assert.match(undoSrc, /if \(hadRollbackTarget && !rollbackApplied\)/);
   assert.match(undoSrc, /msg\.undoRewardRollbackWarning/);
 });

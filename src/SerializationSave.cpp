@@ -8,10 +8,26 @@
 #include <SKSE/Interfaces.h>
 #include <SKSE/Logger.h>
 
+#include <cstdint>
+
 namespace CodexOfPowerNG::Serialization::Internal
 {
 	namespace
 	{
+		inline constexpr std::uint32_t kUndoRecordVersion = 3u;
+
+		[[nodiscard]] bool WriteString(SKSE::SerializationInterface* a_intfc, const std::string& value) noexcept
+		{
+			const auto length = static_cast<std::uint32_t>(value.size());
+			if (!a_intfc->WriteRecordData(length)) {
+				return false;
+			}
+			if (length == 0) {
+				return true;
+			}
+			return a_intfc->WriteRecordData(value.data(), length);
+		}
+
 		[[nodiscard]] bool WriteRegisteredRecord(SKSE::SerializationInterface* a_intfc,
 			const SerializationStateStore::Snapshot& state) noexcept
 		{
@@ -77,6 +93,62 @@ namespace CodexOfPowerNG::Serialization::Internal
 			return true;
 		}
 
+		[[nodiscard]] bool WriteBuildScoresRecord(
+			SKSE::SerializationInterface*          a_intfc,
+			const SerializationStateStore::Snapshot& state) noexcept
+		{
+			if (!a_intfc->OpenRecord(kRecordBuildScores, 1u)) {
+				SKSE::log::error("Failed to open co-save record BSCR");
+				return false;
+			}
+			return a_intfc->WriteRecordData(state.attackScore) &&
+			       a_intfc->WriteRecordData(state.defenseScore) &&
+			       a_intfc->WriteRecordData(state.utilityScore);
+		}
+
+		[[nodiscard]] bool WriteBuildSlotsRecord(
+			SKSE::SerializationInterface*          a_intfc,
+			const SerializationStateStore::Snapshot& state) noexcept
+		{
+			if (!a_intfc->OpenRecord(kRecordBuildSlots, 1u)) {
+				SKSE::log::error("Failed to open co-save record BSLT");
+				return false;
+			}
+
+			const auto slotCount = static_cast<std::uint32_t>(state.activeBuildSlots.size());
+			if (!a_intfc->WriteRecordData(slotCount)) {
+				SKSE::log::error("Failed to write build slot count");
+				return false;
+			}
+
+			for (const auto& slot : state.activeBuildSlots) {
+				if (!WriteString(a_intfc, slot)) {
+					SKSE::log::error("Failed to write build slot entry");
+					return false;
+				}
+			}
+			return true;
+		}
+
+		[[nodiscard]] bool WriteBuildMigrationRecord(
+			SKSE::SerializationInterface*          a_intfc,
+			const SerializationStateStore::Snapshot& state) noexcept
+		{
+			if (!a_intfc->OpenRecord(kRecordBuildMigration, 1u)) {
+				SKSE::log::error("Failed to open co-save record BMIG");
+				return false;
+			}
+
+			const auto migrationState = static_cast<std::uint32_t>(state.buildMigrationState);
+			const std::uint8_t needsNotice = state.buildMigrationNotice.needsNotice ? 1u : 0u;
+			const std::uint8_t legacyRewardsMigrated = state.buildMigrationNotice.legacyRewardsMigrated ? 1u : 0u;
+			return a_intfc->WriteRecordData(state.buildMigrationVersion) &&
+			       a_intfc->WriteRecordData(migrationState) &&
+			       a_intfc->WriteRecordData(needsNotice) &&
+			       a_intfc->WriteRecordData(legacyRewardsMigrated) &&
+			       a_intfc->WriteRecordData(state.buildMigrationNotice.unresolvedHistoricalRegistrations);
+		}
+
 		[[nodiscard]] bool WriteRewardsRecord(SKSE::SerializationInterface* a_intfc,
 			const SerializationStateStore::Snapshot& state) noexcept
 		{
@@ -103,7 +175,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 		[[nodiscard]] bool WriteUndoRecord(SKSE::SerializationInterface* a_intfc,
 			const SerializationStateStore::Snapshot& state) noexcept
 		{
-			if (!a_intfc->OpenRecord(kRecordUndoHistory, kSerializationVersion)) {
+			if (!a_intfc->OpenRecord(kRecordUndoHistory, kUndoRecordVersion)) {
 				SKSE::log::error("Failed to open co-save record UNDO");
 				return false;
 			}
@@ -115,11 +187,21 @@ namespace CodexOfPowerNG::Serialization::Internal
 			}
 
 			for (const auto& entry : state.undoHistory) {
+				const std::uint32_t hasBuildContribution = entry.buildContribution.has_value() ? 1u : 0u;
+				const std::uint32_t disciplineRaw = entry.buildContribution.has_value()
+					? static_cast<std::uint32_t>(entry.buildContribution->discipline)
+					: 0u;
+				const std::int32_t scoreDelta = entry.buildContribution.has_value()
+					? entry.buildContribution->scoreDelta
+					: 0;
 				const std::uint32_t rewardCount = static_cast<std::uint32_t>(entry.rewardDeltas.size());
 				if (!a_intfc->WriteRecordData(entry.actionId) ||
 				    !a_intfc->WriteRecordData(entry.formId) ||
 				    !a_intfc->WriteRecordData(entry.regKey) ||
 				    !a_intfc->WriteRecordData(entry.group) ||
+				    !a_intfc->WriteRecordData(hasBuildContribution) ||
+				    !a_intfc->WriteRecordData(disciplineRaw) ||
+				    !a_intfc->WriteRecordData(scoreDelta) ||
 				    !a_intfc->WriteRecordData(rewardCount)) {
 					SKSE::log::error("Failed to write undo entry header");
 					return false;
@@ -151,6 +233,9 @@ namespace CodexOfPowerNG::Serialization::Internal
 			[&]() { return WriteRegisteredRecord(a_intfc, state); },
 			[&]() { return WriteBlockedRecord(a_intfc, state); },
 			[&]() { return WriteNotifiedRecord(a_intfc, state); },
+			[&]() { return WriteBuildScoresRecord(a_intfc, state); },
+			[&]() { return WriteBuildSlotsRecord(a_intfc, state); },
+			[&]() { return WriteBuildMigrationRecord(a_intfc, state); },
 			[&]() { return WriteRewardsRecord(a_intfc, state); },
 			[&]() { return WriteUndoRecord(a_intfc, state); });
 		if (!allOk) {

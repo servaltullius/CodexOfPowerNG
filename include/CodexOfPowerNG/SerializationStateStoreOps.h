@@ -13,6 +13,13 @@ namespace CodexOfPowerNG::SerializationStateStore::Ops
 		snapshot.blockedItems = state.blockedItems;
 		snapshot.notifiedItems = state.notifiedItems;
 		snapshot.rewardTotals = state.rewardTotals;
+		snapshot.attackScore = state.attackScore;
+		snapshot.defenseScore = state.defenseScore;
+		snapshot.utilityScore = state.utilityScore;
+		snapshot.activeBuildSlots = state.activeBuildSlots;
+		snapshot.buildMigrationVersion = state.buildMigrationVersion;
+		snapshot.buildMigrationState = state.buildMigrationState;
+		snapshot.buildMigrationNotice = state.buildMigrationNotice;
 		snapshot.undoHistory = state.undoHistory;
 		snapshot.undoNextActionId = state.undoNextActionId;
 		return snapshot;
@@ -25,6 +32,13 @@ namespace CodexOfPowerNG::SerializationStateStore::Ops
 		state.blockedItems = std::move(snapshot.blockedItems);
 		state.notifiedItems = std::move(snapshot.notifiedItems);
 		state.rewardTotals = std::move(snapshot.rewardTotals);
+		state.attackScore = snapshot.attackScore;
+		state.defenseScore = snapshot.defenseScore;
+		state.utilityScore = snapshot.utilityScore;
+		state.activeBuildSlots = std::move(snapshot.activeBuildSlots);
+		state.buildMigrationVersion = snapshot.buildMigrationVersion;
+		state.buildMigrationState = snapshot.buildMigrationState;
+		state.buildMigrationNotice = snapshot.buildMigrationNotice;
 		state.undoHistory = std::move(snapshot.undoHistory);
 		state.undoNextActionId = snapshot.undoNextActionId;
 	}
@@ -36,6 +50,13 @@ namespace CodexOfPowerNG::SerializationStateStore::Ops
 		state.blockedItems.clear();
 		state.notifiedItems.clear();
 		state.rewardTotals.clear();
+		state.attackScore = 0;
+		state.defenseScore = 0;
+		state.utilityScore = 0;
+		state.activeBuildSlots = {};
+		state.buildMigrationVersion = 0;
+		state.buildMigrationState = decltype(state.buildMigrationState)::kNotStarted;
+		state.buildMigrationNotice = {};
 		state.undoHistory.clear();
 		state.undoNextActionId = resetUndoNextActionId;
 	}

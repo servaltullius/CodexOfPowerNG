@@ -31,12 +31,12 @@ test("index delegates render layer to ui_rendering module", () => {
   assert.doesNotMatch(html, /function renderQuick\(/);
   assert.doesNotMatch(html, /function renderRegistered\(/);
   assert.doesNotMatch(html, /function renderUndo\(/);
-  assert.doesNotMatch(html, /function renderRewards\(/);
+  assert.doesNotMatch(html, /function renderBuild\(/);
   assert.doesNotMatch(html, /function renderSettings\(/);
   assert.doesNotMatch(html, /function applyI18n\(/);
 });
 
-test("ui_rendering module owns i18n, tab, and list/reward/settings renderers", () => {
+test("ui_rendering module owns i18n, tab, and list/build/settings renderers", () => {
   assert.match(moduleSource, /function applyI18n\(/);
   assert.match(moduleSource, /function getActiveTabId\(/);
   assert.match(moduleSource, /function isTabActive\(/);
@@ -47,6 +47,6 @@ test("ui_rendering module owns i18n, tab, and list/reward/settings renderers", (
   assert.match(moduleSource, /function renderQuick\(/);
   assert.match(moduleSource, /function renderRegistered\(/);
   assert.match(moduleSource, /function renderUndo\(/);
-  assert.match(moduleSource, /function renderRewards\(/);
+  assert.match(moduleSource, /function renderBuild\(/);
   assert.match(moduleSource, /function renderSettings\(/);
 });

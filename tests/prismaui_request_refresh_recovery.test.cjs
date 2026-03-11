@@ -28,7 +28,7 @@ test("dropped UI refresh requests are marked pending and replayed", () => {
 
   assert.match(
     requestOpsSrc,
-    /void FlushPendingUIRefresh\(\) noexcept[\s\S]*QueueSendInventory\(SnapshotLastInventoryRequest\(\)\);[\s\S]*QueueSendRegistered\(\);[\s\S]*QueueSendRewards\(\);[\s\S]*QueueSendUndoList\(\);/,
+    /void FlushPendingUIRefresh\(\) noexcept[\s\S]*QueueSendInventory\(SnapshotLastInventoryRequest\(\)\);[\s\S]*QueueSendRegistered\(\);[\s\S]*QueueSendBuild\(\);[\s\S]*QueueSendRewards\(\);[\s\S]*QueueSendUndoList\(\);/,
     "Pending refresh flush should replay all core UI payload sends",
   );
 

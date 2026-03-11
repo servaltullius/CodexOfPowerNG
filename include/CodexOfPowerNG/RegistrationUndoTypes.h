@@ -1,9 +1,12 @@
 #pragma once
 
+#include "CodexOfPowerNG/BuildTypes.h"
+
 #include <RE/Skyrim.h>
 
 #include <cstddef>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -17,12 +20,19 @@ namespace CodexOfPowerNG::Registration
 		float          delta{ 0.0f };
 	};
 
+	struct BuildScoreContribution
+	{
+		Builds::BuildDiscipline discipline{ Builds::BuildDiscipline::Attack };
+		std::int32_t           scoreDelta{ 0 };
+	};
+
 	struct UndoRecord
 	{
-		std::uint64_t            actionId{ 0 };
-		RE::FormID               formId{ 0 };
-		RE::FormID               regKey{ 0 };
-		std::uint32_t            group{ 255 };
-		std::vector<RewardDelta> rewardDeltas;
+		std::uint64_t                            actionId{ 0 };
+		RE::FormID                               formId{ 0 };
+		RE::FormID                               regKey{ 0 };
+		std::uint32_t                            group{ 255 };
+		std::optional<BuildScoreContribution>    buildContribution;
+		std::vector<RewardDelta>                 rewardDeltas;
 	};
 }

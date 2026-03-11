@@ -27,6 +27,10 @@ namespace CodexOfPowerNG::Rewards
 	// Lightweight carry-weight-only resync used right after carry reward grants.
 	void ScheduleCarryWeightQuickResync() noexcept;
 
+	// One-time migration cleanup for legacy reward totals.
+	// Returns false when the player runtime is not ready yet and cleanup should retry later.
+	[[nodiscard]] bool CleanupLegacyRewardTotals() noexcept;
+
 	// Refunds recorded rewards (does not restore consumed items, does not clear registrations).
 	// Returns number of actor values refunded.
 	[[nodiscard]] std::size_t RefundRewards() noexcept;

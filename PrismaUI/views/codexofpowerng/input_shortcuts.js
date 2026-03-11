@@ -148,7 +148,7 @@
       if (key === "1" || code === "Digit1") return setTab("tabQuick");
       if (key === "2" || code === "Digit2") return setTab("tabRegistered");
       if (key === "3" || code === "Digit3") return setTab("tabUndo");
-      if (key === "4" || code === "Digit4") return setTab("tabRewards");
+      if (key === "4" || code === "Digit4") return setTab("tabBuild");
       if (key === "5" || code === "Digit5") return setTab("tabSettings");
 
       if (!isQuickTab) return;

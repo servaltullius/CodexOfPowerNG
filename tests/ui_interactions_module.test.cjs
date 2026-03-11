@@ -32,6 +32,123 @@ test("ui_interactions module owns quick/undo/settings handlers", () => {
   assert.match(moduleSource, /function requestInventoryPage\(/);
   assert.match(moduleSource, /function onQuickBodyClick\(/);
   assert.match(moduleSource, /function onUndoBodyClick\(/);
+  assert.match(moduleSource, /function onBatchRegisterClick\(/);
+  assert.match(moduleSource, /function toggleQuickBatchSelection\(/);
   assert.match(moduleSource, /function saveSettingsFromUi\(/);
   assert.match(moduleSource, /safeCall\("copng_saveSettings", payload\);/);
+});
+
+test("ui interactions supports select-then-confirm batch registration", () => {
+  const calls = [];
+  let selected = [];
+
+  const interactions = mod.createUIInteractions({
+    documentObj: null,
+    rootScrollEl: null,
+    quickBody: null,
+    undoBody: null,
+    buildPanelEl: null,
+    stateApi: {
+      getInventoryPage: () => ({ sections: [] }),
+      getQuickSelectedId: () => 0,
+      setQuickSelectedId: () => {},
+      getQuickVirtual: () => ({ tbodyTopPx: NaN, rowHeightPx: 0 }),
+      getCurrentUiScale: () => 1,
+      coalesce: (value, fallback) => (value == null ? fallback : value),
+      clamp: (value, lo, hi) => Math.max(lo, Math.min(hi, value)),
+      toHex32: (value) => String(value >>> 0),
+      getQuickBatchSelectedIds: () => selected,
+      setQuickBatchSelectedIds: (next) => {
+        selected = Array.isArray(next) ? next.slice() : [];
+      },
+    },
+    safeCall: (name, payload) => {
+      calls.push({ name, payload });
+    },
+    renderQuick: () => {},
+    renderRegistered: () => {},
+    registerBatchPanelApi: {
+      buildRegisterBatchViewModel: (_inventoryPage, selectedIds) => ({
+        summary: {
+          selectedRows: selectedIds.length,
+          disciplineGain: { attack: 2, defense: 0, utility: 1 },
+          formIds: selectedIds.slice(),
+        },
+      }),
+    },
+  });
+
+  interactions.toggleQuickBatchSelection(46775);
+  interactions.toggleQuickBatchSelection(61234);
+  interactions.toggleQuickBatchSelection(71234);
+
+  assert.deepEqual(selected, [46775, 61234, 71234]);
+
+  interactions.onBatchRegisterClick();
+  assert.deepEqual(calls[0], {
+    name: "copng_requestRegisterBatch",
+    payload: { formIds: [46775, 61234, 71234] },
+  });
+});
+
+test("build swap requests use distinct source and destination slots", () => {
+  const calls = [];
+  const button = {
+    nodeType: 1,
+    getAttribute(name) {
+      return {
+        "data-action": "build-swap",
+        "data-option-id": "build.attack.ferocity",
+        "data-from-slot-id": "attack_1",
+        "data-to-slot-id": "wildcard_1",
+      }[name] || "";
+    },
+    parentNode: null,
+  };
+  const buildPanelEl = { nodeType: 1 };
+  button.parentNode = buildPanelEl;
+
+  const api = mod.createUIInteractions({
+    buildPanelEl,
+    stateApi: {
+      getInventoryPage: () => ({ pageSize: 200 }),
+      coalesce: (value, fallback) => (value == null ? fallback : value),
+      getQuickSelectedId: () => 0,
+      setQuickSelectedId: () => {},
+      getQuickVirtual: () => ({ tbodyTopPx: 0, rowHeightPx: 0 }),
+      getCurrentUiScale: () => 1,
+      toHex32: (value) => String(value >>> 0),
+      getToggleKeyDik: () => 0,
+      setToggleKeyInputFromDik: () => {},
+      showToast: () => {},
+      clamp: (value, lo, hi) => Math.max(lo, Math.min(hi, value)),
+      getInputScale: () => 1,
+      setUiScaleMode: () => {},
+      setUiScaleManual: () => {},
+      getUiScaleManual: () => 1,
+      applyManualUiScale: () => {},
+      saveUiScalePrefs: () => {},
+      syncUiScaleControls: () => {},
+      setInputScale: () => {},
+      setPerfMode: () => {},
+      savePerfModePref: () => {},
+      applyPerfModeFromPrefs: () => {},
+      applyUiScaleFromPrefs: () => {},
+      getUiScaleMode: () => "auto",
+    },
+    safeCall: (name, payload) => calls.push({ name, payload }),
+  });
+
+  api.onBuildPanelClick({ target: button });
+
+  assert.deepEqual(calls, [
+    {
+      name: "copng_swapBuildOption",
+      payload: {
+        optionId: "build.attack.ferocity",
+        fromSlotId: "attack_1",
+        toSlotId: "wildcard_1",
+      },
+    },
+  ]);
 });

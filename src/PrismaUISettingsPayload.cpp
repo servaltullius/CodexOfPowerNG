@@ -120,10 +120,6 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			{ "requireTccDisplayed", settings.requireTccDisplayed },
 			{ "protectFavorites", settings.protectFavorites },
 			{ "enableLootNotify", settings.enableLootNotify },
-			{ "enableRewards", settings.enableRewards },
-			{ "rewardEvery", settings.rewardEvery },
-			{ "rewardMultiplier", settings.rewardMultiplier },
-			{ "allowSkillRewards", settings.allowSkillRewards },
 		};
 	}
 }

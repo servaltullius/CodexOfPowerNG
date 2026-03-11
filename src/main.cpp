@@ -1,4 +1,5 @@
 #include "CodexOfPowerNG/Constants.h"
+#include "CodexOfPowerNG/BuildProgression.h"
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/Events.h"
 #include "CodexOfPowerNG/L10n.h"
@@ -6,6 +7,7 @@
 #include "CodexOfPowerNG/Registration.h"
 #include "CodexOfPowerNG/Rewards.h"
 #include "CodexOfPowerNG/Serialization.h"
+#include "CodexOfPowerNG/SerializationStateStore.h"
 #include "CodexOfPowerNG/TaskScheduler.h"
 
 #include <RE/Skyrim.h>
@@ -114,6 +116,40 @@ namespace CodexOfPowerNG
 
 			if (!QueueUITask([message]() { RE::DebugNotification(message); })) {
 				RE::DebugNotification(message);
+			}
+		}
+
+		[[nodiscard]] std::string BuildMigrationNoticeMessage(
+			const Builds::BuildMigrationNoticeSnapshot& notice)
+		{
+			std::string message = "Codex NG: Legacy progression migrated into build scores";
+			if (notice.unresolvedHistoricalRegistrations > 0) {
+				message += " (";
+				message += std::to_string(notice.unresolvedHistoricalRegistrations);
+				message += " historical registrations skipped)";
+			}
+			return message;
+		}
+
+		void ProcessBuildMigrationState() noexcept
+		{
+			auto snapshot = SerializationStateStore::SnapshotState();
+			BuildProgression::NormalizeLoadedSnapshot(snapshot);
+			(void)BuildProgression::TryFinalizePendingMigration(
+				snapshot,
+				[](const SerializationStateStore::Snapshot& /*ignored*/) noexcept {
+					return Rewards::CleanupLegacyRewardTotals();
+				});
+			const auto notice = BuildProgression::ConsumeMigrationNotice(snapshot);
+			SerializationStateStore::ReplaceState(std::move(snapshot));
+
+			if (!notice.has_value()) {
+				return;
+			}
+
+			const auto message = BuildMigrationNoticeMessage(notice.value());
+			if (!QueueUITask([message]() { RE::DebugNotification(message.c_str()); })) {
+				RE::DebugNotification(message.c_str());
 			}
 		}
 	}
@@ -230,8 +266,7 @@ namespace CodexOfPowerNG
 			PrismaUIManager::OnGameLoaded();
 			Events::Install();
 			Events::OnGameLoaded();
-			Rewards::SyncRewardTotalsToPlayer();
-			Rewards::ScheduleCarryWeightQuickResync();
+			ProcessBuildMigrationState();
 			NotifyLegacyResidueIfNeeded();
 			break;
 		default:

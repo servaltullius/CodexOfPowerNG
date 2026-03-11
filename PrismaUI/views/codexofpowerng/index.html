@@ -471,6 +471,95 @@
         justify-content: center;
         background: rgba(0, 0, 0, 0.55);
       }
+      .buildBoard {
+        display: flex;
+        flex-direction: column;
+        gap: calc(12px * var(--uiScale));
+      }
+      .buildMetaStrip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: calc(8px * var(--uiScale));
+        margin-bottom: calc(10px * var(--uiScale));
+      }
+      .buildMigrationNotice {
+        display: flex;
+        flex-direction: column;
+        gap: calc(6px * var(--uiScale));
+        margin-bottom: calc(10px * var(--uiScale));
+      }
+      .buildMigrationNotice.isEmpty {
+        display: none;
+      }
+      .buildMigrationLine {
+        padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: calc(12px * var(--uiScale));
+        background: rgba(255, 255, 255, 0.05);
+      }
+      .buildPanels {
+        display: grid;
+        grid-template-columns: minmax(calc(320px * var(--uiScale)), 0.9fr) minmax(0, 1.6fr);
+        gap: calc(12px * var(--uiScale));
+      }
+      .buildPanelSection {
+        display: flex;
+        flex-direction: column;
+        gap: calc(10px * var(--uiScale));
+      }
+      .buildSlotsGrid,
+      .buildCardsGrid {
+        display: grid;
+        gap: calc(10px * var(--uiScale));
+      }
+      .buildSlotCard,
+      .buildOptionCard {
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: calc(12px * var(--uiScale));
+        background: rgba(255, 255, 255, 0.04);
+        padding: calc(12px * var(--uiScale));
+      }
+      .buildSlotCardHeader,
+      .buildOptionHeader,
+      .buildDisciplineHeader {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: calc(8px * var(--uiScale));
+      }
+      .buildSlotCardActions,
+      .buildOptionActions {
+        display: flex;
+        gap: calc(8px * var(--uiScale));
+        margin-top: calc(10px * var(--uiScale));
+        flex-wrap: wrap;
+      }
+      .buildDisciplineSection {
+        display: flex;
+        flex-direction: column;
+        gap: calc(8px * var(--uiScale));
+      }
+      .buildOptionList {
+        display: grid;
+        gap: calc(10px * var(--uiScale));
+      }
+      .quickBatchSummary {
+        display: flex;
+        gap: calc(10px * var(--uiScale));
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: calc(12px * var(--uiScale));
+      }
+      .colSelect {
+        width: calc(110px * var(--uiScale));
+        text-align: center;
+      }
+      .sectionDividerRow td {
+        padding-top: calc(14px * var(--uiScale));
+        padding-bottom: calc(8px * var(--uiScale));
+        border-bottom: 0;
+      }
       .rewardViz {
         margin: 0 0 calc(12px * var(--uiScale)) 0;
         padding: calc(12px * var(--uiScale));
@@ -583,6 +672,9 @@
         text-align: center;
       }
       @media (max-width: 980px) {
+        .buildPanels {
+          grid-template-columns: 1fr;
+        }
         .rewardDiagram {
           min-height: calc(520px * var(--uiScale));
         }
@@ -596,7 +688,7 @@
     <div class="root">
       <h1 data-i18n="app.title">Codex of Power NG</h1>
       <p data-i18n="app.desc">
-        Quick Register consumes 1 item and permanently records it. Use Settings to configure safety and rewards.
+        Quick Register consumes 1 item and permanently records it. Build score opens Attack / Defense / Utility options you can unlock and slot.
       </p>
 
       <div class="toolbar">
@@ -618,7 +710,7 @@
         <button class="active" data-tab="tabQuick"><span class="btnLabel" data-i18n="tab.quick">Quick Register</span></button>
         <button data-tab="tabRegistered"><span class="btnLabel" data-i18n="tab.registered">Registered</span></button>
         <button data-tab="tabUndo"><span class="btnLabel" data-i18n="tab.undo">Undo</span></button>
-        <button data-tab="tabRewards"><span class="btnLabel" data-i18n="tab.rewards">Rewards</span></button>
+        <button data-tab="tabBuild"><span class="btnLabel" data-i18n="tab.build">Build</span></button>
         <button data-tab="tabSettings"><span class="btnLabel" data-i18n="tab.settings">Settings</span></button>
       </div>
 
@@ -626,6 +718,7 @@
         <div class="toolbar">
           <div class="left" style="flex: 1">
             <input id="quickFilter" placeholder="Search..." data-i18n-placeholder="placeholder.search" />
+            <label class="inline"><input type="checkbox" id="quickActionableOnly" /> <span data-i18n="quick.actionableOnly">Actionable only</span></label>
           </div>
           <div class="left">
             <span class="pill" id="invMeta">Inventory: -</span>
@@ -643,6 +736,7 @@
         <table>
           <thead>
             <tr>
+              <th class="colSelect" data-i18n="th.select">Select</th>
               <th class="colGroup" data-i18n="th.group">Group</th>
               <th data-i18n="th.item">Item</th>
               <th class="colCount" data-i18n="th.count">Count</th>
@@ -651,8 +745,18 @@
           </thead>
           <tbody id="quickBody"></tbody>
         </table>
+        <div class="quickBatchSummary">
+          <div class="left">
+            <span class="pill" id="quickBatchMeta">Selected 0</span>
+            <span class="pill" id="quickBatchGain">Attack +0 / Defense +0 / Utility +0</span>
+          </div>
+          <div class="left">
+            <button id="btnClearBatch"><span class="btnLabel" data-i18n="btn.clear">Clear</span></button>
+            <button class="primary" id="btnRegisterBatch"><span class="btnLabel" data-i18n="btn.registerSelected">Register Selected</span></button>
+          </div>
+        </div>
         <div class="small" style="margin-top: 10px" data-i18n="quick.help">
-          Only shows items safe to consume (not worn, active quest items excluded, and optionally not favorited). List is paginated to avoid stutter.
+          Shows register-relevant inventory grouped by Attack / Defense / Utility. Disabled rows stay visible with their protection reason, and batch selection always counts one row as one registration.
         </div>
       </div>
 
@@ -702,40 +806,24 @@
         </div>
       </div>
 
-      <div class="card section" id="tabRewards">
+      <div class="card section" id="tabBuild">
         <div class="toolbar">
           <div class="left">
-            <span class="pill" id="rewardMeta">...</span>
+            <span class="pill" id="buildMeta">...</span>
           </div>
           <div class="left">
-            <button id="btnRefreshRewards"><span class="btnLabel" data-i18n="btn.refresh">Refresh</span></button>
-            <button class="danger" id="btnRefundRewards"><span class="btnLabel" data-i18n="btn.refund">Refund</span></button>
+            <button id="btnRefreshBuild"><span class="btnLabel" data-i18n="btn.refresh">Refresh</span></button>
           </div>
         </div>
-        <div class="rewardViz">
-          <div class="rewardDiagram">
-            <div class="rewardRing"></div>
-            <div class="rewardCharacterWrap">
-              <img id="rewardCharacterImg" src="assets/character.png" alt="Reward character" />
-              <div class="rewardImageFallback small" id="rewardImageFallback" data-i18n="rewards.imageMissing">
-                Character image missing: assets/character.png
-              </div>
-            </div>
-            <div id="rewardOrbit"></div>
+        <div class="buildBoard" id="buildPanel">
+          <div id="buildMigrationNotice" class="buildMigrationNotice isEmpty"></div>
+          <div class="buildPanels">
+            <section class="card buildPanelSection" id="buildSlotsPanel"></section>
+            <section class="buildPanelSection" id="buildCardsPanel"></section>
           </div>
-          <div class="small rewardVizHelp" data-i18n="rewards.orbitHelp">Top reward effects are shown around the character.</div>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th data-i18n="th.reward">Reward</th>
-              <th class="colCount" data-i18n="th.total">Total</th>
-            </tr>
-          </thead>
-          <tbody id="rewardsBody"></tbody>
-        </table>
-        <div class="small" style="margin-top: 10px" data-i18n="rewards.help">
-          Refund removes only recorded bonus stats. It does not restore consumed items and does not clear registrations.
+        <div class="small" style="margin-top: 10px" data-i18n="build.help">
+          Build score opens options permanently, but only your active slots apply to the current build.
         </div>
       </div>
 
@@ -878,18 +966,6 @@
             <div style="height: 10px"></div>
             <label class="inline"><input type="checkbox" id="setLootNotify" /> <span data-i18n="settings.lootNotify">Loot notification</span></label>
           </div>
-          <div class="card">
-            <h2 data-i18n="settings.rewardsTitle">Rewards</h2>
-            <label class="inline"><input type="checkbox" id="setRewardsEnabled" /> <span data-i18n="settings.enableRewards">Enable rewards</span></label>
-            <div style="height: 10px"></div>
-            <div class="small" data-i18n="settings.rewardEvery">Every</div>
-            <input id="setRewardEvery" type="number" min="1" step="1" />
-            <div style="height: 10px"></div>
-            <div class="small" data-i18n="settings.rewardMultiplier">Multiplier</div>
-            <input id="setRewardMult" type="number" min="0" step="0.1" />
-            <div style="height: 10px"></div>
-            <label class="inline"><input type="checkbox" id="setSkillRewards" /> <span data-i18n="settings.allowSkillRewards">Allow skill rewards</span></label>
-          </div>
         </div>
 
         <div style="height: 12px"></div>
@@ -925,11 +1001,12 @@
     <script src="ui_interactions.js"></script>
     <script src="ui_bootstrap.js"></script>
     <script src="interop_bridge.js"></script>
+    <script src="ui_build_panel.js"></script>
+    <script src="ui_register_batch_panel.js"></script>
     <script src="ui_rendering.js"></script>
     <script src="native_state_bridge.js"></script>
     <script src="native_bridge_bootstrap.js"></script>
     <script src="input_shortcuts.js"></script>
-    <script src="reward_orbit.js"></script>
     <script src="input_correction.js"></script>
     <script>
       const rootScrollEl = document.querySelector(".root");
@@ -965,6 +1042,9 @@
       const invPageSizeEl = document.getElementById("invPageSize");
       const btnInvPrev = document.getElementById("btnInvPrev");
       const btnInvNext = document.getElementById("btnInvNext");
+      const quickBatchMetaEl = document.getElementById("quickBatchMeta");
+      const quickBatchGainEl = document.getElementById("quickBatchGain");
+      const btnRegisterBatchEl = document.getElementById("btnRegisterBatch");
       const regBody = document.getElementById("regBody");
       const undoBody = document.getElementById("undoBody");
       const undoMetaEl = document.getElementById("undoMeta");
@@ -973,6 +1053,8 @@
       const rewardOrbitEl = document.getElementById("rewardOrbit");
       const rewardCharacterImgEl = document.getElementById("rewardCharacterImg");
       const rewardImageFallbackEl = document.getElementById("rewardImageFallback");
+      const buildPanelEl = document.getElementById("buildPanel");
+      const buildMetaEl = document.getElementById("buildMeta");
 
       const toastEl = document.getElementById("toast");
       const toastMetaEl = document.getElementById("toastMeta");
@@ -1000,6 +1082,8 @@
         (typeof window !== "undefined" && window.COPNGNativeBridgeBootstrap) || null;
       const inputShortcutsApi = (typeof window !== "undefined" && window.COPNGInputShortcuts) || null;
       const rewardOrbitApi = (typeof window !== "undefined" && window.COPNGRewardOrbit) || null;
+      const buildPanelApi = (typeof window !== "undefined" && window.COPNGBuildPanel) || null;
+      const registerBatchPanelApi = (typeof window !== "undefined" && window.COPNGRegisterBatchPanel) || null;
       const inputCorrectionApi = (typeof window !== "undefined" && window.COPNGInputCorrection) || null;
 
       function safeCall(name, payloadObj) {
@@ -1141,10 +1225,15 @@
           invPageSizeEl,
           btnInvPrev,
           btnInvNext,
+          quickBatchMetaEl,
+          quickBatchGainEl,
+          btnRegisterBatchEl,
           quickVirtual: uiState.getQuickVirtual(),
           regVirtual: uiState.getRegVirtual(),
           undoBody,
           undoMetaEl,
+          buildPanelEl,
+          buildMetaEl,
           rewardOrbitEl,
           rewardCharacterImgEl,
           rewardImageFallbackEl,
@@ -1154,6 +1243,8 @@
         },
         langUiApi: LANGUI,
         rewardOrbitApi,
+        buildPanelApi,
+        registerBatchPanelApi,
         t,
         tFmt,
         coalesce,
@@ -1174,8 +1265,12 @@
         getQuickSelectedId: uiState.getQuickSelectedId,
         setQuickSelectedId: uiState.setQuickSelectedId,
         setQuickVisibleIds: uiState.setQuickVisibleIds,
+        getQuickBatchSelectedIds: uiState.getQuickBatchSelectedIds,
+        setQuickBatchSelectedIds: uiState.setQuickBatchSelectedIds,
+        getQuickActionableOnly: uiState.getQuickActionableOnly,
         getRegistered: uiState.getRegistered,
         getUndoItems: uiState.getUndoItems,
+        getBuild: uiState.getBuild,
         getRewards: uiState.getRewards,
         getSettings: uiState.getSettings,
         getInputScale: uiState.getInputScale,
@@ -1199,7 +1294,7 @@
         renderQuick,
         renderRegistered,
         renderUndo,
-        syncRewardCharacterImageState,
+        renderBuild,
         renderRewards,
         renderSettings,
       } = uiRendering;
@@ -1211,6 +1306,7 @@
         setStateValue: uiState.setState,
         setInventoryPage: uiState.setInventoryPage,
         setRegisteredItems: uiState.setRegistered,
+        setBuildValue: uiState.setBuild,
         setRewardsValue: uiState.setRewards,
         setUndoItems: uiState.setUndoItems,
         setSettingsValue: uiState.setSettings,
@@ -1218,6 +1314,7 @@
         renderStatus,
         renderQuick,
         renderRegistered,
+        renderBuild,
         renderUndo,
         renderRewards,
         renderSettings,
@@ -1236,6 +1333,7 @@
           onState: nativeHandlers.onState,
           onInventory: nativeHandlers.onInventory,
           onRegistered: nativeHandlers.onRegistered,
+          onBuild: nativeHandlers.onBuild,
           onRewards: nativeHandlers.onRewards,
           onUndoList: nativeHandlers.onUndoList,
           onSettings: nativeHandlers.onSettings,
@@ -1254,6 +1352,7 @@
         window.copng_setInventory = (jsonStr) =>
           nativeHandlers.onInventory(parseJsonOr(jsonStr, { page: 0, pageSize: 200, total: 0, hasMore: false, items: [] }));
         window.copng_setRegistered = (jsonStr) => nativeHandlers.onRegistered(parseJsonOr(jsonStr, []));
+        window.copng_setBuild = (jsonStr) => nativeHandlers.onBuild(parseJsonOr(jsonStr, null));
         window.copng_setRewards = (jsonStr) => nativeHandlers.onRewards(parseJsonOr(jsonStr, { totals: [] }));
         window.copng_setUndoList = (jsonStr) => nativeHandlers.onUndoList(parseJsonOr(jsonStr, []));
         window.copng_setSettings = (jsonStr) => nativeHandlers.onSettings(parseJsonOr(jsonStr, null));
@@ -1265,12 +1364,14 @@
         rootScrollEl,
         quickBody,
         undoBody,
+        buildPanelEl,
         stateApi: uiState,
         safeCall,
         t,
         KC,
         renderQuick,
         renderRegistered,
+        registerBatchPanelApi,
         clamp,
         getOffsetTopInRoot,
         quickRowBasePx: QUICK_ROW_BASE_PX,
@@ -1289,7 +1390,7 @@
         rootScrollEl,
         quickBody,
         undoBody,
-        rewardCharacterImgEl,
+        buildPanelEl,
         invPageSizeEl,
         btnInvPrev,
         btnInvNext,

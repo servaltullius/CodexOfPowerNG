@@ -206,7 +206,7 @@
         rootScrollEl,
         quickBody: options.quickBody,
         undoBody: options.undoBody,
-        rewardCharacterImgEl: options.rewardCharacterImgEl,
+        buildPanelEl: options.buildPanelEl,
         invPageSizeEl: options.invPageSizeEl,
         btnInvPrev: options.btnInvPrev,
         btnInvNext: options.btnInvNext,
@@ -233,9 +233,13 @@
         scheduleRenderRegistered: interactionsApi.scheduleRenderRegistered,
         renderUndo: renderingApi.renderUndo,
         scheduleVirtualRender: options.scheduleVirtualRender,
-        renderRewards: renderingApi.renderRewards,
+        renderBuild: renderingApi.renderBuild,
         onQuickBodyClick: interactionsApi.onQuickBodyClick,
         onUndoBodyClick: interactionsApi.onUndoBodyClick,
+        onBuildPanelClick: interactionsApi.onBuildPanelClick,
+        onBatchRegisterClick: interactionsApi.onBatchRegisterClick,
+        onClearBatchSelection: interactionsApi.clearQuickBatchSelection,
+        onQuickActionableOnlyChanged: interactionsApi.onQuickActionableOnlyChanged,
         onSaveSettings: interactionsApi.saveSettingsFromUi,
         updateToggleKeyResolved: stateApi.updateToggleKeyResolved,
         setCaptureToggleKey: stateApi.setCaptureToggleKey,
@@ -260,6 +264,7 @@
     safeCall("copng_requestState", {});
     safeCall("copng_getSettings", {});
     safeCall("copng_requestUndoList", {});
+    safeCall("copng_requestBuild", {});
 
     if (inputCorrectionApi && typeof inputCorrectionApi.installInputCorrection === "function") {
       inputCorrectionApi.installInputCorrection({

@@ -53,6 +53,13 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			QueueSendRewards();
 		}
 
+		void OnJsRequestBuild(const char* /*argument*/) noexcept
+		{
+			FlushPendingUIRefresh();
+			SKSE::log::info("JS requested build");
+			HandleRequestBuild();
+		}
+
 		void OnJsRequestUndoList(const char* /*argument*/) noexcept
 		{
 			FlushPendingUIRefresh();
@@ -77,6 +84,26 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			HandleRegisterItemRequest(argument);
 		}
 
+		void OnJsRegisterBatch(const char* argument) noexcept
+		{
+			HandleRegisterBatchRequest(argument);
+		}
+
+		void OnJsActivateBuildOption(const char* argument) noexcept
+		{
+			HandleActivateBuildOptionRequest(argument);
+		}
+
+		void OnJsDeactivateBuildOption(const char* argument) noexcept
+		{
+			HandleDeactivateBuildOptionRequest(argument);
+		}
+
+		void OnJsSwapBuildOption(const char* argument) noexcept
+		{
+			HandleSwapBuildOptionRequest(argument);
+		}
+
 		void OnJsUndoRegisterItem(const char* argument) noexcept
 		{
 			HandleUndoRegisterRequest(argument);
@@ -95,10 +122,15 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		api->RegisterJSListener(view, "copng_requestInventory", OnJsRequestInventory);
 		api->RegisterJSListener(view, "copng_requestRegistered", OnJsRequestRegistered);
 		api->RegisterJSListener(view, "copng_requestRewards", OnJsRequestRewards);
+		api->RegisterJSListener(view, "copng_requestBuild", OnJsRequestBuild);
 		api->RegisterJSListener(view, "copng_requestUndoList", OnJsRequestUndoList);
 		api->RegisterJSListener(view, "copng_getSettings", OnJsGetSettings);
 		api->RegisterJSListener(view, "copng_refundRewards", OnJsRefundRewards);
 		api->RegisterJSListener(view, "copng_registerItem", OnJsRegisterItem);
+		api->RegisterJSListener(view, "copng_requestRegisterBatch", OnJsRegisterBatch);
+		api->RegisterJSListener(view, "copng_activateBuildOption", OnJsActivateBuildOption);
+		api->RegisterJSListener(view, "copng_deactivateBuildOption", OnJsDeactivateBuildOption);
+		api->RegisterJSListener(view, "copng_swapBuildOption", OnJsSwapBuildOption);
 		api->RegisterJSListener(view, "copng_undoRegisterItem", OnJsUndoRegisterItem);
 	}
 }

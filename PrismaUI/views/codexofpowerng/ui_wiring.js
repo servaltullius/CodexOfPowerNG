@@ -25,7 +25,6 @@
 
     const safeCall = asFn(options.safeCall, noop);
     const setTab = asFn(options.setTab, noop);
-    const syncRewardCharacterImageState = asFn(options.syncRewardCharacterImageState, noop);
     const requestInventoryPage = asFn(options.requestInventoryPage, noop);
     const getInventoryPage = asFn(options.getInventoryPage, function () {
       return { page: 0, pageSize: 200 };
@@ -44,9 +43,13 @@
     const scheduleRenderRegistered = asFn(options.scheduleRenderRegistered, noop);
     const renderUndo = asFn(options.renderUndo, noop);
     const scheduleVirtualRender = asFn(options.scheduleVirtualRender, noop);
-    const renderRewards = asFn(options.renderRewards, noop);
+    const renderBuild = asFn(options.renderBuild, noop);
     const onQuickBodyClick = asFn(options.onQuickBodyClick, noop);
     const onUndoBodyClick = asFn(options.onUndoBodyClick, noop);
+    const onBuildPanelClick = asFn(options.onBuildPanelClick, noop);
+    const onBatchRegisterClick = asFn(options.onBatchRegisterClick, noop);
+    const onClearBatchSelection = asFn(options.onClearBatchSelection, noop);
+    const onQuickActionableOnlyChanged = asFn(options.onQuickActionableOnlyChanged, noop);
     const onSaveSettings = asFn(options.onSaveSettings, noop);
     const updateToggleKeyResolved = asFn(options.updateToggleKeyResolved, noop);
     const setCaptureToggleKey = asFn(options.setCaptureToggleKey, noop);
@@ -73,7 +76,7 @@
     const rootScrollEl = options.rootScrollEl || byId(doc, "root");
     const quickBody = options.quickBody || byId(doc, "quickBody");
     const undoBody = options.undoBody || byId(doc, "undoBody");
-    const rewardCharacterImgEl = options.rewardCharacterImgEl || byId(doc, "rewardCharacterImg");
+    const buildPanelEl = options.buildPanelEl || byId(doc, "buildPanel");
     const invPageSizeEl = options.invPageSizeEl || byId(doc, "invPageSize");
     const btnInvPrev = options.btnInvPrev || byId(doc, "btnInvPrev");
     const btnInvNext = options.btnInvNext || byId(doc, "btnInvNext");
@@ -100,12 +103,6 @@
       }
     }
 
-    if (rewardCharacterImgEl) {
-      addListener(rewardCharacterImgEl, "load", syncRewardCharacterImageState);
-      addListener(rewardCharacterImgEl, "error", syncRewardCharacterImageState);
-      syncRewardCharacterImageState();
-    }
-
     addListener(byId(doc, "btnRefreshState"), "click", function () {
       safeCall("copng_requestState", {});
       safeCall("copng_getSettings", {});
@@ -117,6 +114,12 @@
 
     addListener(byId(doc, "btnRefreshInv"), "click", function () {
       requestInventoryPage(0);
+    });
+    addListener(byId(doc, "btnRegisterBatch"), "click", onBatchRegisterClick);
+    addListener(byId(doc, "btnClearBatch"), "click", onClearBatchSelection);
+    addListener(byId(doc, "quickActionableOnly"), "change", function (e) {
+      const target = e && e.target ? e.target : byId(doc, "quickActionableOnly");
+      onQuickActionableOnlyChanged(!!(target && target.checked));
     });
 
     if (invPageSizeEl) {
@@ -149,14 +152,9 @@
       safeCall("copng_requestUndoList", {});
       renderUndo();
     });
-    addListener(byId(doc, "btnRefreshRewards"), "click", function () {
-      safeCall("copng_requestRewards", {});
-    });
-
-    addListener(byId(doc, "btnRefundRewards"), "click", async function () {
-      const ok = await showConfirm(t("confirm.refund", "Refund rewards? This cannot be undone."));
-      if (!ok) return;
-      safeCall("copng_refundRewards", {});
+    addListener(byId(doc, "btnRefreshBuild"), "click", function () {
+      safeCall("copng_requestBuild", {});
+      renderBuild();
     });
 
     addListener(byId(doc, "quickFilter"), "input", scheduleRenderQuick);
@@ -179,7 +177,7 @@
     if (win && typeof win.addEventListener === "function") {
       addListener(win, "resize", function () {
         scheduleVirtualRender({ force: true });
-        renderRewards();
+        renderBuild();
       });
     }
 
@@ -188,6 +186,9 @@
     }
     if (undoBody) {
       addListener(undoBody, "click", onUndoBodyClick);
+    }
+    if (buildPanelEl) {
+      addListener(buildPanelEl, "click", onBuildPanelClick);
     }
 
     addListener(byId(doc, "btnReloadSettings"), "click", function () {

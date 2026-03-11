@@ -60,6 +60,14 @@ Payload:
 {}
 ```
 
+### `window.copng_requestBuild(payloadJson)`
+Requests build summary, option catalog state, and active slots via `window.copng_setBuild(...)`.
+
+Payload:
+```json
+{}
+```
+
 ### `window.copng_requestUndoList(payloadJson)`
 Requests recent register-undo candidates via `window.copng_setUndoList(...)`.
 
@@ -87,13 +95,14 @@ Payload (all fields optional; omitted fields keep current value):
 {
   "toggleKeyCode": 62,
   "languageOverride": "auto|en|ko",
+  "uiPauseGame": true,
+  "uiDisableFocusMenu": false,
+  "uiDestroyOnClose": true,
+  "uiInputScale": 1.0,
   "normalizeRegistration": false,
+  "requireTccDisplayed": false,
   "protectFavorites": true,
-  "enableLootNotify": true,
-  "enableRewards": true,
-  "rewardEvery": 5,
-  "rewardMultiplier": 1.0,
-  "allowSkillRewards": false
+  "enableLootNotify": true
 }
 ```
 
@@ -109,6 +118,49 @@ Notes:
 - `formId` may be a number or a string (`"0x00012EB7"`).
 - On failure, the plugin returns an error toast and the item is not consumed.
 
+### `window.copng_requestRegisterBatch(payloadJson)`
+Attempts to register multiple inventory rows in order.
+
+Payload:
+```json
+{ "formIds": [46775, 51234] }
+```
+
+Notes:
+- Each array entry represents exactly one requested registration row.
+- Native code currently preserves array order and does not collapse rows before processing.
+
+### `window.copng_activateBuildOption(payloadJson)`
+Attempts to activate a build option into a slot.
+
+Payload:
+```json
+{ "optionId": "build.attack.ferocity", "slotId": "attack_1" }
+```
+
+### `window.copng_deactivateBuildOption(payloadJson)`
+Attempts to clear one active build slot.
+
+Payload:
+```json
+{ "slotId": "attack_1" }
+```
+
+### `window.copng_swapBuildOption(payloadJson)`
+Attempts to move an already active option between slots.
+
+Payload:
+```json
+{
+  "optionId": "build.attack.ferocity",
+  "fromSlotId": "attack_1",
+  "toSlotId": "wildcard_1"
+}
+```
+
+Notes:
+- Build activation/deactivation/swap requests are combat-locked.
+
 ### `window.copng_undoRegisterItem(payloadJson)`
 Attempts to undo the latest registration action.
 
@@ -119,8 +171,8 @@ Payload:
 
 Notes:
 - Safety policy: only the latest action can be undone (LIFO).
-- Undo restores 1 consumed item and rolls back reward deltas recorded for that action.
-- If item restore succeeds but no actor-value delta remains to roll back, the success message may include a warning suffix (`[warning: reward rollback not applied]` / `[경고: 보상 롤백이 적용되지 않음]`).
+- Undo restores 1 consumed item and rolls back build-progression contribution recorded for that action.
+- If item restore succeeds but no remaining progression delta can be applied, the success message may include a warning suffix (`[warning: reward rollback not applied]` / `[경고: 보상 롤백이 적용되지 않음]`).
 
 ### `window.copng_refundRewards(payloadJson)`
 Refunds recorded rewards (does not restore consumed items; registrations remain).
@@ -137,9 +189,14 @@ Payload:
   - `copng_setState`
   - `copng_setInventory`
   - `copng_setRegistered`
+  - `copng_setBuild`
   - `copng_setRewards`
   - `copng_setUndoList`
+- `copng_requestRegisterBatch` follows the same invalidation set as single register.
 - `copng_undoRegisterItem` follows the same invalidation set as register.
+- `copng_activateBuildOption`, `copng_deactivateBuildOption`, and `copng_swapBuildOption` invalidate:
+  - `copng_setState`
+  - `copng_setBuild`
 - `copng_refundRewards` currently invalidates:
   - `copng_setState`
   - `copng_setRewards`
@@ -155,6 +212,8 @@ Example payload:
   "ui": { "ready": true, "focused": false, "hidden": true },
   "registeredCount": 3,
   "rewardCount": 12,
+  "buildSummary": { "attackScore": 4, "defenseScore": 3, "utilityScore": 8, "totalScore": 15 },
+  "buildMigration": { "state": 2, "version": 1, "needsNotice": false, "legacyRewardsMigrated": false, "unresolvedHistoricalRegistrations": 0 },
   "language": "en",
   "toggleKeyCode": 62
 }
@@ -162,21 +221,46 @@ Example payload:
 
 ### `window.copng_setInventory(jsonOrString)`
 Quick-register inventory list (safe-to-consume entries only).
-Implementation note: native side may serve this from a short-lived internal cache. Payload schema is unchanged.
+Implementation note: native side may serve this from a short-lived internal cache.
 
 Example:
 ```json
-[
-  {
-    "formId": 46775,
-    "regKey": 46775,
-    "name": "Iron Sword",
-    "group": 0,
-    "groupName": "Weapons",
-    "totalCount": 3,
-    "safeCount": 2
-  }
-]
+{
+  "page": 0,
+  "pageSize": 200,
+  "total": 1,
+  "hasMore": false,
+  "items": [
+    {
+      "formId": 46775,
+      "regKey": 46775,
+      "name": "Iron Sword",
+      "group": 0,
+      "groupName": "Weapons",
+      "totalCount": 3,
+      "safeCount": 2
+    }
+  ],
+  "sections": [
+    {
+      "group": 0,
+      "groupName": "Weapons",
+      "discipline": "attack",
+      "rows": [
+        {
+          "formId": 46775,
+          "regKey": 46775,
+          "name": "Iron Sword",
+          "discipline": "attack",
+          "totalCount": 3,
+          "safeCount": 2,
+          "actionable": true,
+          "disabledReason": null
+        }
+      ]
+    }
+  ]
+}
 ```
 
 ### `window.copng_setRegistered(jsonOrString)`
@@ -202,6 +286,41 @@ Example:
   "totals": [
     { "label": "Health", "total": 4.0, "format": "raw", "display": "+4.00" }
   ]
+}
+```
+
+### `window.copng_setBuild(jsonOrString)`
+Build summary, unlock state, and active slot payload.
+
+Example:
+```json
+{
+  "disciplines": {
+    "attack": { "score": 12, "unlockedBaselineCount": 1 },
+    "defense": { "score": 4, "unlockedBaselineCount": 0 },
+    "utility": { "score": 7, "unlockedBaselineCount": 0 }
+  },
+  "options": [
+    {
+      "id": "build.attack.ferocity",
+      "discipline": "attack",
+      "layer": "slotted",
+      "unlockScore": 5,
+      "unlocked": true,
+      "slotCompatibility": "same_or_wildcard",
+      "effectType": "actor_value",
+      "effectKey": "attack_damage_mult",
+      "magnitude": 5.0
+    }
+  ],
+  "activeSlots": [
+    { "slotId": "attack_1", "slotKind": "attack", "optionId": "build.attack.ferocity", "occupied": true }
+  ],
+  "migrationNotice": {
+    "needsNotice": false,
+    "legacyRewardsMigrated": false,
+    "unresolvedHistoricalRegistrations": 0
+  }
 }
 ```
 

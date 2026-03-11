@@ -425,6 +425,42 @@ namespace CodexOfPowerNG::Rewards
 		SyncRuntime::MarkCarryWeightQuickResyncRerunRequested();
 	}
 
+	bool CleanupLegacyRewardTotals() noexcept
+	{
+		auto totals = Engine::SnapshotRewardTotals();
+		if (totals.empty()) {
+			RewardStateStore::Clear();
+			return true;
+		}
+
+		auto* player = RE::PlayerCharacter::GetSingleton();
+		if (!player) {
+			return false;
+		}
+		auto* avOwner = player->AsActorValueOwner();
+		if (!avOwner) {
+			return false;
+		}
+
+		Engine::NormalizeRewardCapsOnStateAndPlayer();
+		totals = Engine::SnapshotRewardTotals();
+		RewardStateStore::Clear();
+
+		bool carryWeightTouched = false;
+		for (const auto& [av, total] : totals) {
+			avOwner->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kPermanent, av, -total);
+			if (av == RE::ActorValue::kCarryWeight && std::abs(total) > kRewardCapEpsilon) {
+				carryWeightTouched = true;
+			}
+		}
+
+		if (carryWeightTouched) {
+			ScheduleCarryWeightQuickResync();
+		}
+
+		return true;
+	}
+
 	std::size_t RefundRewards() noexcept
 	{
 		auto* player = RE::PlayerCharacter::GetSingleton();

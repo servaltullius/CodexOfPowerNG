@@ -129,6 +129,7 @@
       const force = !!(params && params.force);
       if (!rootScrollEl || !quickBody) return;
       if (getActiveSectionId() !== "tabQuick") return;
+      if (quickBody.dataset && quickBody.dataset.virtualMode === "grouped") return;
 
       const rows = quickVirtual.rows || [];
       const total = rows.length;

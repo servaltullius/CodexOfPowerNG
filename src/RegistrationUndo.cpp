@@ -1,5 +1,6 @@
 #include "CodexOfPowerNG/Registration.h"
 
+#include "CodexOfPowerNG/BuildProgression.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/RewardCaps.h"
 #include "CodexOfPowerNG/RegistrationStateStore.h"
@@ -59,7 +60,7 @@ namespace CodexOfPowerNG::Registration
 			item.regKey = record.regKey;
 			item.group = record.group;
 			item.canUndo = (i == 0);
-			item.hasRewardDelta = !record.rewardDeltas.empty();
+			item.hasRewardDelta = record.buildContribution.has_value() || !record.rewardDeltas.empty();
 			item.name = ResolveUndoItemName(record);
 			out.push_back(std::move(item));
 		}
@@ -111,17 +112,26 @@ namespace CodexOfPowerNG::Registration
 			return result;
 		}
 
-		const auto rollbackApplied = Rewards::RollbackRewardDeltas(record.rewardDeltas);
-		const bool hadRollbackTarget =
-			std::any_of(record.rewardDeltas.begin(), record.rewardDeltas.end(), [](const RewardDelta& entry) {
-				return std::abs(entry.delta) > Rewards::kRewardCapEpsilon;
-			});
-		if (hadRollbackTarget && rollbackApplied == 0) {
+		bool hadRollbackTarget = false;
+		bool rollbackApplied = false;
+		if (record.buildContribution.has_value()) {
+			hadRollbackTarget = record.buildContribution->scoreDelta > 0;
+			const auto rollbackResult =
+				BuildProgression::RollbackRegistrationContributionDetailed(record.buildContribution.value());
+			rollbackApplied = rollbackResult.scoreChanged || rollbackResult.deactivatedSlots > 0u;
+		} else {
+			const auto legacyRollbackApplied = Rewards::RollbackRewardDeltas(record.rewardDeltas);
+			hadRollbackTarget =
+				std::any_of(record.rewardDeltas.begin(), record.rewardDeltas.end(), [](const RewardDelta& entry) {
+					return std::abs(entry.delta) > Rewards::kRewardCapEpsilon;
+				});
+			rollbackApplied = legacyRollbackApplied > 0;
+		}
+		if (hadRollbackTarget && !rollbackApplied) {
 			SKSE::log::warn(
-				"Undo reward rollback: no actor deltas applied (actionId={}, regKey=0x{:08X}, deltas={})",
+				"Undo progression rollback: no state changes applied (actionId={}, regKey=0x{:08X})",
 				record.actionId,
-				static_cast<std::uint32_t>(record.regKey),
-				record.rewardDeltas.size());
+				static_cast<std::uint32_t>(record.regKey));
 		}
 		InvalidateQuickRegisterCache();
 
@@ -133,7 +143,7 @@ namespace CodexOfPowerNG::Registration
 			" (" + L10n::T("msg.totalPrefix", "total ") +
 			std::to_string(totalRegistered) +
 			L10n::T("msg.totalSuffix", " items") + ")";
-		if (hadRollbackTarget && rollbackApplied == 0) {
+		if (hadRollbackTarget && !rollbackApplied) {
 			result.message += L10n::T(
 				"msg.undoRewardRollbackWarning",
 				" [warning: reward rollback not applied]");

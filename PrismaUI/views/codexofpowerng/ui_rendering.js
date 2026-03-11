@@ -81,8 +81,25 @@
     const getQuickSelectedId = asFn(options.getQuickSelectedId, () => 0);
     const setQuickSelectedId = asFn(options.setQuickSelectedId, noop);
     const setQuickVisibleIds = asFn(options.setQuickVisibleIds, noop);
+    const getQuickBatchSelectedIds = asFn(options.getQuickBatchSelectedIds, () => []);
+    const setQuickBatchSelectedIds = asFn(options.setQuickBatchSelectedIds, noop);
+    const getQuickActionableOnly = asFn(options.getQuickActionableOnly, () => false);
     const getRegistered = asFn(options.getRegistered, () => []);
     const getUndoItems = asFn(options.getUndoItems, () => []);
+    const getBuild = asFn(options.getBuild, () => ({
+      disciplines: {
+        attack: { score: 0, unlockedBaselineCount: 0 },
+        defense: { score: 0, unlockedBaselineCount: 0 },
+        utility: { score: 0, unlockedBaselineCount: 0 },
+      },
+      options: [],
+      activeSlots: [],
+      migrationNotice: {
+        needsNotice: false,
+        legacyRewardsMigrated: false,
+        unresolvedHistoricalRegistrations: 0,
+      },
+    }));
     const getRewards = asFn(options.getRewards, () => ({ totals: [] }));
     const getSettings = asFn(options.getSettings, () => null);
     const getInputScale = asFn(options.getInputScale, () => 1);
@@ -91,6 +108,8 @@
     const getLotdGateBlockingToastShown = asFn(options.getLotdGateBlockingToastShown, () => false);
     const setLotdGateBlockingToastShown = asFn(options.setLotdGateBlockingToastShown, noop);
     const rewardOrbitApi = options.rewardOrbitApi || null;
+    const buildPanelApi = options.buildPanelApi || null;
+    const registerBatchPanelApi = options.registerBatchPanelApi || null;
     const langUiApi = options.langUiApi || null;
 
     function syncRewardCharacterImageState() {
@@ -282,7 +301,72 @@
     function renderQuick() {
       const inventoryPage = getInventoryPage() || {};
       const quickFilterEl = documentObj ? documentObj.getElementById("quickFilter") : null;
+      const quickActionableOnlyEl = documentObj ? documentObj.getElementById("quickActionableOnly") : null;
       const query = String((quickFilterEl && quickFilterEl.value) || "").toLowerCase();
+      if (quickActionableOnlyEl) quickActionableOnlyEl.checked = !!getQuickActionableOnly();
+      if (registerBatchPanelApi && typeof registerBatchPanelApi.buildRegisterBatchViewModel === "function") {
+        const viewModel = registerBatchPanelApi.buildRegisterBatchViewModel(inventoryPage, getQuickBatchSelectedIds(), {
+          actionableOnly: getQuickActionableOnly(),
+          query,
+        });
+
+        if (refs.quickBody && refs.quickBody.dataset) refs.quickBody.dataset.virtualMode = "grouped";
+        if (refs.quickVirtual) refs.quickVirtual.rows = [];
+        const actionableIds = (Array.isArray(viewModel.rows) ? viewModel.rows : [])
+          .filter((row) => row && row.canBatchSelect)
+          .map((row) => Number(row.formId) >>> 0);
+        setQuickVisibleIds(actionableIds);
+        if (getQuickSelectedId() && actionableIds.indexOf(getQuickSelectedId()) === -1) {
+          setQuickSelectedId(0);
+        }
+        const validSelected = Array.isArray(viewModel.summary && viewModel.summary.formIds)
+          ? viewModel.summary.formIds
+          : [];
+        setQuickBatchSelectedIds(validSelected);
+
+        if (refs.quickBody && typeof registerBatchPanelApi.renderRegisterBatchTbody === "function") {
+          refs.quickBody.innerHTML = registerBatchPanelApi.renderRegisterBatchTbody(viewModel, {
+            t,
+            escapeHtml,
+            toHex32,
+          });
+        }
+
+        if (refs.quickBatchMetaEl) {
+          refs.quickBatchMetaEl.textContent = tFmt("quick.selectedRows", "Selected {count}", {
+            count: Number((viewModel.summary && viewModel.summary.selectedRows) || 0) >>> 0,
+          });
+        }
+        if (refs.quickBatchGainEl) {
+          const gain = (viewModel.summary && viewModel.summary.disciplineGain) || {};
+          refs.quickBatchGainEl.textContent = tFmt(
+            "quick.disciplineGain",
+            "Attack +{attack} / Defense +{defense} / Utility +{utility}",
+            {
+              attack: Number(gain.attack || 0) >>> 0,
+              defense: Number(gain.defense || 0) >>> 0,
+              utility: Number(gain.utility || 0) >>> 0,
+            },
+          );
+        }
+        if (refs.btnRegisterBatchEl) {
+          refs.btnRegisterBatchEl.disabled = !viewModel.summary || !Array.isArray(viewModel.summary.formIds) || viewModel.summary.formIds.length === 0;
+        }
+
+        const total = coalesce(inventoryPage.total, viewModel.rows.length);
+        if (refs.invMetaEl) {
+          refs.invMetaEl.textContent = `${t("inv.inventory", "Inventory")}: ${t("inv.showing", "showing")} ${viewModel.rows.length}/${total}`;
+        }
+        if (refs.invPageSizeEl) {
+          const shownSize = String(coalesce(inventoryPage.pageSize, 200) || 200);
+          if (refs.invPageSizeEl.value !== shownSize) refs.invPageSizeEl.value = shownSize;
+        }
+        if (refs.btnInvPrev) refs.btnInvPrev.disabled = true;
+        if (refs.btnInvNext) refs.btnInvNext.disabled = true;
+        return;
+      }
+
+      if (refs.quickBody && refs.quickBody.dataset) delete refs.quickBody.dataset.virtualMode;
       const items = Array.isArray(inventoryPage.items) ? inventoryPage.items : [];
       const rows = items.filter((item) => !query || String(item.name || "").toLowerCase().indexOf(query) !== -1);
       if (refs.quickVirtual) refs.quickVirtual.rows = rows;
@@ -388,6 +472,32 @@
               .join("");
     }
 
+    function renderBuild() {
+      const build = getBuild() || {};
+      const disciplines = build.disciplines || {};
+      if (refs.buildMetaEl) {
+        refs.buildMetaEl.textContent = tFmt("build.scoreSummary", "Attack {attack} / Defense {defense} / Utility {utility}", {
+          attack: Number((disciplines.attack && disciplines.attack.score) || 0) >>> 0,
+          defense: Number((disciplines.defense && disciplines.defense.score) || 0) >>> 0,
+          utility: Number((disciplines.utility && disciplines.utility.score) || 0) >>> 0,
+        });
+      }
+      if (!refs.buildPanelEl) return;
+      if (buildPanelApi && typeof buildPanelApi.renderBuildPanelHtml === "function") {
+        refs.buildPanelEl.innerHTML = buildPanelApi.renderBuildPanelHtml(build, {
+          t,
+          tFmt,
+          escapeHtml,
+        });
+        return;
+      }
+
+      refs.buildPanelEl.innerHTML = `
+        <div id="buildMigrationNotice"></div>
+        <section id="buildSlotsPanel"><h2>${escapeHtml(t("build.activeSlots", "Active Slots"))}</h2></section>
+        <section id="buildCardsPanel"><h2>${escapeHtml(t("build.availableOptions", "Available Options"))}</h2></section>`;
+    }
+
     function renderSettings() {
       const settings = getSettings();
       if (!settings || !documentObj) return;
@@ -413,10 +523,6 @@
       assignChecked("setRequireTccDisplayed", settings.requireTccDisplayed);
       assignChecked("setProtectFav", settings.protectFavorites);
       assignChecked("setLootNotify", settings.enableLootNotify);
-      assignChecked("setRewardsEnabled", settings.enableRewards);
-      assignValue("setRewardEvery", coalesce(settings.rewardEvery, 5));
-      assignValue("setRewardMult", coalesce(settings.rewardMultiplier, 1.0));
-      assignChecked("setSkillRewards", settings.allowSkillRewards);
 
       const desiredInputScale = parseFloat(String(coalesce(settings.uiInputScale, 1.0)));
       setInputScale(Number.isFinite(desiredInputScale) && desiredInputScale > 0 ? desiredInputScale : 1.0, { persist: false });
@@ -436,8 +542,8 @@
         renderUndo();
         return;
       }
-      if (nextTabId === "tabRewards") {
-        renderRewards();
+      if (nextTabId === "tabBuild") {
+        renderBuild();
         return;
       }
       if (nextTabId === "tabSettings") {
@@ -491,6 +597,7 @@
       renderQuick,
       renderRegistered,
       renderUndo,
+      renderBuild,
       syncRewardCharacterImageState,
       renderRewardOrbit,
       renderRewards,

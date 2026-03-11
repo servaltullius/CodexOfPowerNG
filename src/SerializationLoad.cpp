@@ -1,5 +1,6 @@
 #include "SerializationInternal.h"
 
+#include "CodexOfPowerNG/BuildProgression.h"
 #include "CodexOfPowerNG/Constants.h"
 #include "CodexOfPowerNG/Registration.h"
 #include "CodexOfPowerNG/RewardCaps.h"
@@ -25,6 +26,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 	{
 		inline constexpr std::uint32_t kMaxSerializedRewardEntries = 256;
 		inline constexpr std::uint32_t kMaxSerializedUndoRewardDeltas = 64;
+		inline constexpr std::uint32_t kMaxSerializedBuildSlotStringLength = 128;
 
 		[[nodiscard]] bool IsSupportedRewardActorValue(std::uint32_t avRaw) noexcept
 		{
@@ -88,6 +90,35 @@ namespace CodexOfPowerNG::Serialization::Internal
 				}
 				length -= bytesRead;
 			}
+		}
+
+		[[nodiscard]] bool ReadString(
+			SKSE::SerializationInterface* a_intfc,
+			std::uint32_t&                remaining,
+			std::string&                  out) noexcept
+		{
+			std::uint32_t length{};
+			if (remaining < sizeof(length) || a_intfc->ReadRecordData(length) != sizeof(length)) {
+				return false;
+			}
+			remaining -= static_cast<std::uint32_t>(sizeof(length));
+
+			if (length > remaining) {
+				return false;
+			}
+
+			std::string value(length, '\0');
+			if (length > 0 && a_intfc->ReadRecordData(value.data(), length) != length) {
+				return false;
+			}
+			remaining -= length;
+
+			if (length > kMaxSerializedBuildSlotStringLength) {
+				value.resize(kMaxSerializedBuildSlotStringLength);
+			}
+
+			out = std::move(value);
+			return true;
 		}
 	}
 
@@ -203,6 +234,101 @@ namespace CodexOfPowerNG::Serialization::Internal
 				}
 				break;
 			}
+			case kRecordBuildScores: {
+				if (version != 1u) {
+					SKSE::log::warn("Unsupported BSCR version {}", version);
+					Skip(a_intfc, length);
+					break;
+				}
+				if (length < sizeof(loadedState.attackScore) + sizeof(loadedState.defenseScore) + sizeof(loadedState.utilityScore) ||
+				    a_intfc->ReadRecordData(loadedState.attackScore) != sizeof(loadedState.attackScore) ||
+				    a_intfc->ReadRecordData(loadedState.defenseScore) != sizeof(loadedState.defenseScore) ||
+				    a_intfc->ReadRecordData(loadedState.utilityScore) != sizeof(loadedState.utilityScore)) {
+					SKSE::log::error("Failed to read build scores");
+					return;
+				}
+
+				const auto bytesRead = static_cast<std::uint32_t>(
+					sizeof(loadedState.attackScore) +
+					sizeof(loadedState.defenseScore) +
+					sizeof(loadedState.utilityScore));
+				if (length > bytesRead) {
+					Skip(a_intfc, length - bytesRead);
+				}
+				break;
+			}
+			case kRecordBuildSlots: {
+				if (version != 1u) {
+					SKSE::log::warn("Unsupported BSLT version {}", version);
+					Skip(a_intfc, length);
+					break;
+				}
+
+				std::uint32_t slotCount{};
+				if (length < sizeof(slotCount) || a_intfc->ReadRecordData(slotCount) != sizeof(slotCount)) {
+					SKSE::log::error("Failed to read build slot count");
+					return;
+				}
+
+				auto remaining = length - static_cast<std::uint32_t>(sizeof(slotCount));
+				loadedState.activeBuildSlots = {};
+				const auto maxSlots = static_cast<std::uint32_t>(loadedState.activeBuildSlots.size());
+				for (std::uint32_t i = 0; i < slotCount && remaining > 0; ++i) {
+					std::string slotValue;
+					if (!ReadString(a_intfc, remaining, slotValue)) {
+						SKSE::log::error("Failed to read build slot entry");
+						return;
+					}
+					if (i < maxSlots) {
+						loadedState.activeBuildSlots[i] = std::move(slotValue);
+					}
+				}
+
+				if (remaining > 0) {
+					Skip(a_intfc, remaining);
+				}
+				break;
+			}
+			case kRecordBuildMigration: {
+				if (version != 1u) {
+					SKSE::log::warn("Unsupported BMIG version {}", version);
+					Skip(a_intfc, length);
+					break;
+				}
+
+				const auto minimumLength = static_cast<std::uint32_t>(
+					sizeof(loadedState.buildMigrationVersion) +
+					sizeof(std::uint32_t) +
+					sizeof(std::uint8_t) +
+					sizeof(std::uint8_t) +
+					sizeof(loadedState.buildMigrationNotice.unresolvedHistoricalRegistrations));
+				if (length < minimumLength) {
+					SKSE::log::error("Failed to read build migration record");
+					return;
+				}
+
+				std::uint32_t migrationStateRaw{};
+				std::uint8_t  needsNotice{};
+				std::uint8_t  legacyRewardsMigrated{};
+				if (a_intfc->ReadRecordData(loadedState.buildMigrationVersion) != sizeof(loadedState.buildMigrationVersion) ||
+				    a_intfc->ReadRecordData(migrationStateRaw) != sizeof(migrationStateRaw) ||
+				    a_intfc->ReadRecordData(needsNotice) != sizeof(needsNotice) ||
+				    a_intfc->ReadRecordData(legacyRewardsMigrated) != sizeof(legacyRewardsMigrated) ||
+				    a_intfc->ReadRecordData(loadedState.buildMigrationNotice.unresolvedHistoricalRegistrations) !=
+					    sizeof(loadedState.buildMigrationNotice.unresolvedHistoricalRegistrations)) {
+					SKSE::log::error("Failed to read build migration payload");
+					return;
+				}
+
+				loadedState.buildMigrationState = static_cast<Builds::BuildMigrationState>(migrationStateRaw);
+				loadedState.buildMigrationNotice.needsNotice = needsNotice != 0u;
+				loadedState.buildMigrationNotice.legacyRewardsMigrated = legacyRewardsMigrated != 0u;
+
+				if (length > minimumLength) {
+					Skip(a_intfc, length - minimumLength);
+				}
+				break;
+			}
 			case kRecordRewards: {
 				std::uint32_t count{};
 				if (length < sizeof(count) || a_intfc->ReadRecordData(count) != sizeof(count)) {
@@ -270,25 +396,59 @@ namespace CodexOfPowerNG::Serialization::Internal
 				}
 
 				auto remaining = length - headerSize;
-				const auto undoHeaderSize = static_cast<std::uint32_t>(
-					sizeof(std::uint64_t) + sizeof(RE::FormID) + sizeof(RE::FormID) + sizeof(std::uint32_t) + sizeof(std::uint32_t));
+				const auto undoHeaderBaseSize = static_cast<std::uint32_t>(
+					sizeof(std::uint64_t) +
+					sizeof(RE::FormID) +
+					sizeof(RE::FormID) +
+					sizeof(std::uint32_t));
+				const auto undoBuildContributionSize = static_cast<std::uint32_t>(
+					sizeof(std::uint32_t) +
+					sizeof(std::uint32_t) +
+					sizeof(std::int32_t));
+				const auto undoHeaderSize = undoHeaderBaseSize +
+					(version >= 3u ? undoBuildContributionSize : 0u) +
+					static_cast<std::uint32_t>(sizeof(std::uint32_t));
 				const auto rewardDeltaSize = static_cast<std::uint32_t>(sizeof(std::uint32_t) + sizeof(float));
 
 				loadedState.undoHistory.clear();
 				for (std::uint32_t i = 0; i < count && remaining >= undoHeaderSize; ++i) {
 					Registration::UndoRecord entry{};
 					std::uint32_t            rewardCount{};
+					std::uint32_t            hasBuildContribution{};
+					std::uint32_t            buildDisciplineRaw{};
+					std::int32_t             buildScoreDelta{};
 					RE::FormID               oldFormId{};
 					RE::FormID               oldRegKey{};
 					if (a_intfc->ReadRecordData(entry.actionId) != sizeof(entry.actionId) ||
 					    a_intfc->ReadRecordData(oldFormId) != sizeof(oldFormId) ||
 					    a_intfc->ReadRecordData(oldRegKey) != sizeof(oldRegKey) ||
-					    a_intfc->ReadRecordData(entry.group) != sizeof(entry.group) ||
-					    a_intfc->ReadRecordData(rewardCount) != sizeof(rewardCount)) {
+					    a_intfc->ReadRecordData(entry.group) != sizeof(entry.group)) {
 						SKSE::log::error("Failed to read undo entry header");
 						return;
 					}
-					remaining -= undoHeaderSize;
+					remaining -= undoHeaderBaseSize;
+
+					if (version >= 3u) {
+						if (a_intfc->ReadRecordData(hasBuildContribution) != sizeof(hasBuildContribution) ||
+						    a_intfc->ReadRecordData(buildDisciplineRaw) != sizeof(buildDisciplineRaw) ||
+						    a_intfc->ReadRecordData(buildScoreDelta) != sizeof(buildScoreDelta)) {
+							SKSE::log::error("Failed to read undo build contribution payload");
+							return;
+						}
+						remaining -= undoBuildContributionSize;
+						if (hasBuildContribution != 0u) {
+							entry.buildContribution = Registration::BuildScoreContribution{
+								.discipline = static_cast<Builds::BuildDiscipline>(buildDisciplineRaw),
+								.scoreDelta = buildScoreDelta,
+							};
+						}
+					}
+
+					if (a_intfc->ReadRecordData(rewardCount) != sizeof(rewardCount)) {
+						SKSE::log::error("Failed to read undo reward count");
+						return;
+					}
+					remaining -= static_cast<std::uint32_t>(sizeof(rewardCount));
 
 					RE::FormID newRegKey{};
 					const bool regKeyResolved = a_intfc->ResolveFormID(oldRegKey, newRegKey);
@@ -369,6 +529,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 			}
 		}
 
+		BuildProgression::NormalizeLoadedSnapshot(loadedState);
 		SerializationStateStore::ReplaceState(std::move(loadedState));
 		Registration::InvalidateQuickRegisterCache();
 	}

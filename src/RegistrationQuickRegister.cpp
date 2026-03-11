@@ -1,11 +1,12 @@
 #include "CodexOfPowerNG/Registration.h"
 
+#include "CodexOfPowerNG/BuildProgression.h"
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/Inventory.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/RegistrationQuestGuard.h"
 #include "CodexOfPowerNG/RegistrationStateStore.h"
-#include "CodexOfPowerNG/Rewards.h"
+#include "CodexOfPowerNG/SerializationStateStore.h"
 #include "CodexOfPowerNG/Util.h"
 
 #include "RegistrationInternal.h"
@@ -284,14 +285,16 @@ namespace CodexOfPowerNG::Registration
 			L10n::T("msg.totalPrefix", "total ") + std::to_string(totalRegistered) +
 			L10n::T("msg.totalSuffix", " items") + ")";
 		RE::DebugNotification(msg.c_str());
-
-		auto rewardDeltas = Rewards::MaybeGrantRegistrationReward(group, static_cast<std::int32_t>(totalRegistered));
+		const auto buildContribution = BuildProgression::MakeRegistrationContribution(group);
+		if (buildContribution.has_value()) {
+			(void)BuildProgression::ApplyRegistrationContribution(buildContribution.value());
+		}
 
 		UndoRecord undoRecord{};
 		undoRecord.formId = item->GetFormID();
 		undoRecord.regKey = regKey->GetFormID();
 		undoRecord.group = group;
-		undoRecord.rewardDeltas = std::move(rewardDeltas);
+		undoRecord.buildContribution = buildContribution;
 		(void)RegistrationStateStore::PushUndoRecord(std::move(undoRecord));
 		InvalidateQuickRegisterCache();
 

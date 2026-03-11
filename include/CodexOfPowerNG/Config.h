@@ -28,7 +28,7 @@ namespace CodexOfPowerNG
 		// Loot notify
 		bool enableLootNotify{ true };
 
-		// Rewards
+		// Legacy reward settings kept only so old config files/payloads still parse safely.
 		bool enableRewards{ true };
 		std::int32_t rewardEvery{ 5 };
 		double rewardMultiplier{ 1.0 };

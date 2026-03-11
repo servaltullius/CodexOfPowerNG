@@ -1,6 +1,7 @@
 #include "PrismaUIInternal.h"
 
 #include "CodexOfPowerNG/Config.h"
+#include "CodexOfPowerNG/BuildStateStore.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/Registration.h"
 #include "CodexOfPowerNG/RegistrationStateStore.h"
@@ -28,6 +29,23 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		};
 		j["registeredCount"] = registeredCount;
 		j["rewardCount"] = rewardCount;
+		const auto migrationNotice = BuildStateStore::GetMigrationNoticeSnapshot();
+		const auto attackScore = BuildStateStore::GetAttackScore();
+		const auto defenseScore = BuildStateStore::GetDefenseScore();
+		const auto utilityScore = BuildStateStore::GetUtilityScore();
+		j["buildSummary"] = {
+			{ "attackScore", attackScore },
+			{ "defenseScore", defenseScore },
+			{ "utilityScore", utilityScore },
+			{ "totalScore", attackScore + defenseScore + utilityScore },
+		};
+		j["buildMigration"] = {
+			{ "state", static_cast<std::uint32_t>(BuildStateStore::MigrationState()) },
+			{ "version", BuildStateStore::MigrationVersion() },
+			{ "needsNotice", migrationNotice.needsNotice },
+			{ "legacyRewardsMigrated", migrationNotice.legacyRewardsMigrated },
+			{ "unresolvedHistoricalRegistrations", migrationNotice.unresolvedHistoricalRegistrations },
+		};
 		j["language"] = L10n::ActiveLanguage();
 		j["toggleKeyCode"] = settings.toggleKeyCode;
 		const bool tccListsAvailable = Registration::IsTccDisplayedListsAvailable();

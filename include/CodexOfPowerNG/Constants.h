@@ -27,6 +27,9 @@ namespace CodexOfPowerNG
 	inline constexpr std::uint32_t kRecordNotifiedItems = 'NTFY';
 	inline constexpr std::uint32_t kRecordRewards = 'RWDS';
 	inline constexpr std::uint32_t kRecordUndoHistory = 'UNDO';
+	inline constexpr std::uint32_t kRecordBuildScores = 'BSCR';
+	inline constexpr std::uint32_t kRecordBuildSlots = 'BSLT';
+	inline constexpr std::uint32_t kRecordBuildMigration = 'BMIG';
 
 	// Sentinel: group was not stored (v1 serialization). Triggers re-computation.
 	inline constexpr std::uint32_t kGroupUnknown = 255;

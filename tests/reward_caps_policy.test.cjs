@@ -140,13 +140,17 @@ test("serialization load clamps over-capped reward totals", () => {
   assert.doesNotMatch(src, /SyncRewardTotalsToPlayer\(\)/);
 });
 
-test("post-load/new-game path schedules full + carry-weight quick reward resync", () => {
+test("post-load/new-game path routes through build migration processing", () => {
   const src = read(mainPath);
   assert.match(src, /case SKSE::MessagingInterface::kPreLoadGame:[\s\S]*Rewards::ResetSyncSchedulersForLoad\(\)/);
   assert.match(src, /case SKSE::MessagingInterface::kPostLoadGame:[\s\S]*case SKSE::MessagingInterface::kNewGame:/);
   assert.match(src, /if \(message->type == SKSE::MessagingInterface::kNewGame\)[\s\S]*Rewards::ResetSyncSchedulersForLoad\(\)/);
-  assert.match(src, /Rewards::SyncRewardTotalsToPlayer\(\);/);
-  assert.match(src, /Rewards::ScheduleCarryWeightQuickResync\(\);/);
+  assert.match(src, /void ProcessBuildMigrationState\(\) noexcept/);
+  assert.match(src, /BuildProgression::NormalizeLoadedSnapshot\(snapshot\);/);
+  assert.match(src, /BuildProgression::TryFinalizePendingMigration\(/);
+  assert.match(src, /Rewards::CleanupLegacyRewardTotals\(\)/);
+  assert.match(src, /BuildProgression::ConsumeMigrationNotice\(snapshot\)/);
+  assert.match(src, /ProcessBuildMigrationState\(\);/);
 });
 
 test("reward sync runtime protects load boundary and readiness retries", () => {

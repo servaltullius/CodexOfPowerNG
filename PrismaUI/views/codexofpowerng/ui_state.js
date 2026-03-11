@@ -30,6 +30,23 @@
     return "0x" + hex;
   }
 
+  function createDefaultBuildState() {
+    return {
+      disciplines: {
+        attack: { score: 0, unlockedBaselineCount: 0 },
+        defense: { score: 0, unlockedBaselineCount: 0 },
+        utility: { score: 0, unlockedBaselineCount: 0 },
+      },
+      options: [],
+      activeSlots: [],
+      migrationNotice: {
+        needsNotice: false,
+        legacyRewardsMigrated: false,
+        unresolvedHistoricalRegistrations: 0,
+      },
+    };
+  }
+
   function createUIState(opts) {
     const options = opts || {};
     const documentObj = options.documentObj || (typeof document !== "undefined" ? document : null);
@@ -55,11 +72,14 @@
     let inventoryPage = { page: 0, pageSize: 200, total: 0, hasMore: false, items: [] };
     let quickSelectedId = 0;
     let quickVisibleIds = [];
+    let quickBatchSelectedIds = [];
+    let quickActionableOnly = false;
     const quickVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
     let registered = [];
     let undoItems = [];
     const regVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
     let rewards = { totals: [] };
+    let build = createDefaultBuildState();
     let settings = null;
     let keyNavRaf = 0;
 
@@ -395,6 +415,14 @@
       setQuickVisibleIds: (next) => {
         quickVisibleIds = Array.isArray(next) ? next : [];
       },
+      getQuickBatchSelectedIds: () => quickBatchSelectedIds,
+      setQuickBatchSelectedIds: (next) => {
+        quickBatchSelectedIds = Array.isArray(next) ? next.map((id) => Number(id) >>> 0).filter((id) => id > 0) : [];
+      },
+      getQuickActionableOnly: () => quickActionableOnly,
+      setQuickActionableOnly: (next) => {
+        quickActionableOnly = !!next;
+      },
       getQuickVirtual: () => quickVirtual,
       getRegistered: () => registered,
       setRegistered: (next) => {
@@ -408,6 +436,10 @@
       getRewards: () => rewards,
       setRewards: (next) => {
         rewards = next;
+      },
+      getBuild: () => build,
+      setBuild: (next) => {
+        build = next || createDefaultBuildState();
       },
       getSettings: () => settings,
       setSettings: (next) => {

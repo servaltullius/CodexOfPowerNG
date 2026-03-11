@@ -101,7 +101,7 @@ namespace CodexOfPowerNG
 				settings.languageOverride = "auto";
 			}
 
-			// Reward settings
+			// Legacy reward settings remain clamped for backward-compatible parsing only.
 			if (settings.rewardEvery <= 0) {
 				settings.rewardEvery = 5;
 			}
@@ -271,12 +271,6 @@ namespace CodexOfPowerNG
 			};
 			j["safety"] = { { "protectFavorites", settings.protectFavorites } };
 			j["lootNotify"] = { { "enabled", settings.enableLootNotify } };
-			j["rewards"] = {
-				{ "enabled", settings.enableRewards },
-				{ "every", settings.rewardEvery },
-				{ "multiplier", settings.rewardMultiplier },
-				{ "allowSkillRewards", settings.allowSkillRewards },
-			};
 
 			std::string serialized;
 			try {

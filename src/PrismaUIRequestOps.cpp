@@ -1,5 +1,6 @@
 #include "PrismaUIRequestOps.h"
 
+#include "CodexOfPowerNG/BuildStateStore.h"
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/PrismaUIManager.h"
 #include "CodexOfPowerNG/Registration.h"
@@ -64,8 +65,15 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 			SendStateToUI();
 			QueueSendInventory(SnapshotLastInventoryRequest());
 			QueueSendRegistered();
+			QueueSendBuild();
 			QueueSendRewards();
 			QueueSendUndoList();
+		}
+
+		[[nodiscard]] bool IsCombatLockedForBuildMutation() noexcept
+		{
+			auto* player = RE::PlayerCharacter::GetSingleton();
+			return player && player->IsInCombat();
 		}
 
 		void PresentRegisterResult(const Registration::RegisterResult& res) noexcept
@@ -115,6 +123,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		SendStateToUI();
 		QueueSendInventory(SnapshotLastInventoryRequest());
 		QueueSendRegistered();
+		QueueSendBuild();
 		QueueSendRewards();
 		QueueSendUndoList();
 	}
@@ -313,6 +322,20 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		ReportMainTaskQueueUnavailable("Rewards");
 	}
 
+	void QueueSendBuild() noexcept
+	{
+		if (QueueMainTask([]() {
+				auto payload = PrismaUIPayloads::BuildBuildPayload();
+				(void)QueueUITask([payload = std::move(payload)]() mutable {
+					SendJS("copng_setBuild", payload);
+				});
+			})) {
+			return;
+		}
+
+		ReportMainTaskQueueUnavailable("Build");
+	}
+
 	void QueueSendUndoList() noexcept
 	{
 		if (QueueMainTask([]() {
@@ -378,6 +401,172 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		}
 
 		ReportMainTaskQueueUnavailable("Register item");
+		ShowToast("error", "Main thread unavailable. Try again.");
+	}
+
+	void HandleRequestBuild() noexcept
+	{
+		QueueSendBuild();
+	}
+
+	void HandleRegisterBatchRequest(const char* argument) noexcept
+	{
+		const auto payloadOpt = ParseJsonPayload(argument, "Register batch payload");
+		if (!payloadOpt) {
+			ShowToast("error", "Invalid JSON");
+			return;
+		}
+
+		const auto requestOpt = ParseRegisterBatchRequest(*payloadOpt);
+		if (!requestOpt.has_value()) {
+			ShowToast("error", "Invalid register batch payload");
+			return;
+		}
+
+		const auto request = *requestOpt;
+		if (QueueMainTask([request]() {
+				std::size_t successCount = 0u;
+				std::string lastMessage;
+				for (const auto formId : request.formIds) {
+					const auto result = Registration::TryRegisterItem(formId);
+					if (result.success) {
+						++successCount;
+					}
+					lastMessage = result.message;
+				}
+
+				(void)QueueUITask([request, successCount, lastMessage = std::move(lastMessage)]() mutable {
+					const auto level = successCount > 0u ? "info" : "error";
+					auto message = std::string("Registered ") + std::to_string(successCount) + " / " +
+					               std::to_string(request.formIds.size());
+					if (!lastMessage.empty()) {
+						message += " (" + lastMessage + ")";
+					}
+					ShowToast(level, std::move(message));
+					RefreshUIAfterMutation();
+				});
+			})) {
+			return;
+		}
+
+		ReportMainTaskQueueUnavailable("Register batch");
+		ShowToast("error", "Main thread unavailable. Try again.");
+	}
+
+	void HandleActivateBuildOptionRequest(const char* argument) noexcept
+	{
+		const auto payloadOpt = ParseJsonPayload(argument, "Build activate payload");
+		if (!payloadOpt) {
+			ShowToast("error", "Invalid JSON");
+			return;
+		}
+
+		const auto requestOpt = ParseBuildActivateRequest(*payloadOpt);
+		switch (ValidateBuildMutationRequest(IsCombatLockedForBuildMutation(), requestOpt.has_value())) {
+		case BuildMutationGuard::kInvalidPayload:
+			ShowToast("error", "Invalid build activation payload");
+			return;
+		case BuildMutationGuard::kCombatLocked:
+			ShowToast("error", "Build changes are unavailable in combat");
+			return;
+		case BuildMutationGuard::kAllowed:
+			break;
+		}
+
+		const auto request = *requestOpt;
+		if (QueueMainTask([request]() {
+				const auto applied = BuildStateStore::SetActiveSlot(request.slotId, request.optionId);
+				(void)QueueUITask([applied]() {
+					ShowToast(applied ? "info" : "error", applied ? "Build option activated" : "Build option unavailable");
+					SendStateToUI();
+					QueueSendBuild();
+				});
+			})) {
+			return;
+		}
+
+		ReportMainTaskQueueUnavailable("Activate build option");
+		ShowToast("error", "Main thread unavailable. Try again.");
+	}
+
+	void HandleDeactivateBuildOptionRequest(const char* argument) noexcept
+	{
+		const auto payloadOpt = ParseJsonPayload(argument, "Build deactivate payload");
+		if (!payloadOpt) {
+			ShowToast("error", "Invalid JSON");
+			return;
+		}
+
+		const auto requestOpt = ParseBuildDeactivateRequest(*payloadOpt);
+		switch (ValidateBuildMutationRequest(IsCombatLockedForBuildMutation(), requestOpt.has_value())) {
+		case BuildMutationGuard::kInvalidPayload:
+			ShowToast("error", "Invalid build deactivation payload");
+			return;
+		case BuildMutationGuard::kCombatLocked:
+			ShowToast("error", "Build changes are unavailable in combat");
+			return;
+		case BuildMutationGuard::kAllowed:
+			break;
+		}
+
+		const auto request = *requestOpt;
+		if (QueueMainTask([request]() {
+				BuildStateStore::ClearActiveSlot(request.slotId);
+				(void)QueueUITask([]() {
+					ShowToast("info", "Build option deactivated");
+					SendStateToUI();
+					QueueSendBuild();
+				});
+			})) {
+			return;
+		}
+
+		ReportMainTaskQueueUnavailable("Deactivate build option");
+		ShowToast("error", "Main thread unavailable. Try again.");
+	}
+
+	void HandleSwapBuildOptionRequest(const char* argument) noexcept
+	{
+		const auto payloadOpt = ParseJsonPayload(argument, "Build swap payload");
+		if (!payloadOpt) {
+			ShowToast("error", "Invalid JSON");
+			return;
+		}
+
+		const auto requestOpt = ParseBuildSwapRequest(*payloadOpt);
+		switch (ValidateBuildMutationRequest(IsCombatLockedForBuildMutation(), requestOpt.has_value())) {
+		case BuildMutationGuard::kInvalidPayload:
+			ShowToast("error", "Invalid build swap payload");
+			return;
+		case BuildMutationGuard::kCombatLocked:
+			ShowToast("error", "Build changes are unavailable in combat");
+			return;
+		case BuildMutationGuard::kAllowed:
+			break;
+		}
+
+		const auto request = *requestOpt;
+		if (QueueMainTask([request]() {
+				const auto activeFrom = BuildStateStore::GetActiveSlot(request.fromSlotId);
+				bool       applied = false;
+				if (activeFrom.has_value() && activeFrom.value() == request.optionId) {
+					BuildStateStore::ClearActiveSlot(request.fromSlotId);
+					applied = BuildStateStore::SetActiveSlot(request.toSlotId, request.optionId);
+					if (!applied) {
+						(void)BuildStateStore::SetActiveSlot(request.fromSlotId, request.optionId);
+					}
+				}
+
+				(void)QueueUITask([applied]() {
+					ShowToast(applied ? "info" : "error", applied ? "Build option swapped" : "Build option swap failed");
+					SendStateToUI();
+					QueueSendBuild();
+				});
+			})) {
+			return;
+		}
+
+		ReportMainTaskQueueUnavailable("Swap build option");
 		ShowToast("error", "Main thread unavailable. Try again.");
 	}
 

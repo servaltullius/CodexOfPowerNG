@@ -32,15 +32,27 @@ else
   trap cleanup EXIT
 
   for test_src in "${CPP_TESTS[@]}"; do
-    # Keep this runner host-friendly: skip any test that directly depends on SKSE/CommonLib headers.
-    if grep -qE '^[[:space:]]*#include[[:space:]]*<(RE/|SKSE/)' "$test_src"; then
-      echo "[copng] SKIP (requires Skyrim headers): $(basename "$test_src")"
-      continue
-    fi
+    extra_sources=()
+    case "$(basename "$test_src")" in
+      build_migration_rules.test.cpp|build_state_store_ops.test.cpp|build_request_guards.test.cpp|registration_build_progression.test.cpp)
+        echo "[copng] SKIP (requires Skyrim/CommonLib support): $(basename "$test_src")"
+        continue
+        ;;
+      build_option_catalog_contract.test.cpp)
+        extra_sources=( "$ROOT_DIR/src/BuildOptionCatalog.cpp" )
+        ;;
+      *)
+        # Keep this runner host-friendly: skip any test that directly depends on SKSE/CommonLib headers.
+        if grep -qE '^[[:space:]]*#include[[:space:]]*<(RE/|SKSE/)' "$test_src"; then
+          echo "[copng] SKIP (requires Skyrim headers): $(basename "$test_src")"
+          continue
+        fi
+        ;;
+    esac
 
     exe="$TMP_DIR/$(basename "${test_src%.cpp}")"
     echo "[copng] build: $(basename "$test_src")"
-    c++ -std=c++20 -O0 -g -Wall -Wextra -I"$ROOT_DIR/include" "$test_src" -o "$exe"
+    c++ -std=c++20 -O0 -g -Wall -Wextra -I"$ROOT_DIR/include" "$test_src" "${extra_sources[@]}" -o "$exe"
     echo "[copng] run: $(basename "$test_src")"
     "$exe"
   done

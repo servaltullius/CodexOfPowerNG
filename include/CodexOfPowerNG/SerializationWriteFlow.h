@@ -17,20 +17,12 @@ namespace CodexOfPowerNG::Serialization
 		}
 	}
 
-	template <class WriteRegistered, class WriteBlocked, class WriteNotified, class WriteRewards, class WriteUndo>
+	template <class... Writers>
 	[[nodiscard]] inline bool ExecuteAllSaveWriters(
-		WriteRegistered&& writeRegistered,
-		WriteBlocked&& writeBlocked,
-		WriteNotified&& writeNotified,
-		WriteRewards&& writeRewards,
-		WriteUndo&& writeUndo)
+		Writers&&... writers)
 	{
 		bool allOk = true;
-		allOk = InvokeSaveWriter(std::forward<WriteRegistered>(writeRegistered)) && allOk;
-		allOk = InvokeSaveWriter(std::forward<WriteBlocked>(writeBlocked)) && allOk;
-		allOk = InvokeSaveWriter(std::forward<WriteNotified>(writeNotified)) && allOk;
-		allOk = InvokeSaveWriter(std::forward<WriteRewards>(writeRewards)) && allOk;
-		allOk = InvokeSaveWriter(std::forward<WriteUndo>(writeUndo)) && allOk;
+		((allOk = InvokeSaveWriter(std::forward<Writers>(writers)) && allOk), ...);
 		return allOk;
 	}
 }

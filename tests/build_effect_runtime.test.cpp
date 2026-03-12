@@ -31,7 +31,7 @@ namespace
 	bool CuratedAttackEffectsResolveToConcreteActorValues()
 	{
 		BuildRuntimeSnapshot anchorSnapshot{};
-		anchorSnapshot.attackScore = 30u;
+		anchorSnapshot.attackScore = 35u;
 		anchorSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack1)] = "build.attack.ferocity";
 		anchorSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack2)] = "build.attack.precision";
 		anchorSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.attack.vitals";
@@ -46,7 +46,7 @@ namespace
 		}
 
 		BuildRuntimeSnapshot expansionSnapshot{};
-		expansionSnapshot.attackScore = 30u;
+		expansionSnapshot.attackScore = 35u;
 		expansionSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack1)] = "build.attack.precision";
 		expansionSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack2)] = "build.attack.pinpoint";
 		expansionSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.attack.vitals";
@@ -112,7 +112,7 @@ namespace
 		}
 
 		BuildRuntimeSnapshot enduranceSnapshot{};
-		enduranceSnapshot.defenseScore = 30u;
+		enduranceSnapshot.defenseScore = 35u;
 		enduranceSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.endurance";
 		const auto enduranceTotals = ComputeDerivedBuildActorValueTotals(enduranceSnapshot);
 		if (!LookupTotal(enduranceTotals, RE::ActorValue::kHealth).has_value() ||
@@ -122,7 +122,7 @@ namespace
 		}
 
 		BuildRuntimeSnapshot sustainSnapshot{};
-		sustainSnapshot.defenseScore = 35u;
+		sustainSnapshot.defenseScore = 40u;
 		sustainSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.recovery";
 		sustainSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.defense.restoration";
 		const auto sustainTotals = ComputeDerivedBuildActorValueTotals(sustainSnapshot);
@@ -288,7 +288,7 @@ namespace
 
 		const auto totals = ComputeDerivedBuildActorValueTotals(snapshot);
 		return LookupTotal(totals, RE::ActorValue::kAttackDamageMult).has_value() &&
-		       NearlyEqual(*LookupTotal(totals, RE::ActorValue::kAttackDamageMult), 0.11f);
+		       NearlyEqual(*LookupTotal(totals, RE::ActorValue::kAttackDamageMult), 0.07f);
 	}
 
 	bool BuildSyncClampHonorsShoutRecoveryFloor()

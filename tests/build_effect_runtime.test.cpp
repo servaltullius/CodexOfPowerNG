@@ -160,34 +160,29 @@ namespace
 
 		BuildRuntimeSnapshot elementalSnapshot{};
 		elementalSnapshot.defenseScore = 35u;
-		elementalSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.fireward";
-		elementalSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.defense.frostward";
+		elementalSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.elementalWard";
 		const auto elementalTotals = ComputeDerivedBuildActorValueTotals(elementalSnapshot);
 		if (!LookupTotal(elementalTotals, RE::ActorValue::kResistFire).has_value() ||
 		    !NearlyEqual(*LookupTotal(elementalTotals, RE::ActorValue::kResistFire), 1.0f) ||
 		    !LookupTotal(elementalTotals, RE::ActorValue::kResistFrost).has_value() ||
-		    !NearlyEqual(*LookupTotal(elementalTotals, RE::ActorValue::kResistFrost), 1.0f)) {
+		    !NearlyEqual(*LookupTotal(elementalTotals, RE::ActorValue::kResistFrost), 1.0f) ||
+		    !LookupTotal(elementalTotals, RE::ActorValue::kResistShock).has_value() ||
+		    !NearlyEqual(*LookupTotal(elementalTotals, RE::ActorValue::kResistShock), 1.0f)) {
 			return false;
 		}
 
 		BuildRuntimeSnapshot statusSnapshot{};
 		statusSnapshot.defenseScore = 35u;
-		statusSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.stormward";
-		statusSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.defense.antidote";
+		statusSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.purification";
 		const auto statusTotals = ComputeDerivedBuildActorValueTotals(statusSnapshot);
-		if (!LookupTotal(statusTotals, RE::ActorValue::kResistShock).has_value() ||
-		    !NearlyEqual(*LookupTotal(statusTotals, RE::ActorValue::kResistShock), 1.0f) ||
-		    !LookupTotal(statusTotals, RE::ActorValue::kPoisonResist).has_value() ||
-		    !NearlyEqual(*LookupTotal(statusTotals, RE::ActorValue::kPoisonResist), 1.0f)) {
+		if (!LookupTotal(statusTotals, RE::ActorValue::kPoisonResist).has_value() ||
+		    !NearlyEqual(*LookupTotal(statusTotals, RE::ActorValue::kPoisonResist), 1.0f) ||
+		    !LookupTotal(statusTotals, RE::ActorValue::kResistDisease).has_value() ||
+		    !NearlyEqual(*LookupTotal(statusTotals, RE::ActorValue::kResistDisease), 1.0f)) {
 			return false;
 		}
 
-		BuildRuntimeSnapshot puritySnapshot{};
-		puritySnapshot.defenseScore = 35u;
-		puritySnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.purity";
-		const auto purityTotals = ComputeDerivedBuildActorValueTotals(puritySnapshot);
-		return LookupTotal(purityTotals, RE::ActorValue::kResistDisease).has_value() &&
-		       NearlyEqual(*LookupTotal(purityTotals, RE::ActorValue::kResistDisease), 1.0f);
+		return true;
 	}
 
 	bool CuratedUtilityEffectsResolveToConcreteActorValues()

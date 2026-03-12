@@ -200,6 +200,20 @@ namespace
 		       snapshot.undoHistory.front().rewardDeltas.empty() &&
 		       !ConsumeMigrationNotice(snapshot).has_value();
 	}
+
+	bool LegacyResistanceSlotIdsRemapIntoBundledOptions()
+	{
+		Snapshot snapshot{};
+		snapshot.buildMigrationVersion = kBuildMigrationVersion;
+		snapshot.buildMigrationState = BuildMigrationState::kComplete;
+		snapshot.activeBuildSlots[static_cast<std::size_t>(CodexOfPowerNG::Builds::BuildSlotId::Defense1)] = "build.defense.fireward";
+		snapshot.activeBuildSlots[static_cast<std::size_t>(CodexOfPowerNG::Builds::BuildSlotId::Wildcard1)] = "build.defense.antidote";
+
+		NormalizeLoadedSnapshot(snapshot, ResolveLegacyDisciplineForTest);
+
+		return snapshot.activeBuildSlots[static_cast<std::size_t>(CodexOfPowerNG::Builds::BuildSlotId::Defense1)] == "build.defense.elementalWard" &&
+		       snapshot.activeBuildSlots[static_cast<std::size_t>(CodexOfPowerNG::Builds::BuildSlotId::Wildcard1)] == "build.defense.purification";
+	}
 }
 
 int main()
@@ -237,6 +251,9 @@ int main()
 		return 1;
 	}
 	if (!expect(CompletedMigrationReloadSkipsRerunAndDoesNotRepeatNotice(), "completed migration reload must skip rerun and notice repeat")) {
+		return 1;
+	}
+	if (!expect(LegacyResistanceSlotIdsRemapIntoBundledOptions(), "legacy resistance slot ids must remap into bundled options")) {
 		return 1;
 	}
 

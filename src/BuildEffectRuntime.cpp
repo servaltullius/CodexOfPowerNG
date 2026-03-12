@@ -16,6 +16,7 @@
 #include <string_view>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 namespace CodexOfPowerNG::Builds
 {
@@ -102,7 +103,7 @@ namespace CodexOfPowerNG::Builds
 			return std::nullopt;
 		}
 
-		[[nodiscard]] std::optional<std::pair<RE::ActorValue, float>> ResolveActorValueDelta(
+		[[nodiscard]] std::vector<std::pair<RE::ActorValue, float>> ResolveActorValueDeltas(
 			BuildEffectType        effectType,
 			std::string_view       effectKey,
 			const BuildMagnitude& magnitude) noexcept
@@ -111,130 +112,128 @@ namespace CodexOfPowerNG::Builds
 			case BuildEffectType::ActorValue: {
 				const auto amount = ToFloatMagnitude(magnitude);
 				if (!amount.has_value()) {
-					return std::nullopt;
+					return {};
 				}
 				if (effectKey == "attack_damage_mult") {
-					return std::pair{ RE::ActorValue::kAttackDamageMult, *amount / 100.0f };
+					return { { RE::ActorValue::kAttackDamageMult, *amount / 100.0f } };
 				}
 				if (effectKey == "weapon_speed_mult") {
-					return std::pair{ RE::ActorValue::kWeaponSpeedMult, *amount / 100.0f };
+					return { { RE::ActorValue::kWeaponSpeedMult, *amount / 100.0f } };
 				}
 				if (effectKey == "critical_chance") {
-					return std::pair{ RE::ActorValue::kCriticalChance, *amount };
+					return { { RE::ActorValue::kCriticalChance, *amount } };
 				}
 				if (effectKey == "unarmed_damage") {
-					return std::pair{ RE::ActorValue::kUnarmedDamage, *amount };
+					return { { RE::ActorValue::kUnarmedDamage, *amount } };
 				}
 				if (effectKey == "stamina") {
-					return std::pair{ RE::ActorValue::kStamina, *amount };
+					return { { RE::ActorValue::kStamina, *amount } };
 				}
 				if (effectKey == "stamina_rate") {
-					return std::pair{ RE::ActorValue::kStaminaRate, *amount };
+					return { { RE::ActorValue::kStaminaRate, *amount } };
 				}
 				if (effectKey == "destruction_modifier") {
-					return std::pair{ RE::ActorValue::kDestructionModifier, *amount };
+					return { { RE::ActorValue::kDestructionModifier, *amount } };
 				}
 				if (effectKey == "damage_resist") {
-					return std::pair{ RE::ActorValue::kDamageResist, *amount };
+					return { { RE::ActorValue::kDamageResist, *amount } };
 				}
 				if (effectKey == "block_power_modifier") {
-					return std::pair{ RE::ActorValue::kBlockPowerModifier, *amount };
+					return { { RE::ActorValue::kBlockPowerModifier, *amount } };
 				}
 				if (effectKey == "health") {
-					return std::pair{ RE::ActorValue::kHealth, *amount };
+					return { { RE::ActorValue::kHealth, *amount } };
 				}
 				if (effectKey == "heal_rate") {
-					return std::pair{ RE::ActorValue::kHealRate, *amount };
+					return { { RE::ActorValue::kHealRate, *amount } };
 				}
 				if (effectKey == "restoration_modifier") {
-					return std::pair{ RE::ActorValue::kRestorationModifier, *amount };
+					return { { RE::ActorValue::kRestorationModifier, *amount } };
 				}
 				if (effectKey == "reflect_damage") {
-					return std::pair{ RE::ActorValue::kReflectDamage, *amount };
+					return { { RE::ActorValue::kReflectDamage, *amount } };
 				}
 				if (effectKey == "alteration_modifier") {
-					return std::pair{ RE::ActorValue::kAlterationModifier, *amount };
+					return { { RE::ActorValue::kAlterationModifier, *amount } };
 				}
-				if (effectKey == "magic_resist") {
-					return std::pair{ RE::ActorValue::kResistMagic, *amount };
+				if (effectKey == "magic_resist_bundle") {
+					return { { RE::ActorValue::kResistMagic, *amount } };
 				}
-				if (effectKey == "fire_resist") {
-					return std::pair{ RE::ActorValue::kResistFire, *amount };
+				if (effectKey == "elemental_resist_bundle") {
+					return {
+						{ RE::ActorValue::kResistFire, *amount },
+						{ RE::ActorValue::kResistFrost, *amount },
+						{ RE::ActorValue::kResistShock, *amount },
+					};
 				}
-				if (effectKey == "frost_resist") {
-					return std::pair{ RE::ActorValue::kResistFrost, *amount };
-				}
-				if (effectKey == "shock_resist") {
-					return std::pair{ RE::ActorValue::kResistShock, *amount };
-				}
-				if (effectKey == "poison_resist") {
-					return std::pair{ RE::ActorValue::kPoisonResist, *amount };
-				}
-				if (effectKey == "disease_resist") {
-					return std::pair{ RE::ActorValue::kResistDisease, *amount };
+				if (effectKey == "status_resist_bundle") {
+					return {
+						{ RE::ActorValue::kPoisonResist, *amount },
+						{ RE::ActorValue::kResistDisease, *amount },
+					};
 				}
 				if (effectKey == "absorb_chance") {
-					return std::pair{ RE::ActorValue::kAbsorbChance, *amount };
+					return { { RE::ActorValue::kAbsorbChance, *amount } };
 				}
 				if (effectKey == "smithing_modifier") {
-					return std::pair{ RE::ActorValue::kSmithingModifier, *amount };
+					return { { RE::ActorValue::kSmithingModifier, *amount } };
 				}
 				if (effectKey == "alchemy_modifier") {
-					return std::pair{ RE::ActorValue::kAlchemyModifier, *amount };
+					return { { RE::ActorValue::kAlchemyModifier, *amount } };
 				}
 				if (effectKey == "enchanting_modifier") {
-					return std::pair{ RE::ActorValue::kEnchantingModifier, *amount };
+					return { { RE::ActorValue::kEnchantingModifier, *amount } };
 				}
 				if (effectKey == "magicka") {
-					return std::pair{ RE::ActorValue::kMagicka, *amount };
+					return { { RE::ActorValue::kMagicka, *amount } };
 				}
 				if (effectKey == "magicka_rate") {
-					return std::pair{ RE::ActorValue::kMagickaRate, *amount };
+					return { { RE::ActorValue::kMagickaRate, *amount } };
 				}
 				if (effectKey == "lockpicking_modifier") {
-					return std::pair{ RE::ActorValue::kLockpickingModifier, *amount };
+					return { { RE::ActorValue::kLockpickingModifier, *amount } };
 				}
 				if (effectKey == "pickpocket_modifier") {
-					return std::pair{ RE::ActorValue::kPickpocketModifier, *amount };
+					return { { RE::ActorValue::kPickpocketModifier, *amount } };
 				}
 				if (effectKey == "sneaking_modifier") {
-					return std::pair{ RE::ActorValue::kSneakingModifier, *amount };
+					return { { RE::ActorValue::kSneakingModifier, *amount } };
 				}
 				if (effectKey == "conjuration_modifier") {
-					return std::pair{ RE::ActorValue::kConjurationModifier, *amount };
+					return { { RE::ActorValue::kConjurationModifier, *amount } };
 				}
 				if (effectKey == "illusion_modifier") {
-					return std::pair{ RE::ActorValue::kIllusionModifier, *amount };
+					return { { RE::ActorValue::kIllusionModifier, *amount } };
 				}
 				if (effectKey == "speed_mult") {
-					return std::pair{ RE::ActorValue::kSpeedMult, *amount / 100.0f };
+					return { { RE::ActorValue::kSpeedMult, *amount / 100.0f } };
 				}
 				if (effectKey == "shout_recovery_mult") {
-					return std::pair{ RE::ActorValue::kShoutRecoveryMult, *amount };
+					return { { RE::ActorValue::kShoutRecoveryMult, *amount } };
 				}
-				return std::nullopt;
+				return {};
 			}
 			case BuildEffectType::CarryWeight: {
 				const auto amount = ToFloatMagnitude(magnitude);
 				if (!amount.has_value() || effectKey != "carry_weight") {
-					return std::nullopt;
+					return {};
 				}
-				return std::pair{ RE::ActorValue::kCarryWeight, *amount };
+				return { { RE::ActorValue::kCarryWeight, *amount } };
 			}
 			case BuildEffectType::Economy: {
 				const auto amount = ToIntMagnitude(magnitude);
 				if (!amount.has_value() || effectKey != "speechcraft_modifier") {
-					return std::nullopt;
+					return {};
 				}
 				// Keep build-facing economy magnitudes in semantic "% favorable" units while
 				// mapping to the legacy speechcraft modifier tuning already used by rewards.
-				return std::pair{ RE::ActorValue::kSpeechcraftModifier, static_cast<float>(*amount) * 0.05f };
+				return { { RE::ActorValue::kSpeechcraftModifier, static_cast<float>(*amount) * 0.05f } };
 			}
 			case BuildEffectType::UtilityFlag:
-				return std::nullopt;
+				return {};
 			}
 
-			return std::nullopt;
+			return {};
 		}
 
 		void AccumulateEffect(
@@ -243,13 +242,15 @@ namespace CodexOfPowerNG::Builds
 			std::string_view                                          effectKey,
 			const BuildMagnitude&                                     magnitude) noexcept
 		{
-			const auto resolved = ResolveActorValueDelta(effectType, effectKey, magnitude);
-			if (!resolved.has_value()) {
+			const auto resolved = ResolveActorValueDeltas(effectType, effectKey, magnitude);
+			if (resolved.empty()) {
 				return;
 			}
 
-			auto& total = totals[resolved->first];
-			total += resolved->second;
+			for (const auto& [actorValue, delta] : resolved) {
+				auto& total = totals[actorValue];
+				total += delta;
+			}
 		}
 
 		[[nodiscard]] BuildRuntimeSnapshot SnapshotCurrentBuildRuntime() noexcept

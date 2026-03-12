@@ -301,10 +301,10 @@
       "theme": "resistance",
       "hierarchy": "signpost",
       "effectType": "actorValue",
-      "runtimeKey": "magic_resist",
+      "runtimeKey": "magic_resist_bundle",
       "magnitude": 0.75,
       "runtimeStatus": "supported",
-      "migrationFrom": [],
+      "migrationFrom": ["build.defense.warding"],
       "notes": "Primary general-purpose resistance marker."
     },
     {
@@ -315,11 +315,11 @@
       "theme": "resistance",
       "hierarchy": "standard",
       "effectType": "actorValue",
-      "runtimeKey": "fire_resist",
+      "runtimeKey": "elemental_resist_bundle",
       "magnitude": 1.0,
       "runtimeStatus": "supported",
-      "migrationFrom": [],
-      "notes": "Elemental resistance bucket."
+      "migrationFrom": ["build.defense.fireward", "build.defense.frostward", "build.defense.stormward"],
+      "notes": "Collapsed into the shared elemental resistance bundle."
     },
     {
       "legacyKey": "av.frostResist",
@@ -329,11 +329,11 @@
       "theme": "resistance",
       "hierarchy": "standard",
       "effectType": "actorValue",
-      "runtimeKey": "frost_resist",
+      "runtimeKey": "elemental_resist_bundle",
       "magnitude": 1.0,
       "runtimeStatus": "supported",
-      "migrationFrom": [],
-      "notes": "Elemental resistance bucket."
+      "migrationFrom": ["build.defense.fireward", "build.defense.frostward", "build.defense.stormward"],
+      "notes": "Collapsed into the shared elemental resistance bundle."
     },
     {
       "legacyKey": "av.electricResist",
@@ -343,11 +343,11 @@
       "theme": "resistance",
       "hierarchy": "standard",
       "effectType": "actorValue",
-      "runtimeKey": "shock_resist",
+      "runtimeKey": "elemental_resist_bundle",
       "magnitude": 1.0,
       "runtimeStatus": "supported",
-      "migrationFrom": [],
-      "notes": "Elemental resistance bucket."
+      "migrationFrom": ["build.defense.fireward", "build.defense.frostward", "build.defense.stormward"],
+      "notes": "Collapsed into the shared elemental resistance bundle."
     },
     {
       "legacyKey": "av.poisonResist",
@@ -357,11 +357,11 @@
       "theme": "resistance",
       "hierarchy": "standard",
       "effectType": "actorValue",
-      "runtimeKey": "poison_resist",
+      "runtimeKey": "status_resist_bundle",
       "magnitude": 1.0,
       "runtimeStatus": "supported",
-      "migrationFrom": [],
-      "notes": "Status resistance stays in the same defensive family."
+      "migrationFrom": ["build.defense.antidote", "build.defense.purity"],
+      "notes": "Collapsed into the shared poison/disease resistance bundle."
     },
     {
       "legacyKey": "av.diseaseResist",
@@ -371,11 +371,11 @@
       "theme": "resistance",
       "hierarchy": "standard",
       "effectType": "actorValue",
-      "runtimeKey": "disease_resist",
+      "runtimeKey": "status_resist_bundle",
       "magnitude": 1.0,
       "runtimeStatus": "supported",
-      "migrationFrom": [],
-      "notes": "Status resistance stays in the same defensive family."
+      "migrationFrom": ["build.defense.antidote", "build.defense.purity"],
+      "notes": "Collapsed into the shared poison/disease resistance bundle."
     },
     {
       "legacyKey": "av.absorbChance",
@@ -388,7 +388,7 @@
       "runtimeKey": "absorb_chance",
       "magnitude": 0.4,
       "runtimeStatus": "supported",
-      "migrationFrom": [],
+      "migrationFrom": ["build.defense.absorption"],
       "notes": "High-impact magical mitigation capstone candidate."
     },
     {

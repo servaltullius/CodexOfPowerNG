@@ -47,6 +47,33 @@ namespace CodexOfPowerNG::BuildProgression
 			}
 		}
 
+		[[nodiscard]] std::string_view RemapLegacyOptionId(std::string_view optionId) noexcept
+		{
+			if (optionId == "build.defense.fireward" ||
+			    optionId == "build.defense.frostward" ||
+			    optionId == "build.defense.stormward") {
+				return "build.defense.elementalWard";
+			}
+			if (optionId == "build.defense.antidote" ||
+			    optionId == "build.defense.purity") {
+				return "build.defense.purification";
+			}
+			return optionId;
+		}
+
+		void NormalizeActiveSlotOptionIds(SerializationStateStore::Snapshot& snapshot) noexcept
+		{
+			for (auto& slot : snapshot.activeBuildSlots) {
+				if (slot.empty()) {
+					continue;
+				}
+				const auto remapped = RemapLegacyOptionId(slot);
+				if (remapped != slot) {
+					slot = std::string(remapped);
+				}
+			}
+		}
+
 		void ApplyDerivedScore(
 			SerializationStateStore::Snapshot& snapshot,
 			Builds::BuildDiscipline           discipline) noexcept
@@ -198,6 +225,8 @@ namespace CodexOfPowerNG::BuildProgression
 		SerializationStateStore::Snapshot& snapshot,
 		LegacyDisciplineResolver           resolver) noexcept
 	{
+		NormalizeActiveSlotOptionIds(snapshot);
+
 		if (snapshot.buildMigrationVersion >= kBuildMigrationVersion) {
 			if (snapshot.buildMigrationState == Builds::BuildMigrationState::kPendingCleanup) {
 				ClearActiveSlots(snapshot);

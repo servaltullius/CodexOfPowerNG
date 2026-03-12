@@ -444,6 +444,28 @@ test("build panel renders supported-first option descriptions from grouped catal
         slotCompatibility: "same_or_wildcard",
       },
       {
+        id: "build.defense.elementalWard",
+        discipline: "defense",
+        themeId: "resistance",
+        hierarchy: "standard",
+        unlockScore: 20,
+        unlocked: true,
+        titleKey: "build.defense.elementalWard.title",
+        descriptionKey: "build.defense.elementalWard.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.defense.purification",
+        discipline: "defense",
+        themeId: "resistance",
+        hierarchy: "standard",
+        unlockScore: 25,
+        unlocked: true,
+        titleKey: "build.defense.purification.title",
+        descriptionKey: "build.defense.purification.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
         id: "build.defense.absorption",
         discipline: "defense",
         themeId: "resistance",
@@ -458,7 +480,11 @@ test("build panel renders supported-first option descriptions from grouped catal
     "build.defense.warding",
   );
   assert.match(resistanceHtml, /Magic Ward/);
-  assert.match(resistanceHtml, /\+0\.75% magic resist while this option is slotted\./);
+  assert.match(resistanceHtml, /Magic resistance increases while this option is slotted\./);
+  assert.match(resistanceHtml, /Elemental Ward/);
+  assert.match(resistanceHtml, /Fire, frost, and shock resistance increase while this option is slotted\./);
+  assert.match(resistanceHtml, /Purification Ward/);
+  assert.match(resistanceHtml, /Poison and disease resistance increase while this option is slotted\./);
   assert.match(resistanceHtml, /Absorption/);
   assert.match(resistanceHtml, /Need 35 Score/);
 

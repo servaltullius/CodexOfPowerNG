@@ -63,9 +63,11 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.defense\.alteration\.title":\s*"Alteration"/);
   assert.match(moduleSource, /"build\.defense\.alteration\.description":\s*"Alteration spells cost less while this option is slotted\."/);
   assert.match(moduleSource, /"build\.defense\.warding\.title":\s*"Magic Ward"/);
-  assert.match(moduleSource, /"build\.defense\.warding\.description":\s*"\+0\.75% magic resist while this option is slotted\."/);
-  assert.match(moduleSource, /"build\.defense\.fireward\.title":\s*"Fire Ward"/);
-  assert.match(moduleSource, /"build\.defense\.fireward\.description":\s*"\+1% fire resist while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.defense\.warding\.description":\s*"Magic resistance increases while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.defense\.elementalWard\.title":\s*"Elemental Ward"/);
+  assert.match(moduleSource, /"build\.defense\.elementalWard\.description":\s*"Fire, frost, and shock resistance increase while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.defense\.purification\.title":\s*"Purification Ward"/);
+  assert.match(moduleSource, /"build\.defense\.purification\.description":\s*"Poison and disease resistance increase while this option is slotted\."/);
   assert.match(moduleSource, /"build\.defense\.absorption\.title":\s*"Absorption"/);
   assert.match(moduleSource, /"build\.defense\.absorption\.description":\s*"Spell absorption chance increases while this option is slotted\."/);
   assert.match(moduleSource, /"build\.utility\.smithing\.title":\s*"Smithing"/);
@@ -124,9 +126,11 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.defense\.alteration\.title":\s*"변화"/);
   assert.match(moduleSource, /"build\.defense\.alteration\.description":\s*"슬롯 활성 시 변화 주문 비용이 감소합니다\."/);
   assert.match(moduleSource, /"build\.defense\.warding\.title":\s*"마법결계"/);
-  assert.match(moduleSource, /"build\.defense\.warding\.description":\s*"슬롯 활성 시 마법 저항이 0\.75% 증가합니다\."/);
-  assert.match(moduleSource, /"build\.defense\.fireward\.title":\s*"화염결계"/);
-  assert.match(moduleSource, /"build\.defense\.fireward\.description":\s*"슬롯 활성 시 화염 저항이 1% 증가합니다\."/);
+  assert.match(moduleSource, /"build\.defense\.warding\.description":\s*"슬롯 활성 시 마법 저항이 증가합니다\."/);
+  assert.match(moduleSource, /"build\.defense\.elementalWard\.title":\s*"원소방벽"/);
+  assert.match(moduleSource, /"build\.defense\.elementalWard\.description":\s*"슬롯 활성 시 화염, 냉기, 전격 저항이 증가합니다\."/);
+  assert.match(moduleSource, /"build\.defense\.purification\.title":\s*"정화결계"/);
+  assert.match(moduleSource, /"build\.defense\.purification\.description":\s*"슬롯 활성 시 독과 질병 저항이 증가합니다\."/);
   assert.match(moduleSource, /"build\.defense\.absorption\.title":\s*"주문흡수"/);
   assert.match(moduleSource, /"build\.defense\.absorption\.description":\s*"슬롯 활성 시 주문 흡수 확률이 증가합니다\."/);
   assert.match(moduleSource, /"build\.utility\.smithing\.title":\s*"대장"/);
@@ -167,6 +171,8 @@ test("translator normalizes language and formats variables", () => {
   assert.equal(translator.t("build.attack.pinpoint.title"), "정조준");
   assert.equal(translator.t("build.attack.reserve.title"), "기력");
   assert.equal(translator.t("build.defense.warding.title"), "마법결계");
+  assert.equal(translator.t("build.defense.elementalWard.title"), "원소방벽");
+  assert.equal(translator.t("build.defense.purification.title"), "정화결계");
   assert.equal(translator.t("build.defense.recovery.title"), "회복력");
   assert.equal(translator.t("build.utility.smithing.title"), "대장");
   assert.equal(translator.t("build.utility.echo.title"), "메아리");

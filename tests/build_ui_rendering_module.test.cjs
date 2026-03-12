@@ -467,6 +467,17 @@ test("build panel renders supported-first option descriptions from grouped catal
     "livelihood",
     [
       {
+        id: "build.utility.cache",
+        discipline: "utility",
+        themeId: "livelihood",
+        hierarchy: "signpost",
+        unlockScore: 10,
+        unlocked: true,
+        titleKey: "build.utility.cache.title",
+        descriptionKey: "build.utility.cache.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
         id: "build.utility.smithing",
         discipline: "utility",
         themeId: "livelihood",
@@ -482,7 +493,7 @@ test("build panel renders supported-first option descriptions from grouped catal
         discipline: "utility",
         themeId: "livelihood",
         hierarchy: "standard",
-        unlockScore: 20,
+        unlockScore: 30,
         unlocked: true,
         titleKey: "build.utility.hauler.title",
         descriptionKey: "build.utility.hauler.description",
@@ -493,17 +504,21 @@ test("build panel renders supported-first option descriptions from grouped catal
         discipline: "utility",
         themeId: "livelihood",
         hierarchy: "standard",
-        unlockScore: 15,
+        unlockScore: 25,
         unlocked: true,
         titleKey: "build.utility.barter.title",
         descriptionKey: "build.utility.barter.description",
         slotCompatibility: "same_or_wildcard",
       },
     ],
-    "build.utility.smithing",
+    "build.utility.cache",
   );
+  assert.match(livelihoodHtml, /Cache|비축/);
+  assert.match(livelihoodHtml, /Need 10 Score/);
   assert.match(livelihoodHtml, /Smithing/);
   assert.match(livelihoodHtml, /Smithing results improve while this option is slotted\./);
+  assert.match(livelihoodHtml, /Need 25 Score/);
+  assert.match(livelihoodHtml, /Need 30 Score/);
 
   const livelihoodResourceHtml = renderSelection(
     "utility",

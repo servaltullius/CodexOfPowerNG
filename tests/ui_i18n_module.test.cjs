@@ -46,6 +46,12 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.defense\.endurance\.description":\s*"\+15 max health while this option is slotted\."/);
   assert.match(moduleSource, /"build\.defense\.bulwark\.title":\s*"Bulwark"/);
   assert.match(moduleSource, /"build\.defense\.bulwark\.description":\s*"\+8 armor rating while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.defense\.warding\.title":\s*"Magic Ward"/);
+  assert.match(moduleSource, /"build\.defense\.warding\.description":\s*"\+0\.75% magic resist while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.defense\.fireward\.title":\s*"Fire Ward"/);
+  assert.match(moduleSource, /"build\.defense\.fireward\.description":\s*"\+1% fire resist while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.defense\.absorption\.title":\s*"Absorption"/);
+  assert.match(moduleSource, /"build\.defense\.absorption\.description":\s*"\+0\.4% spell absorption chance while this option is slotted\."/);
   assert.match(moduleSource, /"build\.utility\.hauler\.title":\s*"Hauler"/);
   assert.match(moduleSource, /"build\.utility\.hauler\.description":\s*"\+15 carry weight while this option is slotted\."/);
   assert.match(moduleSource, /"build\.utility\.mobility\.title":\s*"Mobility"/);
@@ -60,6 +66,12 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.defense\.endurance\.description":\s*"슬롯 활성 시 최대 체력이 15 증가합니다\."/);
   assert.match(moduleSource, /"build\.defense\.bulwark\.title":\s*"방벽"/);
   assert.match(moduleSource, /"build\.defense\.bulwark\.description":\s*"슬롯 활성 시 방어력이 8 증가합니다\."/);
+  assert.match(moduleSource, /"build\.defense\.warding\.title":\s*"마법결계"/);
+  assert.match(moduleSource, /"build\.defense\.warding\.description":\s*"슬롯 활성 시 마법 저항이 0\.75% 증가합니다\."/);
+  assert.match(moduleSource, /"build\.defense\.fireward\.title":\s*"화염결계"/);
+  assert.match(moduleSource, /"build\.defense\.fireward\.description":\s*"슬롯 활성 시 화염 저항이 1% 증가합니다\."/);
+  assert.match(moduleSource, /"build\.defense\.absorption\.title":\s*"주문흡수"/);
+  assert.match(moduleSource, /"build\.defense\.absorption\.description":\s*"슬롯 활성 시 주문 흡수 확률이 0\.4% 증가합니다\."/);
   assert.match(moduleSource, /"build\.utility\.hauler\.title":\s*"짐꾼"/);
   assert.match(moduleSource, /"build\.utility\.hauler\.description":\s*"슬롯 활성 시 소지 한도가 15 증가합니다\."/);
   assert.match(moduleSource, /"build\.utility\.mobility\.title":\s*"기동"/);
@@ -74,6 +86,7 @@ test("translator normalizes language and formats variables", () => {
   const translator = mod.createTranslator({ getLanguage: () => "ko" });
   assert.equal(translator.t("btn.save"), "저장");
   assert.equal(translator.t("build.attack.pinpoint.title"), "정조준");
+  assert.equal(translator.t("build.defense.warding.title"), "마법결계");
   assert.equal(translator.t("build.utility.wayfinder.description"), "슬롯 활성 시 이동 속도가 1.5% 증가합니다.");
   assert.equal(translator.tFmt("rewards.more", "+{n}개 더", { n: 5 }), "+5개 더");
   assert.equal(mod.normalizeLanguage("jp"), "en");

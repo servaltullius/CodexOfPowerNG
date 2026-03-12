@@ -303,7 +303,7 @@
       "effectType": "actorValue",
       "runtimeKey": "magic_resist",
       "magnitude": 0.75,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Primary general-purpose resistance marker."
     },
@@ -317,7 +317,7 @@
       "effectType": "actorValue",
       "runtimeKey": "fire_resist",
       "magnitude": 1.0,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Elemental resistance bucket."
     },
@@ -331,7 +331,7 @@
       "effectType": "actorValue",
       "runtimeKey": "frost_resist",
       "magnitude": 1.0,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Elemental resistance bucket."
     },
@@ -345,7 +345,7 @@
       "effectType": "actorValue",
       "runtimeKey": "shock_resist",
       "magnitude": 1.0,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Elemental resistance bucket."
     },
@@ -359,7 +359,7 @@
       "effectType": "actorValue",
       "runtimeKey": "poison_resist",
       "magnitude": 1.0,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Status resistance stays in the same defensive family."
     },
@@ -373,7 +373,7 @@
       "effectType": "actorValue",
       "runtimeKey": "disease_resist",
       "magnitude": 1.0,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Status resistance stays in the same defensive family."
     },
@@ -387,7 +387,7 @@
       "effectType": "actorValue",
       "runtimeKey": "absorb_chance",
       "magnitude": 0.4,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "High-impact magical mitigation capstone candidate."
     },

@@ -294,6 +294,40 @@ test("build panel renders supported-first option descriptions from grouped catal
   assert.match(defenseHtml, /Bulwark/);
   assert.match(defenseHtml, /\+8 armor rating while this option is slotted\./);
 
+  const resistanceHtml = renderSelection(
+    "defense",
+    "resistance",
+    [
+      {
+        id: "build.defense.warding",
+        discipline: "defense",
+        themeId: "resistance",
+        hierarchy: "signpost",
+        unlockScore: 10,
+        unlocked: true,
+        titleKey: "build.defense.warding.title",
+        descriptionKey: "build.defense.warding.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.defense.absorption",
+        discipline: "defense",
+        themeId: "resistance",
+        hierarchy: "special",
+        unlockScore: 35,
+        unlocked: false,
+        titleKey: "build.defense.absorption.title",
+        descriptionKey: "build.defense.absorption.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.defense.warding",
+  );
+  assert.match(resistanceHtml, /Magic Ward/);
+  assert.match(resistanceHtml, /\+0\.75% magic resist while this option is slotted\./);
+  assert.match(resistanceHtml, /Absorption/);
+  assert.match(resistanceHtml, /Need 35 Score/);
+
   const livelihoodHtml = renderSelection(
     "utility",
     "livelihood",

@@ -93,6 +93,52 @@ namespace
 		       !LookupTotal(enduranceTotals, RE::ActorValue::kBlockPowerModifier).has_value();
 	}
 
+	bool CuratedResistanceEffectsResolveToConcreteActorValues()
+	{
+		BuildRuntimeSnapshot wardingSnapshot{};
+		wardingSnapshot.defenseScore = 35u;
+		wardingSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.warding";
+		wardingSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.defense.absorption";
+		const auto wardingTotals = ComputeDerivedBuildActorValueTotals(wardingSnapshot);
+		if (!LookupTotal(wardingTotals, RE::ActorValue::kResistMagic).has_value() ||
+		    !NearlyEqual(*LookupTotal(wardingTotals, RE::ActorValue::kResistMagic), 0.75f) ||
+		    !LookupTotal(wardingTotals, RE::ActorValue::kAbsorbChance).has_value() ||
+		    !NearlyEqual(*LookupTotal(wardingTotals, RE::ActorValue::kAbsorbChance), 0.4f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot elementalSnapshot{};
+		elementalSnapshot.defenseScore = 35u;
+		elementalSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.fireward";
+		elementalSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.defense.frostward";
+		const auto elementalTotals = ComputeDerivedBuildActorValueTotals(elementalSnapshot);
+		if (!LookupTotal(elementalTotals, RE::ActorValue::kResistFire).has_value() ||
+		    !NearlyEqual(*LookupTotal(elementalTotals, RE::ActorValue::kResistFire), 1.0f) ||
+		    !LookupTotal(elementalTotals, RE::ActorValue::kResistFrost).has_value() ||
+		    !NearlyEqual(*LookupTotal(elementalTotals, RE::ActorValue::kResistFrost), 1.0f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot statusSnapshot{};
+		statusSnapshot.defenseScore = 35u;
+		statusSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.stormward";
+		statusSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.defense.antidote";
+		const auto statusTotals = ComputeDerivedBuildActorValueTotals(statusSnapshot);
+		if (!LookupTotal(statusTotals, RE::ActorValue::kResistShock).has_value() ||
+		    !NearlyEqual(*LookupTotal(statusTotals, RE::ActorValue::kResistShock), 1.0f) ||
+		    !LookupTotal(statusTotals, RE::ActorValue::kPoisonResist).has_value() ||
+		    !NearlyEqual(*LookupTotal(statusTotals, RE::ActorValue::kPoisonResist), 1.0f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot puritySnapshot{};
+		puritySnapshot.defenseScore = 35u;
+		puritySnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.purity";
+		const auto purityTotals = ComputeDerivedBuildActorValueTotals(puritySnapshot);
+		return LookupTotal(purityTotals, RE::ActorValue::kResistDisease).has_value() &&
+		       NearlyEqual(*LookupTotal(purityTotals, RE::ActorValue::kResistDisease), 1.0f);
+	}
+
 	bool CuratedUtilityEffectsResolveToConcreteActorValues()
 	{
 		BuildRuntimeSnapshot livelihoodSnapshot{};
@@ -146,6 +192,9 @@ int main()
 		return 1;
 	}
 	if (!expect(CuratedDefenseEffectsResolveToConcreteActorValues(), "defense effects must resolve to concrete actor values")) {
+		return 1;
+	}
+	if (!expect(CuratedResistanceEffectsResolveToConcreteActorValues(), "resistance effects must resolve to concrete actor values")) {
 		return 1;
 	}
 	if (!expect(CuratedUtilityEffectsResolveToConcreteActorValues(), "utility effects must resolve to concrete actor values")) {

@@ -131,6 +131,27 @@ namespace CodexOfPowerNG::Builds
 				if (effectKey == "health") {
 					return std::pair{ RE::ActorValue::kHealth, *amount };
 				}
+				if (effectKey == "magic_resist") {
+					return std::pair{ RE::ActorValue::kResistMagic, *amount };
+				}
+				if (effectKey == "fire_resist") {
+					return std::pair{ RE::ActorValue::kResistFire, *amount };
+				}
+				if (effectKey == "frost_resist") {
+					return std::pair{ RE::ActorValue::kResistFrost, *amount };
+				}
+				if (effectKey == "shock_resist") {
+					return std::pair{ RE::ActorValue::kResistShock, *amount };
+				}
+				if (effectKey == "poison_resist") {
+					return std::pair{ RE::ActorValue::kPoisonResist, *amount };
+				}
+				if (effectKey == "disease_resist") {
+					return std::pair{ RE::ActorValue::kResistDisease, *amount };
+				}
+				if (effectKey == "absorb_chance") {
+					return std::pair{ RE::ActorValue::kAbsorbChance, *amount };
+				}
 				if (effectKey == "speed_mult") {
 					return std::pair{ RE::ActorValue::kSpeedMult, *amount / 100.0f };
 				}

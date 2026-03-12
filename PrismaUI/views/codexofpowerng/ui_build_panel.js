@@ -77,6 +77,91 @@
     return slotKind === discipline || slotKind === "wildcard";
   }
 
+  function disciplineClassName(id) {
+    const value = String(id || "").toLowerCase();
+    if (value === "attack") return "disc-attack";
+    if (value === "defense") return "disc-defense";
+    if (value === "utility") return "disc-utility";
+    if (value === "wildcard") return "disc-wildcard";
+    return "disc-unknown";
+  }
+
+  function slotTitle(slot, t) {
+    const slotId = String((slot && slot.slotId) || "");
+    const slotKind = String((slot && slot.slotKind) || "");
+    return t("build.slot." + slotId, humanizeDiscipline(slotKind));
+  }
+
+  function summarizeDiscipline(discipline, disciplines, options, activeSlots) {
+    const info = disciplines[discipline] || { score: 0, unlockedBaselineCount: 0 };
+    const optionRows = options.filter((option) => String((option && option.discipline) || "").toLowerCase() === discipline);
+    const unlockedCount = optionRows.filter((option) => !!option.unlocked).length;
+    const activeCount = optionRows.filter((option) =>
+      activeSlots.some((slot) => slot && slot.optionId === option.id),
+    ).length;
+    return {
+      score: Number(info.score || 0) >>> 0,
+      unlockedBaselineCount: Number(info.unlockedBaselineCount || 0) >>> 0,
+      unlockedCount,
+      activeCount,
+    };
+  }
+
+  function buildOptionView(option, activeSlots, t, tFmt) {
+    const optionId = String((option && option.id) || "");
+    const unlockScore = Number((option && option.unlockScore) || 0) >>> 0;
+    const compatibleSlots = activeSlots.filter((slot) => slotSupportsOption(slot, option));
+    const activeSlot = compatibleSlots.find((slot) => slot && slot.optionId === optionId) || null;
+    const emptySlot = compatibleSlots.find((slot) => slot && !slot.optionId) || null;
+    const unlocked = !!(option && option.unlocked);
+    const discipline = String((option && option.discipline) || "").toLowerCase();
+    const title = t(option.titleKey, humanizeOptionId(optionId));
+    const description = t(option.descriptionKey, "");
+    const stateKey = activeSlot ? "build.active" : unlocked ? "build.unlocked" : "build.locked";
+    const stateText = t(stateKey, activeSlot ? "Active" : unlocked ? "Unlocked" : "Locked");
+    const stateClass = activeSlot ? "isActive" : unlocked ? "isUnlocked" : "isLocked";
+    const unlockText = tFmt("build.requiresScore", "Need {score} Score", { score: unlockScore });
+    const compatibleText = compatibleSlots.length
+      ? compatibleSlots.map((slot) => slotTitle(slot, t)).join(" / ")
+      : t("build.noCompatibleSlots", "No compatible slots");
+    let actionHtml = `<span class="small buildHint">${String(unlockText)}</span>`;
+
+    if (unlocked) {
+      if (activeSlot) {
+        actionHtml = `<button type="button" class="buildActionButton isPrimary" data-action="build-deactivate" data-slot-id="${defaultEscapeHtml(
+          String(activeSlot.slotId || ""),
+        )}">${defaultEscapeHtml(t("build.deactivate", "Deactivate"))}</button>`;
+      } else if (emptySlot) {
+        actionHtml = `<button type="button" class="buildActionButton isPrimary" data-action="build-activate" data-option-id="${defaultEscapeHtml(
+          optionId,
+        )}" data-slot-id="${defaultEscapeHtml(String(emptySlot.slotId || ""))}">${defaultEscapeHtml(
+          t("build.activate", "Activate"),
+        )}</button>`;
+      } else {
+        actionHtml = `<span class="small buildHint">${defaultEscapeHtml(
+          t("build.slotOccupiedHint", "Deactivate a compatible slot first."),
+        )}</span>`;
+      }
+    }
+
+    return {
+      optionId,
+      discipline,
+      disciplineClass: disciplineClassName(discipline),
+      title,
+      description,
+      unlockText,
+      stateText,
+      stateClass,
+      unlocked,
+      activeSlot,
+      emptySlot,
+      compatibleSlots,
+      compatibleText,
+      actionHtml,
+    };
+  }
+
   function renderBuildPanelHtml(build, helpers) {
     const source = build && typeof build === "object" ? build : createEmptyBuild();
     const t = asFn(helpers && helpers.t, defaultT);
@@ -92,28 +177,39 @@
     }
 
     const disciplineOrder = ["attack", "defense", "utility"];
+    const optionViews = options.map((option) => buildOptionView(option, activeSlots, t, tFmt));
+    const focusOptionView =
+      optionViews.find((view) => !!view.activeSlot) ||
+      optionViews.find((view) => view.unlocked) ||
+      optionViews[0] ||
+      null;
     const slotHtml = activeSlots
       .map((slot) => {
         const slotId = String((slot && slot.slotId) || "");
         const slotKind = String((slot && slot.slotKind) || "");
         const option = optionById.get(slot && slot.optionId) || null;
-        const slotTitle = t("build.slot." + slotId, humanizeDiscipline(slotKind));
+        const slotLabel = slotTitle(slot, t);
         const stateLabel = option ? t("build.active", "Active") : t("build.emptySlot", "Empty slot");
         const optionTitle = option
           ? t(option.titleKey, humanizeOptionId(option.id))
           : t("build.emptySlot", "Empty slot");
         const actionButton = option
-          ? `<button type="button" data-action="build-deactivate" data-slot-id="${escapeHtml(slotId)}">${escapeHtml(
+          ? `<button type="button" class="buildActionButton" data-action="build-deactivate" data-slot-id="${escapeHtml(
+              slotId,
+            )}">${escapeHtml(
               t("build.deactivate", "Deactivate"),
             )}</button>`
-          : "";
+          : `<span class="small buildHint">${escapeHtml(t("build.slotWaiting", "Awaiting option"))}</span>`;
+        const slotClass = disciplineClassName(slotKind);
         return `
-          <article class="buildSlotCard" data-slot-id="${escapeHtml(slotId)}">
+          <article class="buildSlotCard ${slotClass} ${option ? "isOccupied" : "isEmpty"}" data-slot-id="${escapeHtml(
+            slotId,
+          )}" data-slot-kind="${escapeHtml(slotKind)}">
             <div class="buildSlotCardHeader">
-              <span class="pill">${escapeHtml(slotTitle)}</span>
+              <span class="disciplineMark ${slotClass}">${escapeHtml(slotLabel)}</span>
               <span class="small">${escapeHtml(stateLabel)}</span>
             </div>
-            <strong>${escapeHtml(optionTitle)}</strong>
+            <strong class="buildSlotName">${escapeHtml(optionTitle)}</strong>
             <div class="small mono">${escapeHtml(slotId)}</div>
             <div class="buildSlotCardActions">${actionButton}</div>
           </article>`;
@@ -143,68 +239,50 @@
 
     const cardsHtml = disciplineOrder
       .map((discipline) => {
-        const info = disciplines[discipline] || { score: 0, unlockedBaselineCount: 0 };
+        const info = summarizeDiscipline(discipline, disciplines, options, activeSlots);
         const label = t("build." + discipline, humanizeDiscipline(discipline));
-        const rows = options
-          .filter((option) => String((option && option.discipline) || "").toLowerCase() === discipline)
-          .map((option) => {
-            const optionId = String(option.id || "");
-            const unlockScore = Number(option.unlockScore || 0) >>> 0;
-            const compatibleSlots = activeSlots.filter((slot) => slotSupportsOption(slot, option));
-            const activeSlot = compatibleSlots.find((slot) => slot && slot.optionId === optionId) || null;
-            const emptySlot = compatibleSlots.find((slot) => !slot || !slot.optionId) || null;
-            const unlocked = !!option.unlocked;
-            const stateKey = activeSlot ? "build.active" : unlocked ? "build.unlocked" : "build.locked";
-            const stateText = t(stateKey, activeSlot ? "Active" : unlocked ? "Unlocked" : "Locked");
-            let actionHtml = `<span class="small">${escapeHtml(
-              tFmt("build.requiresScore", "Need {score} Score", { score: unlockScore }),
-            )}</span>`;
-
-            if (unlocked) {
-              if (activeSlot) {
-                actionHtml = `<button type="button" data-action="build-deactivate" data-slot-id="${escapeHtml(
-                  String(activeSlot.slotId || ""),
-                )}">${escapeHtml(t("build.deactivate", "Deactivate"))}</button>`;
-              } else if (emptySlot) {
-                actionHtml = `<button type="button" data-action="build-activate" data-option-id="${escapeHtml(
-                  optionId,
-                )}" data-slot-id="${escapeHtml(String(emptySlot.slotId || ""))}">${escapeHtml(
-                  t("build.activate", "Activate"),
-                )}</button>`;
-              } else {
-                actionHtml = `<span class="small">${escapeHtml(
-                  t("build.slotOccupiedHint", "Deactivate a compatible slot first."),
-                )}</span>`;
-              }
-            }
-
+        const sectionClass = disciplineClassName(discipline);
+        const rows = optionViews
+          .filter((view) => view.discipline === discipline)
+          .map((view) => {
+            const isFocus = focusOptionView && focusOptionView.optionId === view.optionId;
             return `
-              <article class="buildOptionCard ${activeSlot ? "isActive" : unlocked ? "isUnlocked" : "isLocked"}" data-option-id="${escapeHtml(
-                optionId,
+              <article class="buildOptionCard ${view.stateClass} ${view.disciplineClass} ${isFocus ? "isFocus" : ""}" data-option-id="${escapeHtml(
+                view.optionId,
               )}">
                 <div class="buildOptionHeader">
-                  <strong>${escapeHtml(t(option.titleKey, humanizeOptionId(optionId)))}</strong>
-                  <span class="pill">${escapeHtml(stateText)}</span>
+                  <strong>${escapeHtml(view.title)}</strong>
+                  <span class="pill">${escapeHtml(view.stateText)}</span>
                 </div>
-                <div class="small">${escapeHtml(t(option.descriptionKey, ""))}</div>
-                <div class="small mono">${escapeHtml(
-                  tFmt("build.requiresScore", "Need {score} Score", { score: unlockScore }),
+                <div class="small">${escapeHtml(view.description)}</div>
+                <div class="small mono">${escapeHtml(view.unlockText)}</div>
+                <div class="small buildOptionCompat">${escapeHtml(
+                  tFmt("build.compatibleSlots", "Compatible Slots: {slots}", { slots: view.compatibleText }),
                 )}</div>
-                <div class="buildOptionActions">${actionHtml}</div>
+                <div class="buildOptionActions">${view.actionHtml}</div>
               </article>`;
           })
           .join("");
 
         return `
-          <section class="buildDisciplineSection" data-discipline="${escapeHtml(discipline)}">
+          <section class="buildDisciplineSection ${sectionClass}" data-discipline="${escapeHtml(discipline)}">
             <div class="buildDisciplineHeader">
-              <h3>${escapeHtml(label)}</h3>
+              <div>
+                <div class="small buildPanelEyebrow">${escapeHtml(t("build.disciplineLedger", "Discipline"))}</div>
+                <h3>${escapeHtml(label)}</h3>
+              </div>
               <div class="buildDisciplineStats">
-                <span class="pill">${escapeHtml(tFmt("build.scorePill", "Score {score}", { score: Number(info.score || 0) >>> 0 }))}</span>
+                <span class="pill">${escapeHtml(tFmt("build.scorePill", "Score {score}", { score: info.score }))}</span>
                 <span class="small">${escapeHtml(
                   tFmt("build.baselinePill", "Baseline {count}", {
-                    count: Number(info.unlockedBaselineCount || 0) >>> 0,
+                    count: info.unlockedBaselineCount,
                   }),
+                )}</span>
+                <span class="small">${escapeHtml(
+                  tFmt("build.unlockedCount", "Unlocked {count}", { count: info.unlockedCount }),
+                )}</span>
+                <span class="small">${escapeHtml(
+                  tFmt("build.activeCount", "Active {count}", { count: info.activeCount }),
                 )}</span>
               </div>
             </div>
@@ -213,32 +291,98 @@
       })
       .join("");
 
+    const summaryHtml = disciplineOrder
+      .map((discipline) => {
+        const info = summarizeDiscipline(discipline, disciplines, options, activeSlots);
+        const label = t("build." + discipline, humanizeDiscipline(discipline));
+        const sectionClass = disciplineClassName(discipline);
+        return `
+          <article class="buildSummaryCard ${sectionClass}">
+            <div class="small buildPanelEyebrow">${escapeHtml(t("build.scoreSummaryLabel", "Build Score"))}</div>
+            <strong>${escapeHtml(label)}</strong>
+            <div class="buildSummaryValue">${escapeHtml(String(info.score))}</div>
+            <div class="small">${escapeHtml(
+              tFmt("build.summaryCounts", "Baseline {baseline} / Unlocked {unlocked} / Active {active}", {
+                baseline: info.unlockedBaselineCount,
+                unlocked: info.unlockedCount,
+                active: info.activeCount,
+              }),
+            )}</div>
+          </article>`;
+      })
+      .join("");
+
+    let focusHtml = `
+      <section id="buildDetailPanel" class="card buildPanelSection buildFocusPanel buildStaticPanel">
+        <div class="small buildPanelEyebrow">${escapeHtml(t("build.focusTitle", "Focused Option"))}</div>
+        <h2>${escapeHtml(t("build.availableOptions", "Available Options"))}</h2>
+        <div class="small">${escapeHtml(t("build.focusEmpty", "Unlock or activate an option to inspect it here."))}</div>
+      </section>`;
+
+    if (focusOptionView) {
+      const focusDisciplineLabel = t("build." + focusOptionView.discipline, humanizeDiscipline(focusOptionView.discipline));
+      const focusSlotLabel = focusOptionView.activeSlot ? slotTitle(focusOptionView.activeSlot, t) : t("build.none", "No options");
+      focusHtml = `
+        <section id="buildDetailPanel" class="card buildPanelSection buildFocusPanel buildStaticPanel ${focusOptionView.disciplineClass}">
+          <div class="small buildPanelEyebrow">${escapeHtml(t("build.focusTitle", "Focused Option"))}</div>
+          <h2>${escapeHtml(focusOptionView.title)}</h2>
+          <div class="buildFocusStateRow">
+            <span class="disciplineMark ${focusOptionView.disciplineClass}">${escapeHtml(focusDisciplineLabel)}</span>
+            <span class="pill">${escapeHtml(focusOptionView.stateText)}</span>
+          </div>
+          <div class="small buildFocusDescription">${escapeHtml(focusOptionView.description)}</div>
+          <div class="buildFocusMeta">
+            <div class="buildFocusMetaItem">
+              <span class="small">${escapeHtml(t("build.requiresScoreLabel", "Unlock"))}</span>
+              <strong>${escapeHtml(focusOptionView.unlockText)}</strong>
+            </div>
+            <div class="buildFocusMetaItem">
+              <span class="small">${escapeHtml(t("build.compatibleSlotsLabel", "Compatible Slots"))}</span>
+              <strong>${escapeHtml(focusOptionView.compatibleText)}</strong>
+            </div>
+            <div class="buildFocusMetaItem">
+              <span class="small">${escapeHtml(t("build.activeSlotLabel", "Current Slot"))}</span>
+              <strong>${escapeHtml(focusSlotLabel)}</strong>
+            </div>
+          </div>
+          <div class="buildFocusActions">${focusOptionView.actionHtml}</div>
+        </section>`;
+    }
+
     return `
-      <div class="buildBoardInner">
-        <div class="buildMetaStrip">
-          <span class="pill">${escapeHtml(
-            tFmt("build.scoreSummary", "Attack {attack} / Defense {defense} / Utility {utility}", {
-              attack: Number((disciplines.attack && disciplines.attack.score) || 0) >>> 0,
-              defense: Number((disciplines.defense && disciplines.defense.score) || 0) >>> 0,
-              utility: Number((disciplines.utility && disciplines.utility.score) || 0) >>> 0,
-            }),
-          )}</span>
+      <div class="buildBoardInner buildFixedBoard">
+        <div class="buildSummaryBar">
+          ${summaryHtml}
         </div>
         <div id="buildMigrationNotice" class="buildMigrationNotice${migrationParts.length ? "" : " isEmpty"}">
           ${migrationParts.join("")}
         </div>
-        <div class="buildPanels">
-          <section id="buildSlotsPanel" class="card buildPanelSection">
+        <div class="buildPanels buildShrineGrid buildFixedSurface">
+          <section id="buildCardsPanel" class="card buildPanelSection buildOptionRail">
+            <div class="buildOptionRailHeader">
+              <div class="small buildPanelEyebrow">${escapeHtml(t("build.disciplineLedger", "Discipline"))}</div>
+              <h2>${escapeHtml(t("build.availableOptions", "Available Options"))}</h2>
+              <div class="small buildOptionRailLead">${escapeHtml(
+                t("build.help", "Build score opens options permanently, but only your active slots apply to the current build."),
+              )}</div>
+            </div>
+            <div id="buildCardsScroller" class="buildOptionRailBody" data-wheel-surface="build-options">
+              <div class="buildCardsGrid">
+                ${cardsHtml}
+              </div>
+            </div>
+          </section>
+          <section id="buildSlotsPanel" class="card buildPanelSection buildAltarPanel buildStaticPanel">
+            <div class="small buildPanelEyebrow">${escapeHtml(t("build.altarTitle", "Build Shrine"))}</div>
             <h2>${escapeHtml(t("build.activeSlots", "Active Slots"))}</h2>
             <div class="small buildActionLegend">${escapeHtml(
               `${t("build.activate", "Activate")} / ${t("build.deactivate", "Deactivate")} / ${t("build.swap", "Swap")}`,
             )}</div>
-            <div class="buildSlotsGrid">${slotHtml || ""}</div>
+            <div class="buildSlotStage">
+              <div class="buildSlotCluster">${slotHtml || ""}</div>
+            </div>
           </section>
-          <section id="buildCardsPanel" class="buildPanelSection">
-            <h2>${escapeHtml(t("build.availableOptions", "Available Options"))}</h2>
-            <div class="buildCardsGrid">${cardsHtml}</div>
-          </section>
+          ${focusHtml}
         </div>
       </div>`;
   }

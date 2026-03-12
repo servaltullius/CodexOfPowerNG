@@ -30,7 +30,10 @@ test("index delegates bootstrap layer to ui_bootstrap module", () => {
 test("ui_bootstrap module owns startup requests and fallback bootstrap", () => {
   assert.match(moduleSource, /safeCall\("copng_requestState", \{\}\);/);
   assert.match(moduleSource, /safeCall\("copng_getSettings", \{\}\);/);
+  assert.match(moduleSource, /safeCall\("copng_requestInventory", \{ page: 0, pageSize: 200 \}\);/);
+  assert.match(moduleSource, /safeCall\("copng_requestRegistered", \{\}\);/);
   assert.match(moduleSource, /safeCall\("copng_requestUndoList", \{\}\);/);
+  assert.match(moduleSource, /safeCall\("copng_requestBuild", \{\}\);/);
   assert.match(moduleSource, /function installInputCorrectionFallback\(/);
   assert.match(moduleSource, /function installEscapeCloseFallback\(/);
 });

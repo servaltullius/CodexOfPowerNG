@@ -30,6 +30,22 @@
     return "0x" + hex;
   }
 
+  function dataKeyFromName(name) {
+    return String(name || "").replace(/-([a-z])/g, (_m, ch) => ch.toUpperCase());
+  }
+
+  function getElementDataAttr(el, name) {
+    if (!el || !name) return "";
+    const attrName = "data-" + String(name);
+    const dataKey = dataKeyFromName(name);
+    if (typeof el.getAttribute === "function") {
+      const value = el.getAttribute(attrName);
+      if (typeof value === "string" && value) return value;
+    }
+    if (el.dataset && typeof el.dataset[dataKey] === "string") return el.dataset[dataKey];
+    return "";
+  }
+
   function getOffsetTopInRoot(rootEl, el) {
     if (!rootEl || !el || !rootEl.getBoundingClientRect || !el.getBoundingClientRect) return 0;
     const rr = rootEl.getBoundingClientRect();
@@ -41,6 +57,7 @@
     const options = opts || {};
 
     const rootScrollEl = options.rootScrollEl || null;
+    const quickScrollEl = options.quickScrollEl || rootScrollEl || null;
     const quickBody = options.quickBody || null;
     const regBody = options.regBody || null;
     const quickVirtual = options.quickVirtual || { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
@@ -127,9 +144,9 @@
 
     function renderQuickVirtual(params) {
       const force = !!(params && params.force);
-      if (!rootScrollEl || !quickBody) return;
+      if (!quickScrollEl || !quickBody) return;
       if (getActiveSectionId() !== "tabQuick") return;
-      if (quickBody.dataset && quickBody.dataset.virtualMode === "grouped") return;
+      if (getElementDataAttr(quickBody, "virtual-mode") === "grouped") return;
 
       const rows = quickVirtual.rows || [];
       const total = rows.length;
@@ -158,14 +175,14 @@
       if (force || !Number.isFinite(quickVirtual.tbodyTopPx) || !Number.isFinite(quickVirtual.rowHeightPx) || quickVirtual.rowHeightPx <= 0) {
         const uiScale = getCurrentUiScale();
         quickVirtual.rowHeightPx = quickRowBasePx * uiScale;
-        quickVirtual.tbodyTopPx = getOffsetTopInRoot(rootScrollEl, quickBody);
+        quickVirtual.tbodyTopPx = getOffsetTopInRoot(quickScrollEl, quickBody);
       }
 
       const rowHeight = quickVirtual.rowHeightPx;
       const tbodyTop = quickVirtual.tbodyTopPx;
-      const viewTop = Number(rootScrollEl.scrollTop || 0);
+      const viewTop = Number(quickScrollEl.scrollTop || 0);
       const startRaw = Math.floor((viewTop - tbodyTop) / rowHeight);
-      const approxVisible = Math.ceil(Number(rootScrollEl.clientHeight || 900) / rowHeight) + 2;
+      const approxVisible = Math.ceil(Number(quickScrollEl.clientHeight || 900) / rowHeight) + 2;
       const start = clamp(startRaw - overscan, 0, Math.max(0, total - 1));
       const end = clamp(start + approxVisible + overscan * 2, 0, total);
 

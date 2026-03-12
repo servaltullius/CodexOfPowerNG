@@ -8,13 +8,22 @@
       :root {
         color-scheme: dark;
         --uiScale: 1;
-        --bg: rgba(12, 12, 16, 0.82);
-        --panel: rgba(255, 255, 255, 0.06);
-        --border: rgba(255, 255, 255, 0.12);
-        --text: rgba(255, 255, 255, 0.92);
-        --muted: rgba(255, 255, 255, 0.62);
+        --bg: rgba(10, 12, 18, 0.88);
+        --panel: rgba(18, 20, 28, 0.84);
+        --border: rgba(255, 255, 255, 0.14);
+        --text: rgba(255, 255, 255, 0.97);
+        --muted: rgba(224, 228, 240, 0.78);
         --accent: #7c5cff;
         --danger: #ff6b6b;
+        --attack-accent: #c46b52;
+        --attack-soft: rgba(196, 107, 82, 0.16);
+        --attack-line: rgba(196, 107, 82, 0.5);
+        --defense-accent: #8aa2c2;
+        --defense-soft: rgba(138, 162, 194, 0.16);
+        --defense-line: rgba(138, 162, 194, 0.48);
+        --utility-accent: #b69a54;
+        --utility-soft: rgba(182, 154, 84, 0.16);
+        --utility-line: rgba(182, 154, 84, 0.48);
 
         /* Perf-tunable styling (helps cursor smoothness on high DPI / 4K). */
         --shadowScale: 1;
@@ -31,8 +40,8 @@
         --btnHoverBg: rgba(255, 255, 255, 0.06);
 
         /* Slightly more opaque panels reduce expensive blending in some renderers. */
-        --bg: rgba(12, 12, 16, 0.92);
-        --panel: rgba(255, 255, 255, 0.05);
+        --bg: rgba(10, 12, 18, 0.95);
+        --panel: rgba(18, 20, 28, 0.88);
       }
       * {
         box-sizing: border-box;
@@ -60,6 +69,9 @@
         max-height: 96vh;
         overflow: auto;
       }
+      .root.isViewportLocked {
+        overflow: hidden;
+      }
       h1 {
         margin: 0 0 calc(6px * var(--uiScale)) 0;
         font-size: calc(22px * var(--uiScale));
@@ -68,8 +80,79 @@
       p {
         margin: 0 0 calc(16px * var(--uiScale)) 0;
         color: var(--muted);
-        font-size: calc(13px * var(--uiScale));
-        line-height: 1.4;
+        font-size: calc(13.5px * var(--uiScale));
+        line-height: 1.5;
+      }
+      .heroHeader {
+        display: grid;
+        gap: 0;
+        margin-bottom: calc(8px * var(--uiScale));
+      }
+      .heroTop {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(calc(220px * var(--uiScale)), auto);
+        gap: calc(14px * var(--uiScale));
+        align-items: start;
+      }
+      .heroMain {
+        display: grid;
+        gap: calc(6px * var(--uiScale));
+        min-width: 0;
+      }
+      .heroBottom {
+        display: grid;
+        gap: calc(4px * var(--uiScale));
+      }
+      .heroCopy {
+        min-width: 0;
+      }
+      .heroCopy p {
+        margin-bottom: 0;
+        max-width: min(calc(980px * var(--uiScale)), 100%);
+      }
+      .heroToolbar {
+        display: grid;
+        gap: calc(4px * var(--uiScale));
+        align-items: start;
+        margin: 0;
+      }
+      .heroToolbar .left {
+        gap: calc(8px * var(--uiScale));
+      }
+      .heroTabs {
+        margin: 0;
+      }
+      .heroAside {
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+        gap: calc(8px * var(--uiScale));
+        min-width: calc(220px * var(--uiScale));
+      }
+      .heroCharacterPanel {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+        flex: 0 0 auto;
+      }
+      .heroCharacterPanel .rewardCharacterWrap {
+        position: relative;
+        left: auto;
+        top: auto;
+        transform: translateX(calc(-20px * var(--uiScale)));
+        width: min(calc(150px * var(--uiScale)), 14vw);
+        max-width: calc(172px * var(--uiScale));
+        margin: 0;
+        opacity: 0.86;
+      }
+      .heroActions {
+        display: flex;
+        flex-direction: column;
+        gap: calc(8px * var(--uiScale));
+        align-items: stretch;
+        justify-content: flex-start;
+        width: auto;
       }
       .row {
         display: flex;
@@ -133,7 +216,7 @@
         border-radius: calc(10px * var(--uiScale));
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-color: var(--border);
-        background: rgba(0, 0, 0, 0.25);
+        background: rgba(5, 7, 12, 0.42);
         color: rgba(255, 255, 255, 0.92);
         color: var(--text);
         outline: none;
@@ -145,7 +228,7 @@
         border-radius: calc(10px * var(--uiScale));
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-color: var(--border);
-        background: rgba(0, 0, 0, 0.25);
+        background: rgba(5, 7, 12, 0.42);
         color: rgba(255, 255, 255, 0.92);
         color: var(--text);
         outline: none;
@@ -267,6 +350,26 @@
         align-items: center;
         flex-wrap: wrap;
       }
+      .quickScreen,
+      .buildScreen {
+        position: relative;
+        overflow: hidden;
+      }
+      .quickScreen {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto auto;
+        align-items: start;
+        background:
+          radial-gradient(circle at top right, rgba(182, 154, 84, 0.1), transparent 36%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.08)),
+          var(--panel);
+      }
+      .buildScreen {
+        background:
+          radial-gradient(circle at 50% 0%, rgba(124, 92, 255, 0.1), transparent 38%),
+          linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(0, 0, 0, 0.08)),
+          var(--panel);
+      }
       table {
         width: 100%;
         border-collapse: collapse;
@@ -281,13 +384,14 @@
       }
       th {
         color: var(--muted);
-        font-size: calc(12.5px * var(--uiScale));
+        font-size: calc(12px * var(--uiScale));
         font-weight: 800;
         text-transform: uppercase;
-        letter-spacing: 0.08em;
+        letter-spacing: 0.12em;
       }
       thead th {
-        background: rgba(12, 12, 16, 0.92);
+        background: rgba(7, 9, 15, 0.96);
+        color: rgba(236, 240, 248, 0.84);
       }
       tbody tr.dataRow.rowOdd {
         background: var(--rowOdd);
@@ -312,7 +416,8 @@
 
       /* Fixed row heights for virtualization (scaled). */
       #tabQuick tbody tr.dataRow {
-        height: calc(78px * var(--uiScale));
+        min-height: calc(72px * var(--uiScale));
+        height: auto;
       }
       #tabRegistered tbody tr.dataRow {
         height: calc(54px * var(--uiScale));
@@ -361,9 +466,10 @@
         width: calc(220px * var(--uiScale));
       }
       .itemName {
-        font-size: calc(16px * var(--uiScale));
+        font-size: calc(17px * var(--uiScale));
         font-weight: 800;
         letter-spacing: 0.1px;
+        line-height: 1.2;
       }
       .pill {
         display: inline-block;
@@ -396,6 +502,26 @@
         color: rgba(124, 92, 255, 0.95);
         font-weight: 800;
       }
+      .disc-attack {
+        --discipline-accent: var(--attack-accent);
+        --discipline-soft: var(--attack-soft);
+        --discipline-line: var(--attack-line);
+      }
+      .disc-defense {
+        --discipline-accent: var(--defense-accent);
+        --discipline-soft: var(--defense-soft);
+        --discipline-line: var(--defense-line);
+      }
+      .disc-utility {
+        --discipline-accent: var(--utility-accent);
+        --discipline-soft: var(--utility-soft);
+        --discipline-line: var(--utility-line);
+      }
+      .disc-wildcard {
+        --discipline-accent: #b995e9;
+        --discipline-soft: rgba(185, 149, 233, 0.16);
+        --discipline-line: rgba(185, 149, 233, 0.5);
+      }
       .toast {
         position: fixed;
         right: calc(22px * var(--uiScale));
@@ -423,6 +549,20 @@
       }
       .section.active {
         display: block;
+      }
+      .quickScreen.section.active {
+        display: grid;
+        min-height: 0;
+        height: var(--sectionViewportPx, auto);
+        grid-template-rows: auto minmax(0, 1fr) auto auto;
+      }
+      .buildScreen.section.active {
+        display: grid;
+        min-height: 0;
+        height: var(--sectionViewportPx, auto);
+      }
+      .buildScreen.section.active {
+        grid-template-rows: auto minmax(0, 1fr);
       }
       #tabSettings {
         padding-bottom: calc(70px * var(--uiScale));
@@ -475,12 +615,15 @@
         display: flex;
         flex-direction: column;
         gap: calc(12px * var(--uiScale));
+        min-height: 0;
       }
-      .buildMetaStrip {
+      .buildFixedBoard {
         display: flex;
-        flex-wrap: wrap;
+        flex-direction: column;
         gap: calc(8px * var(--uiScale));
-        margin-bottom: calc(10px * var(--uiScale));
+        height: var(--buildViewportPx, min(calc(560px * var(--uiScale)), calc(56vh)));
+        min-height: 0;
+        overflow: hidden;
       }
       .buildMigrationNotice {
         display: flex;
@@ -495,7 +638,7 @@
         padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
         border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: calc(12px * var(--uiScale));
-        background: rgba(255, 255, 255, 0.05);
+        background: rgba(17, 19, 28, 0.76);
       }
       .buildPanels {
         display: grid;
@@ -543,6 +686,414 @@
         display: grid;
         gap: calc(10px * var(--uiScale));
       }
+      .buildPanelEyebrow {
+        font-size: calc(11px * var(--uiScale));
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: rgba(233, 237, 246, 0.56);
+      }
+      .buildSummaryBar {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: calc(10px * var(--uiScale));
+      }
+      .buildSummaryCard {
+        display: flex;
+        flex-direction: column;
+        gap: calc(5px * var(--uiScale));
+        padding: calc(12px * var(--uiScale));
+        border-radius: calc(12px * var(--uiScale));
+        border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.1));
+        background:
+          linear-gradient(90deg, var(--discipline-soft, rgba(255, 255, 255, 0.06)), rgba(12, 14, 22, 0) 40%),
+          rgba(12, 14, 22, 0.94);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+      .buildSummaryCard strong {
+        font-size: calc(16px * var(--uiScale));
+        color: rgba(250, 252, 255, 0.96);
+      }
+      .buildSummaryValue {
+        font-size: calc(32px * var(--uiScale));
+        font-weight: 900;
+        line-height: 1;
+        color: var(--discipline-accent, var(--text));
+      }
+      .buildFixedSurface {
+        flex: 1 1 auto;
+        min-height: 0;
+      }
+      .buildShrineGrid {
+        min-height: 0;
+        grid-template-columns:
+          minmax(calc(300px * var(--uiScale)), 1.05fr)
+          minmax(calc(340px * var(--uiScale)), 1fr)
+          minmax(calc(280px * var(--uiScale)), 0.88fr);
+        align-items: stretch;
+      }
+      .buildOptionRail,
+      .buildAltarPanel,
+      .buildFocusPanel {
+        min-height: 0;
+        height: 100%;
+        overflow: hidden;
+      }
+      .buildStaticPanel {
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+      }
+      .buildOptionRail {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(8, 10, 18, 0.92);
+      }
+      .buildOptionRailHeader {
+        display: grid;
+        gap: calc(4px * var(--uiScale));
+        padding-bottom: calc(8px * var(--uiScale));
+        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      }
+      .buildOptionRailLead {
+        line-height: 1.45;
+        max-width: min(calc(320px * var(--uiScale)), 100%);
+      }
+      .buildOptionRailBody {
+        min-height: 0;
+        overflow: auto;
+        overscroll-behavior: contain;
+        padding-right: calc(4px * var(--uiScale));
+        margin-right: calc(-4px * var(--uiScale));
+      }
+      .buildOptionRail .buildCardsGrid {
+        display: flex;
+        flex-direction: column;
+        gap: calc(12px * var(--uiScale));
+      }
+      .buildOptionRail .buildDisciplineSection {
+        padding: calc(12px * var(--uiScale));
+        border-radius: calc(12px * var(--uiScale));
+        border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.1));
+        background: linear-gradient(180deg, var(--discipline-soft, rgba(255, 255, 255, 0.04)), rgba(10, 12, 18, 0.88));
+      }
+      .buildAltarPanel {
+        position: relative;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: linear-gradient(180deg, rgba(11, 13, 19, 0.96), rgba(7, 9, 16, 0.98));
+      }
+      .buildSlotStage {
+        position: relative;
+        isolation: isolate;
+        min-height: 0;
+        padding-top: calc(4px * var(--uiScale));
+      }
+      .buildSlotCluster {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: calc(10px * var(--uiScale));
+        position: relative;
+        padding: calc(4px * var(--uiScale)) 0 0 0;
+        z-index: 2;
+      }
+      .buildSlotCluster::before {
+        content: "";
+        position: absolute;
+        inset: calc(18px * var(--uiScale)) calc(26px * var(--uiScale));
+        border-radius: calc(18px * var(--uiScale));
+        border: 1px dashed rgba(255, 255, 255, 0.08);
+        pointer-events: none;
+      }
+      .buildSlotCard {
+        position: relative;
+        border-color: var(--discipline-line, rgba(255, 255, 255, 0.12));
+        background:
+          linear-gradient(135deg, var(--discipline-soft, rgba(255, 255, 255, 0.04)), rgba(12, 14, 20, 0) 62%),
+          rgba(12, 14, 20, 0.9);
+      }
+      .buildSlotCard.isOccupied {
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+      }
+      .buildSlotName {
+        display: block;
+        font-size: calc(16px * var(--uiScale));
+      }
+      .buildActionButton {
+        min-height: calc(38px * var(--uiScale));
+        padding: calc(8px * var(--uiScale)) calc(12px * var(--uiScale));
+        border-radius: calc(10px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        color: var(--text);
+        font-size: calc(12.5px * var(--uiScale));
+        font-weight: 700;
+      }
+      .buildActionButton.isPrimary {
+        border-color: var(--discipline-line, rgba(124, 92, 255, 0.48));
+        background: var(--discipline-soft, rgba(124, 92, 255, 0.14));
+      }
+      .buildHint {
+        color: rgba(238, 242, 250, 0.68);
+      }
+      .buildOptionCard {
+        border-color: var(--discipline-line, rgba(255, 255, 255, 0.12));
+        background:
+          linear-gradient(135deg, var(--discipline-soft, rgba(255, 255, 255, 0.03)), rgba(12, 14, 20, 0) 64%),
+          rgba(12, 14, 20, 0.9);
+      }
+      .buildOptionCard.isFocus {
+        box-shadow: inset 0 0 0 1px var(--discipline-line, rgba(255, 255, 255, 0.16));
+      }
+      .buildOptionCard.isActive {
+        background:
+          linear-gradient(135deg, var(--discipline-soft, rgba(255, 255, 255, 0.05)), rgba(255, 255, 255, 0.015) 58%),
+          rgba(12, 14, 20, 0.94);
+      }
+      .buildOptionCompat {
+        margin-top: calc(6px * var(--uiScale));
+        color: rgba(238, 242, 250, 0.76);
+      }
+      .buildFocusPanel {
+        border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.12));
+        background: rgba(10, 12, 18, 0.94);
+      }
+      .buildFocusStateRow {
+        display: flex;
+        gap: calc(8px * var(--uiScale));
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .buildFocusDescription {
+        line-height: 1.55;
+        color: rgba(247, 249, 255, 0.86);
+      }
+      .buildFocusMeta {
+        display: grid;
+        gap: calc(10px * var(--uiScale));
+      }
+      .buildFocusMetaItem {
+        padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
+        border-radius: calc(10px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(15, 17, 24, 0.92);
+      }
+      .buildFocusMetaItem strong {
+        display: block;
+        margin-top: calc(4px * var(--uiScale));
+        line-height: 1.4;
+      }
+      .buildFocusActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: calc(8px * var(--uiScale));
+      }
+      .quickToolbar,
+      .buildToolbar {
+        margin-bottom: calc(14px * var(--uiScale));
+        padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: calc(12px * var(--uiScale));
+        background: rgba(10, 12, 18, 0.88);
+      }
+      .quickTableShell,
+      #quickTableScroller {
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: calc(14px * var(--uiScale));
+        background: rgba(8, 10, 18, 0.88);
+        min-height: min(calc(360px * var(--uiScale)), calc(38vh));
+        height: var(--quickViewportPx, auto);
+        max-height: var(--quickViewportPx, min(calc(560px * var(--uiScale)), calc(52vh)));
+        overflow: auto;
+        overscroll-behavior: contain;
+      }
+      .quickCodexTable {
+        margin: 0;
+      }
+      .quickCodexTable thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background:
+          linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+          rgba(8, 10, 18, 0.92);
+        border-bottom-color: rgba(255, 255, 255, 0.05);
+      }
+      #tabQuick .colSelect {
+        width: calc(88px * var(--uiScale));
+      }
+      #tabQuick .colGroup {
+        width: calc(140px * var(--uiScale));
+      }
+      #tabQuick .colCount {
+        width: calc(128px * var(--uiScale));
+      }
+      #tabQuick .colAction {
+        width: calc(156px * var(--uiScale));
+      }
+      #tabQuick tr.sectionRow td {
+        padding-top: calc(14px * var(--uiScale));
+        padding-bottom: calc(10px * var(--uiScale));
+        border-bottom-color: rgba(255, 255, 255, 0.03);
+      }
+      #tabQuick .sectionRowInner {
+        display: flex;
+        align-items: center;
+        gap: calc(10px * var(--uiScale));
+        color: var(--discipline-accent, var(--muted));
+      }
+      #tabQuick .sectionOrnament {
+        width: calc(32px * var(--uiScale));
+        height: 1px;
+        background: var(--discipline-line, rgba(255, 255, 255, 0.22));
+        box-shadow: none;
+      }
+      #tabQuick .sectionHeading strong {
+        display: block;
+        font-size: calc(12px * var(--uiScale));
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      #tabQuick tr.codexRow td {
+        padding-top: calc(8px * var(--uiScale));
+        padding-bottom: calc(8px * var(--uiScale));
+        border-bottom-color: rgba(255, 255, 255, 0.05);
+      }
+      #tabQuick tr.codexRow:hover {
+        background: linear-gradient(90deg, var(--discipline-soft, rgba(124, 92, 255, 0.16)), rgba(255, 255, 255, 0.03));
+      }
+      #tabQuick tr.codexRow.selected {
+        background: linear-gradient(90deg, var(--discipline-soft, rgba(124, 92, 255, 0.24)), rgba(124, 92, 255, 0.12));
+        box-shadow: inset 0 0 0 1px var(--discipline-line, rgba(255, 255, 255, 0.18));
+      }
+      #tabQuick .colItem {
+        padding-right: calc(10px * var(--uiScale));
+      }
+      #tabQuick .itemName {
+        font-size: calc(15px * var(--uiScale));
+        font-weight: 800;
+        color: rgba(255, 255, 255, 0.96);
+      }
+      #tabQuick .itemFormId,
+      #tabQuick .reasonText,
+      #tabQuick .stateTagRow {
+        margin-top: calc(4px * var(--uiScale));
+      }
+      #tabQuick .itemFormId {
+        opacity: 0.92;
+        color: rgba(230, 235, 246, 0.72);
+      }
+      .disciplineMark {
+        display: inline-flex;
+        align-items: center;
+        gap: calc(8px * var(--uiScale));
+        padding: calc(4px * var(--uiScale)) calc(10px * var(--uiScale));
+        border-radius: 999px;
+        border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.15));
+        background: var(--discipline-soft, rgba(255, 255, 255, 0.05));
+        color: var(--discipline-accent, var(--muted));
+        font-size: calc(11.5px * var(--uiScale));
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .disciplineMarkIcon {
+        width: calc(8px * var(--uiScale));
+        height: calc(8px * var(--uiScale));
+        border-radius: 999px;
+        background: currentColor;
+        box-shadow: 0 0 0 calc(3px * var(--uiScale)) var(--discipline-soft, rgba(255, 255, 255, 0.08));
+      }
+      .stateTagRow {
+        display: flex;
+        gap: calc(6px * var(--uiScale));
+        flex-wrap: wrap;
+      }
+      .stateTag {
+        display: inline-flex;
+        align-items: center;
+        padding: calc(2px * var(--uiScale)) calc(7px * var(--uiScale));
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.06);
+        color: rgba(244, 247, 255, 0.76);
+        font-size: calc(11.5px * var(--uiScale));
+      }
+      .stateTag[data-state="quest_protected"],
+      .stateTag[data-state="favorite_protected"] {
+        border-color: rgba(255, 214, 128, 0.26);
+        background: rgba(255, 214, 128, 0.09);
+        color: rgba(255, 228, 175, 0.92);
+      }
+      .stateTag[data-state="not_actionable"] {
+        border-color: rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(255, 255, 255, 0.6);
+      }
+      .reasonText {
+        color: rgba(245, 247, 255, 0.82);
+      }
+      .selectToggle {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: calc(28px * var(--uiScale));
+        height: calc(28px * var(--uiScale));
+        color: var(--discipline-accent, var(--accent));
+      }
+      .selectToggle input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        margin: 0;
+        cursor: pointer;
+      }
+      .selectToggle.isDisabled {
+        color: rgba(255, 255, 255, 0.28);
+      }
+      .selectGlyph {
+        width: calc(18px * var(--uiScale));
+        height: calc(18px * var(--uiScale));
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        background: rgba(0, 0, 0, 0.16);
+        box-shadow: inset 0 0 0 calc(4px * var(--uiScale)) transparent;
+        pointer-events: none;
+        transition: border-color 120ms ease, box-shadow 120ms ease, background 120ms ease;
+      }
+      .selectToggle input:checked + .selectGlyph {
+        border-color: currentColor;
+        background: var(--discipline-soft, rgba(124, 92, 255, 0.16));
+        box-shadow: inset 0 0 0 calc(4px * var(--uiScale)) currentColor;
+      }
+      .countValue {
+        color: rgba(245, 248, 255, 0.86);
+        font-weight: 800;
+      }
+      .countValue.isSafe {
+        color: var(--discipline-accent, rgba(124, 92, 255, 0.95));
+      }
+      .countDivider,
+      .countTotal {
+        color: rgba(255, 255, 255, 0.48);
+      }
+      .rowActionButton {
+        min-height: calc(38px * var(--uiScale));
+        padding-top: calc(8px * var(--uiScale));
+        padding-bottom: calc(8px * var(--uiScale));
+        border-color: rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+        font-size: calc(12.5px * var(--uiScale));
+        color: rgba(249, 251, 255, 0.94);
+      }
+      .rowActionButton:not(.isDisabled) {
+        border-color: var(--discipline-line, rgba(255, 255, 255, 0.1));
+        background: var(--discipline-soft, rgba(255, 255, 255, 0.05));
+      }
+      .rowActionButton.isDisabled,
+      .rowActionButton:disabled {
+        color: rgba(255, 255, 255, 0.45);
+        border-color: rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.03);
+      }
       .quickBatchSummary {
         display: flex;
         gap: calc(10px * var(--uiScale));
@@ -550,6 +1101,35 @@
         align-items: center;
         flex-wrap: wrap;
         margin-top: calc(12px * var(--uiScale));
+        padding: calc(12px * var(--uiScale)) calc(14px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: calc(14px * var(--uiScale));
+        background: rgba(10, 12, 18, 0.9);
+      }
+      .quickBatchReadout .pill {
+        min-height: calc(28px * var(--uiScale));
+        display: inline-flex;
+        align-items: center;
+      }
+      .quickBatchActions {
+        margin-left: auto;
+      }
+      .quickBatchActions button:not(.primary) {
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .quickHelp {
+        margin-top: calc(10px * var(--uiScale));
+        line-height: 1.5;
+      }
+      .buildScreen.section.active #buildPanel {
+        min-height: 0;
+        height: 100%;
+      }
+      .buildScreen.section.active .buildFixedBoard {
+        height: 100%;
+      }
+      .shrineLayout {
+        padding: calc(6px * var(--uiScale)) 0 0 0;
       }
       .colSelect {
         width: calc(110px * var(--uiScale));
@@ -607,7 +1187,8 @@
         width: 100%;
         height: auto;
         object-fit: contain;
-        filter: drop-shadow(0 calc(8px * var(--uiScale)) calc(16px * var(--uiScale)) rgba(0, 0, 0, 0.45));
+        filter: grayscale(0.04) brightness(0.92) contrast(1.08)
+          drop-shadow(0 calc(6px * var(--uiScale)) calc(12px * var(--uiScale)) rgba(0, 0, 0, 0.28));
       }
       .rewardImageFallback {
         display: none;
@@ -672,7 +1253,27 @@
         text-align: center;
       }
       @media (max-width: 980px) {
-        .buildPanels {
+        .heroTop {
+          grid-template-columns: 1fr;
+        }
+        .heroMain {
+          gap: calc(8px * var(--uiScale));
+        }
+        .heroAside {
+          display: grid;
+          justify-content: center;
+          justify-items: center;
+        }
+        .heroCharacterPanel .rewardCharacterWrap {
+          transform: translateX(calc(-8px * var(--uiScale)));
+          width: min(calc(168px * var(--uiScale)), 42vw);
+        }
+        .buildPanels,
+        .buildShrineGrid,
+        .buildSummaryBar {
+          grid-template-columns: 1fr;
+        }
+        .buildSlotCluster {
           grid-template-columns: 1fr;
         }
         .rewardDiagram {
@@ -686,36 +1287,54 @@
   </head>
   <body>
     <div class="root">
-      <h1 data-i18n="app.title">Codex of Power NG</h1>
-      <p data-i18n="app.desc">
-        Quick Register consumes 1 item and permanently records it. Build score opens Attack / Defense / Utility options you can unlock and slot.
-      </p>
-
-      <div class="toolbar">
-        <div class="left">
-          <span class="pill" id="status">UI: ...</span>
-          <span class="pill" id="counts">Registered: 0</span>
-          <span class="pill" id="lang">Lang: ...</span>
-          <span class="pill mono" id="hotkey">Hotkey: ...</span>
-          <span class="pill mono" id="inputScale">Input: 1.00</span>
-          <span class="pill" id="lotdGate" style="display: none">LOTD: ...</span>
-        </div>
-        <div class="left">
-          <button id="btnRefreshState"><span class="btnLabel" data-i18n="btn.refresh">Refresh</span></button>
-          <button class="primary" id="btnClose"><span class="btnLabel" data-i18n="btn.close">Close</span></button>
+      <div class="heroHeader">
+        <div class="heroTop">
+          <div class="heroMain">
+            <div class="heroCopy">
+              <h1 data-i18n="app.title">Codex of Power NG</h1>
+              <p data-i18n="app.desc">
+                Quick Register consumes 1 item and permanently records it. Build score opens Attack / Defense / Utility options you can unlock and slot.
+              </p>
+            </div>
+            <div class="heroBottom">
+              <div class="toolbar heroToolbar">
+                <div class="left">
+                  <span class="pill" id="status">UI: ...</span>
+                  <span class="pill" id="counts">Registered: 0</span>
+                  <span class="pill" id="lang">Lang: ...</span>
+                  <span class="pill mono" id="hotkey">Hotkey: ...</span>
+                  <span class="pill mono" id="inputScale">Input: 1.00</span>
+                  <span class="pill" id="lotdGate" style="display: none">LOTD: ...</span>
+                </div>
+              </div>
+              <div class="tabs heroTabs">
+                <button class="active" data-tab="tabQuick"><span class="btnLabel" data-i18n="tab.quick">Quick Register</span></button>
+                <button data-tab="tabRegistered"><span class="btnLabel" data-i18n="tab.registered">Registered</span></button>
+                <button data-tab="tabUndo"><span class="btnLabel" data-i18n="tab.undo">Undo</span></button>
+                <button data-tab="tabBuild"><span class="btnLabel" data-i18n="tab.build">Build</span></button>
+                <button data-tab="tabSettings"><span class="btnLabel" data-i18n="tab.settings">Settings</span></button>
+              </div>
+            </div>
+          </div>
+          <div class="heroAside">
+            <div class="heroCharacterPanel" aria-hidden="true">
+              <div class="rewardCharacterWrap">
+                <img id="rewardCharacterImg" src="assets/character.png" alt="" />
+                <div id="rewardImageFallback" class="rewardImageFallback small">
+                  Character image missing: assets/character.png
+                </div>
+              </div>
+            </div>
+            <div class="heroActions">
+              <button id="btnRefreshState"><span class="btnLabel" data-i18n="btn.refresh">Refresh</span></button>
+              <button class="primary" id="btnClose"><span class="btnLabel" data-i18n="btn.close">Close</span></button>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div class="tabs">
-        <button class="active" data-tab="tabQuick"><span class="btnLabel" data-i18n="tab.quick">Quick Register</span></button>
-        <button data-tab="tabRegistered"><span class="btnLabel" data-i18n="tab.registered">Registered</span></button>
-        <button data-tab="tabUndo"><span class="btnLabel" data-i18n="tab.undo">Undo</span></button>
-        <button data-tab="tabBuild"><span class="btnLabel" data-i18n="tab.build">Build</span></button>
-        <button data-tab="tabSettings"><span class="btnLabel" data-i18n="tab.settings">Settings</span></button>
-      </div>
-
-      <div class="card section active" id="tabQuick">
-        <div class="toolbar">
+      <div class="card section active quickScreen" id="tabQuick">
+        <div class="toolbar quickToolbar">
           <div class="left" style="flex: 1">
             <input id="quickFilter" placeholder="Search..." data-i18n-placeholder="placeholder.search" />
             <label class="inline"><input type="checkbox" id="quickActionableOnly" /> <span data-i18n="quick.actionableOnly">Actionable only</span></label>
@@ -733,29 +1352,31 @@
             <button id="btnRefreshInv"><span class="btnLabel" data-i18n="btn.refresh">Refresh</span></button>
           </div>
         </div>
-        <table>
-          <thead>
-            <tr>
-              <th class="colSelect" data-i18n="th.select">Select</th>
-              <th class="colGroup" data-i18n="th.group">Group</th>
-              <th data-i18n="th.item">Item</th>
-              <th class="colCount" data-i18n="th.count">Count</th>
-              <th class="colAction"></th>
-            </tr>
-          </thead>
-          <tbody id="quickBody"></tbody>
-        </table>
-        <div class="quickBatchSummary">
-          <div class="left">
+        <div class="quickTableShell" id="quickTableScroller">
+          <table class="quickCodexTable">
+            <thead>
+              <tr>
+                <th class="colSelect" data-i18n="th.select">Select</th>
+                <th class="colGroup" data-i18n="th.group">Group</th>
+                <th data-i18n="th.item">Item</th>
+                <th class="colCount" data-i18n="th.count">Count</th>
+                <th class="colAction"></th>
+              </tr>
+            </thead>
+            <tbody id="quickBody"></tbody>
+          </table>
+        </div>
+        <div class="quickBatchSummary" id="quickBatchSummary">
+          <div class="left quickBatchReadout">
             <span class="pill" id="quickBatchMeta">Selected 0</span>
             <span class="pill" id="quickBatchGain">Attack +0 / Defense +0 / Utility +0</span>
           </div>
-          <div class="left">
+          <div class="left quickBatchActions">
             <button id="btnClearBatch"><span class="btnLabel" data-i18n="btn.clear">Clear</span></button>
             <button class="primary" id="btnRegisterBatch"><span class="btnLabel" data-i18n="btn.registerSelected">Register Selected</span></button>
           </div>
         </div>
-        <div class="small" style="margin-top: 10px" data-i18n="quick.help">
+        <div class="small quickHelp" data-i18n="quick.help">
           Shows register-relevant inventory grouped by Attack / Defense / Utility. Disabled rows stay visible with their protection reason, and batch selection always counts one row as one registration.
         </div>
       </div>
@@ -806,8 +1427,8 @@
         </div>
       </div>
 
-      <div class="card section" id="tabBuild">
-        <div class="toolbar">
+      <div class="card section buildScreen" id="tabBuild">
+        <div class="toolbar buildToolbar">
           <div class="left">
             <span class="pill" id="buildMeta">...</span>
           </div>
@@ -815,15 +1436,12 @@
             <button id="btnRefreshBuild"><span class="btnLabel" data-i18n="btn.refresh">Refresh</span></button>
           </div>
         </div>
-        <div class="buildBoard" id="buildPanel">
+        <div class="buildBoard shrineLayout" id="buildPanel">
           <div id="buildMigrationNotice" class="buildMigrationNotice isEmpty"></div>
           <div class="buildPanels">
             <section class="card buildPanelSection" id="buildSlotsPanel"></section>
             <section class="buildPanelSection" id="buildCardsPanel"></section>
           </div>
-        </div>
-        <div class="small" style="margin-top: 10px" data-i18n="build.help">
-          Build score opens options permanently, but only your active slots apply to the current build.
         </div>
       </div>
 
@@ -1037,6 +1655,8 @@
       const inputScaleNumberEl = document.getElementById("setInputScaleNumber");
       const inputScalePresetEl = document.getElementById("setInputScalePreset");
 
+      const quickScrollEl = document.getElementById("quickTableScroller");
+      const quickSectionEl = document.getElementById("tabQuick");
       const quickBody = document.getElementById("quickBody");
       const invMetaEl = document.getElementById("invMeta");
       const invPageSizeEl = document.getElementById("invPageSize");
@@ -1044,7 +1664,9 @@
       const btnInvNext = document.getElementById("btnInvNext");
       const quickBatchMetaEl = document.getElementById("quickBatchMeta");
       const quickBatchGainEl = document.getElementById("quickBatchGain");
+      const quickBatchSummaryEl = document.getElementById("quickBatchSummary");
       const btnRegisterBatchEl = document.getElementById("btnRegisterBatch");
+      const quickHelpEl = document.querySelector("#tabQuick .quickHelp");
       const regBody = document.getElementById("regBody");
       const undoBody = document.getElementById("undoBody");
       const undoMetaEl = document.getElementById("undoMeta");
@@ -1053,6 +1675,7 @@
       const rewardOrbitEl = document.getElementById("rewardOrbit");
       const rewardCharacterImgEl = document.getElementById("rewardCharacterImg");
       const rewardImageFallbackEl = document.getElementById("rewardImageFallback");
+      const buildSectionEl = document.getElementById("tabBuild");
       const buildPanelEl = document.getElementById("buildPanel");
       const buildMetaEl = document.getElementById("buildMeta");
 
@@ -1129,10 +1752,11 @@
             ? uiRenderingApi.escapeHtml
             : (value) => String(value == null ? "" : value);
 
-        virtualTablesManager = virtualTablesApi.createVirtualTableManager({
-          rootScrollEl,
-          quickBody,
-          regBody,
+            virtualTablesManager = virtualTablesApi.createVirtualTableManager({
+              rootScrollEl,
+              quickScrollEl,
+              quickBody,
+              regBody,
           quickVirtual: uiState.getQuickVirtual(),
           regVirtual: uiState.getRegVirtual(),
           quickRowBasePx: QUICK_ROW_BASE_PX,
@@ -1211,6 +1835,11 @@
       const uiRendering = uiRenderingApi.createUIRendering({
         documentObj: document,
         refs: {
+              rootScrollEl,
+              quickScrollEl,
+              quickSectionEl,
+              quickBody,
+          regBody,
           statusEl,
           countsEl,
           langEl,
@@ -1221,17 +1850,20 @@
           langSelectEl,
           langBtnLabelEl,
           langMenuEl,
-          invMetaEl,
-          invPageSizeEl,
-          btnInvPrev,
-          btnInvNext,
-          quickBatchMetaEl,
-          quickBatchGainEl,
-          btnRegisterBatchEl,
+              invMetaEl,
+              invPageSizeEl,
+              btnInvPrev,
+              btnInvNext,
+              quickBatchMetaEl,
+              quickBatchGainEl,
+              quickBatchSummaryEl,
+              quickHelpEl,
+              btnRegisterBatchEl,
           quickVirtual: uiState.getQuickVirtual(),
           regVirtual: uiState.getRegVirtual(),
           undoBody,
           undoMetaEl,
+          buildSectionEl,
           buildPanelEl,
           buildMetaEl,
           rewardOrbitEl,
@@ -1388,6 +2020,7 @@
         documentObj: document,
         windowObj: window,
         rootScrollEl,
+        quickScrollEl,
         quickBody,
         undoBody,
         buildPanelEl,

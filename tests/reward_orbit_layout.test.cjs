@@ -89,5 +89,6 @@ test("build panel strings exist in both locales", () => {
     i18nModuleSource,
     /"build\.help": "빌드 점수로 해금한 옵션은 영구 보유되지만, 현재 빌드에는 활성 슬롯에 넣은 효과만 적용됩니다\."/,
   );
-  assert.match(html, /data-i18n="build\.help"/);
+  assert.doesNotMatch(html, /class="small buildHelp"/);
+  assert.match(buildPanelModuleSource, /buildOptionRailLead/);
 });

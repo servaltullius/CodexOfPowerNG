@@ -84,7 +84,7 @@ This change uses approach 2.
 
 The character image returns only on the Build screen and only as a visual altar center.
 
-- place it behind the active slot cluster
+- place it in the lower empty altar space beneath the active slot cluster
 - keep it non-interactive
 - keep it lower contrast than the slot cards and text
 - do not restore orbit nodes around it
@@ -96,7 +96,7 @@ This means the screen center once again has a recognizable in-world visual ancho
 ### Placement
 
 The image should live inside the central build-slot region rather than in a separate panel.
-It should sit behind the slot cards so the current build still reads as the foreground layer.
+It should sit in the lower empty altar space below the slot cards so the current build remains the foreground layer and the silhouette reads as a supporting emblem rather than an overlap.
 
 ### Contrast
 
@@ -122,7 +122,7 @@ Foreground order should remain:
 1. build slot cards
 2. slot labels and actions
 3. focus/detail content
-4. character silhouette
+4. character silhouette in the lower altar well
 5. background panel
 
 The silhouette supports the scene but never outranks the interactive layer.

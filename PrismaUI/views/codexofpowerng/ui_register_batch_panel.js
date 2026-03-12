@@ -47,6 +47,12 @@
     return "Unknown";
   }
 
+  function disciplineClassName(id) {
+    const value = String(id || "").toLowerCase();
+    if (value === "attack" || value === "defense" || value === "utility") return "disc-" + value;
+    return "disc-unknown";
+  }
+
   function buildStateTags(row) {
     const tags = [];
     if (!row) return tags;
@@ -160,36 +166,64 @@
     const toHex32 = asFn(helpers && helpers.toHex32, defaultToHex32);
     const parts = [];
 
+    if (!Array.isArray(model.sections) || model.sections.length === 0) {
+      return `
+        <tr class="dataRow emptyState">
+          <td colspan="5" class="small">${escapeHtml(t("quick.empty", "No register-relevant items"))}</td>
+        </tr>`;
+    }
+
     for (const section of model.sections || []) {
       if (!section || !Array.isArray(section.rows) || section.rows.length === 0) continue;
+      const sectionClass = disciplineClassName(section.discipline);
       parts.push(`
-          <tr class="sectionRow">
-            <td colspan="5"><strong>${escapeHtml(t("build." + section.discipline, section.label || section.discipline))}</strong></td>
+          <tr class="sectionRow ${sectionClass}" data-discipline="${escapeHtml(section.discipline)}">
+            <td colspan="5">
+              <div class="sectionRowInner">
+                <span class="sectionOrnament"></span>
+                <div class="sectionHeading">
+                  <strong>${escapeHtml(t("build." + section.discipline, section.label || section.discipline))}</strong>
+                </div>
+              </div>
+            </td>
           </tr>`);
 
       for (const row of section.rows) {
+        const rowClass = disciplineClassName(row.discipline);
         const tags = row.stateTags
-          .map((tag) => `<span class="pill small">${escapeHtml(t("quick.reason." + tag, tag))}</span>`)
+          .map((tag) => `<span class="stateTag" data-state="${escapeHtml(tag)}">${escapeHtml(t("quick.reason." + tag, tag))}</span>`)
           .join(" ");
-        const reason = row.reasonTag ? `<div class="small">${escapeHtml(reasonText(row.reasonTag, t))}</div>` : "";
+        const reason = row.reasonTag
+          ? `<div class="small reasonText">${escapeHtml(reasonText(row.reasonTag, t))}</div>`
+          : "";
         const checkbox = row.canBatchSelect
-          ? `<input type="checkbox" data-action="batch-toggle" data-id="${row.formId}"${row.isSelected ? " checked" : ""} />`
-          : `<input type="checkbox" disabled />`;
+          ? `<label class="selectToggle"><input type="checkbox" data-action="batch-toggle" data-id="${row.formId}"${row.isSelected ? " checked" : ""} /><span class="selectGlyph" aria-hidden="true"></span></label>`
+          : `<label class="selectToggle isDisabled"><input type="checkbox" disabled /><span class="selectGlyph" aria-hidden="true"></span></label>`;
         const buttonDisabled = row.singleRegisterAction === "disabled" ? " disabled" : "";
         const rowIdAttr = row.singleRegisterAction === "enabled" ? String(row.formId) : "";
+        const buttonClass = row.singleRegisterAction === "enabled" ? "rowActionButton" : "rowActionButton isDisabled";
+        const countClass = row.actionable ? "countValue isSafe" : "countValue";
+        const tagsBlock = tags ? `<div class="stateTagRow">${tags}</div>` : "";
 
         parts.push(`
-        <tr class="dataRow ${row.isSelected ? "selected" : ""}" data-row-id="${rowIdAttr}">
+        <tr class="dataRow codexRow ${rowClass} ${row.isSelected ? "selected" : ""}" data-discipline="${escapeHtml(
+          row.discipline,
+        )}" data-row-id="${rowIdAttr}">
           <td class="colSelect">${checkbox}</td>
-          <td class="colGroup"><span class="pill">${escapeHtml(t("build." + row.discipline, row.discipline))}</span></td>
-          <td>
+          <td class="colGroup">
+            <span class="disciplineMark ${rowClass}">
+              <span class="disciplineMarkIcon" aria-hidden="true"></span>
+              <span>${escapeHtml(t("build." + row.discipline, row.discipline))}</span>
+            </span>
+          </td>
+          <td class="colItem">
             <div class="itemName">${escapeHtml(row.name)}</div>
-            <div class="small mono">${escapeHtml(toHex32(row.formId))}</div>
-            <div class="small">${tags}</div>
+            <div class="small mono itemFormId">${escapeHtml(toHex32(row.formId))}</div>
+            ${tagsBlock}
             ${reason}
           </td>
-          <td class="mono colCount"><span class="good">${row.safeCount}</span>/${row.totalCount}</td>
-          <td class="colAction"><button class="primary" data-action="reg" data-id="${row.formId}"${buttonDisabled}><span class="btnLabel">${escapeHtml(
+          <td class="mono colCount"><span class="${countClass}">${row.safeCount}</span><span class="countDivider">/</span><span class="countTotal">${row.totalCount}</span></td>
+          <td class="colAction"><button class="${buttonClass}" data-action="reg" data-id="${row.formId}"${buttonDisabled}><span class="btnLabel">${escapeHtml(
             t("btn.register", "Register"),
           )}</span></button></td>
         </tr>`);

@@ -32,6 +32,12 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"status\.lotdGate":\s*"LOTD 게이트"/);
   assert.match(moduleSource, /"settings\.lotdGateWarnTitle":\s*"LOTD gate warning"/);
   assert.match(moduleSource, /"settings\.lotdGateWarnBody":\s*"LOTD Display gate is enabled, but TCC lists are unavailable\./);
+  assert.match(moduleSource, /"build\.focusTitle":\s*"Focused Option"/);
+  assert.match(moduleSource, /"build\.focusTitle":\s*"선택 옵션"/);
+  assert.match(moduleSource, /"build\.altarTitle":\s*"Build Shrine"/);
+  assert.match(moduleSource, /"build\.altarTitle":\s*"빌드 제단"/);
+  assert.match(moduleSource, /"build\.compatibleSlots":\s*"Compatible Slots: \{slots\}"/);
+  assert.match(moduleSource, /"build\.compatibleSlots":\s*"호환 슬롯: \{slots\}"/);
   assert.match(moduleSource, /return base\.replace/);
 });
 

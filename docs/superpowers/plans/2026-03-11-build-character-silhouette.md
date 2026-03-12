@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Reintroduce the existing character image into the Build screen as a low-contrast altar silhouette behind the active slot cluster without restoring the legacy reward orbit.
+**Goal:** Reintroduce the existing character image into the Build screen as a low-contrast altar silhouette in the lower empty altar space beneath the active slot cluster without restoring the legacy reward orbit.
 
 **Architecture:** Treat this as a focused presentation-layer enhancement on top of the existing Build redesign. Keep the asset path and fallback behavior aligned with the legacy reward image pipeline, but move the rendered image into the current Build shrine structure so slot cards and detail panels remain the foreground UI.
 
@@ -15,7 +15,7 @@
 - Modify: `PrismaUI/views/codexofpowerng/index.html`
   Responsibility: add the Build-screen silhouette markup, shared CSS layering, and DOM refs.
 - Modify: `PrismaUI/views/codexofpowerng/ui_build_panel.js`
-  Responsibility: preserve slot cluster structure while cooperating with the new silhouette container.
+  Responsibility: preserve slot cluster structure while moving the silhouette into a dedicated lower altar well.
 - Modify: `PrismaUI/views/codexofpowerng/ui_rendering.js`
   Responsibility: sync the reused character-image load/fallback state against the new Build-screen DOM location.
 - Test: `tests/build_ui_rendering_module.test.cjs`
@@ -36,6 +36,7 @@
 Add assertions that the Build view source contains:
 
 ```js
+assert.match(html, /buildCharacterWell/);
 assert.match(html, /buildCharacterStage/);
 assert.match(html, /buildCharacterSilhouette/);
 assert.match(html, /buildCharacterShade/);
@@ -75,9 +76,9 @@ git commit -m "test: lock build silhouette contract"
 
 Update the Build screen so the slot cluster owns a non-interactive character stage:
 
-- add a dedicated silhouette container behind the slot cards
+- add a dedicated lower altar-well container beneath the slot cards
 - place the existing character image element inside that stage
-- keep the slot grid and panel layout unchanged in front of it
+- keep the slot grid and panel layout unchanged above it
 - keep the fallback node available for missing-image cases
 
 - [ ] **Step 2: Add the minimum CSS layering**

@@ -80,3 +80,89 @@ test("grouped batch register view model merges duplicate discipline sections int
   );
   assert.deepEqual(viewModel.summary.disciplineGain, { attack: 0, defense: 0, utility: 2 });
 });
+
+test("grouped batch register renderer shows an explicit empty state when no rows are available", () => {
+  const html = mod.renderRegisterBatchRowsHtml(
+    {
+      sections: [],
+      rows: [],
+      summary: {
+        selectedRows: 0,
+        disciplineGain: { attack: 0, defense: 0, utility: 0 },
+        formIds: [],
+      },
+    },
+    {
+      t: (_key, fallback) => fallback,
+      escapeHtml: (value) => String(value == null ? "" : value),
+      toHex32: (value) => "0x" + Number(value >>> 0).toString(16).toUpperCase(),
+    },
+  );
+
+  assert.match(html, /No items|No register-relevant items/i);
+});
+
+test("grouped batch register renderer exposes codex row structure and discipline hooks", () => {
+  const html = mod.renderRegisterBatchRowsHtml(
+    {
+      sections: [
+        {
+          discipline: "attack",
+          label: "Attack",
+          rows: [
+            {
+              formId: 46775,
+              regKey: 46775,
+              name: "Iron Sword",
+              discipline: "attack",
+              totalCount: 3,
+              safeCount: 2,
+              actionable: true,
+              canBatchSelect: true,
+              singleRegisterAction: "enabled",
+              reasonTag: null,
+              stateTags: [],
+              isSelected: true,
+            },
+            {
+              formId: 51234,
+              regKey: 51234,
+              name: "Quest Blade",
+              discipline: "attack",
+              totalCount: 1,
+              safeCount: 0,
+              actionable: false,
+              canBatchSelect: false,
+              singleRegisterAction: "disabled",
+              reasonTag: "quest_protected",
+              stateTags: ["quest_protected", "not_actionable"],
+              isSelected: false,
+            },
+          ],
+        },
+      ],
+      rows: [],
+      summary: {
+        selectedRows: 1,
+        disciplineGain: { attack: 1, defense: 0, utility: 0 },
+        formIds: [46775],
+      },
+    },
+    {
+      t: (_key, fallback) => fallback,
+      escapeHtml: (value) => String(value == null ? "" : value),
+      toHex32: (value) => "0x" + Number(value >>> 0).toString(16).toUpperCase(),
+    },
+  );
+
+  assert.match(html, /sectionRow/);
+  assert.match(html, /disc-attack/);
+  assert.match(html, /colSelect/);
+  assert.match(html, /colGroup/);
+  assert.match(html, /disciplineMark/);
+  assert.match(html, /itemName/);
+  assert.match(html, /stateTag/);
+  assert.match(html, /reasonText/);
+  assert.match(html, /quest_protected|not_actionable/);
+  assert.match(html, /rowActionButton/);
+});

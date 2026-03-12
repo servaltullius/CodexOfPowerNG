@@ -74,6 +74,7 @@
     const onInputScaleChange = asFn(options.onInputScaleChange, noop);
 
     const rootScrollEl = options.rootScrollEl || byId(doc, "root");
+    const quickScrollEl = options.quickScrollEl || byId(doc, "quickTableScroller");
     const quickBody = options.quickBody || byId(doc, "quickBody");
     const undoBody = options.undoBody || byId(doc, "undoBody");
     const buildPanelEl = options.buildPanelEl || byId(doc, "buildPanel");
@@ -106,6 +107,10 @@
     addListener(byId(doc, "btnRefreshState"), "click", function () {
       safeCall("copng_requestState", {});
       safeCall("copng_getSettings", {});
+      requestInventoryPage(0);
+      safeCall("copng_requestRegistered", {});
+      safeCall("copng_requestUndoList", {});
+      safeCall("copng_requestBuild", {});
     });
 
     addListener(byId(doc, "btnClose"), "click", function () {
@@ -170,6 +175,19 @@
         { passive: true }
       );
       addListener(rootScrollEl, "scroll", function () {
+        if (isLangMenuOpen()) closeLangMenu();
+      });
+    }
+    if (quickScrollEl && quickScrollEl !== rootScrollEl) {
+      addListener(
+        quickScrollEl,
+        "scroll",
+        function () {
+          scheduleVirtualRender();
+        },
+        { passive: true }
+      );
+      addListener(quickScrollEl, "scroll", function () {
         if (isLangMenuOpen()) closeLangMenu();
       });
     }

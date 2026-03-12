@@ -57,6 +57,29 @@
       .replace(/&lt;(\/?(span|br)\b[^&]*?)&gt;/gi, "<$1>");
   }
 
+  function dataKeyFromName(name) {
+    return String(name || "").replace(/-([a-z])/g, (_m, ch) => ch.toUpperCase());
+  }
+
+  function setElementDataAttr(el, name, value) {
+    if (!el || !name) return;
+    const attrName = "data-" + String(name);
+    const dataKey = dataKeyFromName(name);
+    if (value == null || value === "") {
+      if (typeof el.removeAttribute === "function") {
+        el.removeAttribute(attrName);
+        return;
+      }
+      if (el.dataset) delete el.dataset[dataKey];
+      return;
+    }
+    if (typeof el.setAttribute === "function") {
+      el.setAttribute(attrName, String(value));
+      return;
+    }
+    if (el.dataset) el.dataset[dataKey] = String(value);
+  }
+
   function createUIRendering(opts) {
     const options = opts || {};
     const documentObj = options.documentObj || (typeof document !== "undefined" ? document : null);
@@ -112,9 +135,25 @@
     const registerBatchPanelApi = options.registerBatchPanelApi || null;
     const langUiApi = options.langUiApi || null;
 
+    function resolveNamedElement(refValue, elementId) {
+      if (refValue) return refValue;
+      if (documentObj && typeof documentObj.getElementById === "function") {
+        return documentObj.getElementById(elementId);
+      }
+      return null;
+    }
+
+    function getQuickBodyEl() {
+      if (refs.quickBody) return refs.quickBody;
+      if (documentObj && typeof documentObj.getElementById === "function") {
+        return documentObj.getElementById("quickBody");
+      }
+      return null;
+    }
+
     function syncRewardCharacterImageState() {
-      const characterImgEl = refs.rewardCharacterImgEl;
-      const fallbackEl = refs.rewardImageFallbackEl;
+      const characterImgEl = resolveNamedElement(refs.rewardCharacterImgEl, "rewardCharacterImg");
+      const fallbackEl = resolveNamedElement(refs.rewardImageFallbackEl, "rewardImageFallback");
       if (rewardOrbitApi && typeof rewardOrbitApi.syncRewardCharacterImageState === "function") {
         rewardOrbitApi.syncRewardCharacterImageState({
           characterImgEl,
@@ -126,6 +165,77 @@
       const loaded = !!(characterImgEl.complete && characterImgEl.naturalWidth > 0);
       characterImgEl.style.display = loaded ? "" : "none";
       fallbackEl.classList.toggle("show", !loaded);
+    }
+
+    function syncSectionViewportHeight(sectionEl) {
+      const targetEl = sectionEl || null;
+      if (!targetEl || !targetEl.style || typeof targetEl.style.setProperty !== "function") return 0;
+      if (typeof targetEl.getBoundingClientRect !== "function") return 0;
+
+      const rootEl =
+        refs.rootScrollEl ||
+        (documentObj && typeof documentObj.querySelector === "function" ? documentObj.querySelector(".root") : null);
+      if (!rootEl || typeof rootEl.getBoundingClientRect !== "function") return 0;
+
+      const rootRect = rootEl.getBoundingClientRect();
+      const sectionRect = targetEl.getBoundingClientRect();
+      const availablePx = Math.max(360, Math.floor(Number(rootRect.bottom || 0) - Number(sectionRect.top || 0) - 24));
+      targetEl.style.setProperty("--sectionViewportPx", `${availablePx}px`);
+      return availablePx;
+    }
+
+    function syncQuickViewportHeight() {
+      const quickScrollEl =
+        refs.quickScrollEl ||
+        (documentObj && typeof documentObj.getElementById === "function" ? documentObj.getElementById("quickTableScroller") : null);
+      if (!quickScrollEl || !quickScrollEl.style || typeof quickScrollEl.style.setProperty !== "function") return;
+      if (typeof quickScrollEl.getBoundingClientRect !== "function") return;
+
+      const rootEl =
+        refs.rootScrollEl ||
+        (documentObj && typeof documentObj.querySelector === "function" ? documentObj.querySelector(".root") : null);
+      if (!rootEl || typeof rootEl.getBoundingClientRect !== "function") return;
+
+      const quickSummaryEl =
+        refs.quickBatchSummaryEl ||
+        (documentObj && typeof documentObj.getElementById === "function" ? documentObj.getElementById("quickBatchSummary") : null);
+      const quickHelpEl =
+        refs.quickHelpEl ||
+        (documentObj && typeof documentObj.querySelector === "function" ? documentObj.querySelector("#tabQuick .quickHelp") : null);
+
+      const rootRect = rootEl.getBoundingClientRect();
+      const scrollRect = quickScrollEl.getBoundingClientRect();
+      const summaryHeight =
+        quickSummaryEl && typeof quickSummaryEl.getBoundingClientRect === "function"
+          ? Number(quickSummaryEl.getBoundingClientRect().height || 0)
+          : 0;
+      const helpHeight =
+        quickHelpEl && typeof quickHelpEl.getBoundingClientRect === "function"
+          ? Number(quickHelpEl.getBoundingClientRect().height || 0)
+          : 0;
+      const availablePx = Math.max(220, Math.floor(Number(rootRect.bottom || 0) - Number(scrollRect.top || 0) - summaryHeight - helpHeight - 24));
+      quickScrollEl.style.setProperty("--quickViewportPx", `${availablePx}px`);
+    }
+
+    function syncBuildViewportHeight() {
+      const buildPanelEl = refs.buildPanelEl;
+      if (!buildPanelEl || !buildPanelEl.style || typeof buildPanelEl.style.setProperty !== "function") return;
+      if (typeof buildPanelEl.getBoundingClientRect !== "function") return;
+
+      const buildSectionEl =
+        refs.buildSectionEl ||
+        (documentObj && typeof documentObj.getElementById === "function" ? documentObj.getElementById("tabBuild") : null);
+      syncSectionViewportHeight(buildSectionEl);
+
+      const rootEl =
+        refs.rootScrollEl ||
+        (documentObj && typeof documentObj.querySelector === "function" ? documentObj.querySelector(".root") : null);
+      if (!rootEl || typeof rootEl.getBoundingClientRect !== "function") return;
+
+      const rootRect = rootEl.getBoundingClientRect();
+      const panelRect = buildPanelEl.getBoundingClientRect();
+      const availablePx = Math.max(360, Math.floor(Number(rootRect.bottom || 0) - Number(panelRect.top || 0) - 24));
+      buildPanelEl.style.setProperty("--buildViewportPx", `${availablePx}px`);
     }
 
     function renderRewardOrbit(rows) {
@@ -220,6 +330,23 @@
       return getActiveTabId() === String(tabId || "");
     }
 
+    function syncRootViewportMode(tabId) {
+      const nextTabId = String(tabId || "");
+      const rootEl =
+        refs.rootScrollEl ||
+        (documentObj && typeof documentObj.querySelector === "function" ? documentObj.querySelector(".root") : null);
+      if (!rootEl || !rootEl.classList || typeof rootEl.classList.toggle !== "function") return;
+      const lockViewport = nextTabId === "tabQuick" || nextTabId === "tabBuild";
+      rootEl.classList.toggle("isViewportLocked", lockViewport);
+      if (lockViewport) {
+        if (typeof rootEl.scrollTo === "function") {
+          rootEl.scrollTo(0, 0);
+        } else if (typeof rootEl.scrollTop === "number") {
+          rootEl.scrollTop = 0;
+        }
+      }
+    }
+
     function setTab(tabId) {
       if (!documentObj) return;
       documentObj.querySelectorAll(".tabs button").forEach((btn) =>
@@ -228,6 +355,7 @@
       documentObj.querySelectorAll(".section").forEach((sec) =>
         sec.classList.toggle("active", sec.id === tabId),
       );
+      syncRootViewportMode(tabId);
       renderTab(tabId);
       scheduleVirtualRender({ force: true });
     }
@@ -299,7 +427,10 @@
     }
 
     function renderQuick() {
+      syncQuickViewportHeight();
+
       const inventoryPage = getInventoryPage() || {};
+      const quickBodyEl = getQuickBodyEl();
       const quickFilterEl = documentObj ? documentObj.getElementById("quickFilter") : null;
       const quickActionableOnlyEl = documentObj ? documentObj.getElementById("quickActionableOnly") : null;
       const query = String((quickFilterEl && quickFilterEl.value) || "").toLowerCase();
@@ -310,7 +441,7 @@
           query,
         });
 
-        if (refs.quickBody && refs.quickBody.dataset) refs.quickBody.dataset.virtualMode = "grouped";
+        if (quickBodyEl) setElementDataAttr(quickBodyEl, "virtual-mode", "grouped");
         if (refs.quickVirtual) refs.quickVirtual.rows = [];
         const actionableIds = (Array.isArray(viewModel.rows) ? viewModel.rows : [])
           .filter((row) => row && row.canBatchSelect)
@@ -324,8 +455,8 @@
           : [];
         setQuickBatchSelectedIds(validSelected);
 
-        if (refs.quickBody && typeof registerBatchPanelApi.renderRegisterBatchTbody === "function") {
-          refs.quickBody.innerHTML = registerBatchPanelApi.renderRegisterBatchTbody(viewModel, {
+        if (quickBodyEl && typeof registerBatchPanelApi.renderRegisterBatchTbody === "function") {
+          quickBodyEl.innerHTML = registerBatchPanelApi.renderRegisterBatchTbody(viewModel, {
             t,
             escapeHtml,
             toHex32,
@@ -366,7 +497,7 @@
         return;
       }
 
-      if (refs.quickBody && refs.quickBody.dataset) delete refs.quickBody.dataset.virtualMode;
+      if (quickBodyEl) setElementDataAttr(quickBodyEl, "virtual-mode", null);
       const items = Array.isArray(inventoryPage.items) ? inventoryPage.items : [];
       const rows = items.filter((item) => !query || String(item.name || "").toLowerCase().indexOf(query) !== -1);
       if (refs.quickVirtual) refs.quickVirtual.rows = rows;
@@ -375,6 +506,7 @@
       if (getQuickSelectedId() && visibleIds.indexOf(getQuickSelectedId()) === -1) {
         setQuickSelectedId(0);
       }
+      renderQuickVirtual({ force: true });
       scheduleVirtualRender({ force: true });
 
       const page = coalesce(inventoryPage.page, 0);
@@ -489,6 +621,8 @@
           tFmt,
           escapeHtml,
         });
+        syncBuildViewportHeight();
+        syncRewardCharacterImageState();
         return;
       }
 
@@ -496,6 +630,8 @@
         <div id="buildMigrationNotice"></div>
         <section id="buildSlotsPanel"><h2>${escapeHtml(t("build.activeSlots", "Active Slots"))}</h2></section>
         <section id="buildCardsPanel"><h2>${escapeHtml(t("build.availableOptions", "Available Options"))}</h2></section>`;
+      syncBuildViewportHeight();
+      syncRewardCharacterImageState();
     }
 
     function renderSettings() {
@@ -534,6 +670,7 @@
 
     function renderTab(tabId) {
       const nextTabId = String(tabId || "");
+      syncRootViewportMode(nextTabId);
       if (nextTabId === "tabRegistered") {
         renderRegistered();
         return;

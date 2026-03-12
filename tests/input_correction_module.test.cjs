@@ -35,6 +35,25 @@ function makeEventTarget(initial = {}) {
   return target;
 }
 
+function makeRafHarness() {
+  const queue = [];
+  return {
+    requestAnimationFrame(cb) {
+      queue.push(cb);
+      return queue.length;
+    },
+    cancelAnimationFrame() {},
+    flush(limit = 12) {
+      let count = 0;
+      while (queue.length > 0 && count < limit) {
+        const cb = queue.shift();
+        cb();
+        count += 1;
+      }
+    },
+  };
+}
+
 test("view loads input correction module", () => {
   assert.match(
     html,
@@ -80,6 +99,10 @@ test("installDirectWheelScroll applies normalized wheel delta", () => {
     clamp: (v, min, max) => Math.max(min, Math.min(max, Number(v))),
     getCurrentUiScale: () => 1,
     performanceObj: { now: () => 100 },
+    requestAnimationFrameFn(cb) {
+      cb();
+      return 1;
+    },
   });
 
   let prevented = false;
@@ -100,6 +123,291 @@ test("installDirectWheelScroll applies normalized wheel delta", () => {
 
   detach();
   assert.equal(rootEl.listenerCount("wheel"), 0);
+});
+
+test("installDirectWheelScroll gives Quick Register a smoothed immediate step that settles to the full travel", () => {
+  const rootEl = makeEventTarget({
+    scrollTop: 0,
+    scrollHeight: 1600,
+    clientHeight: 400,
+  });
+  const raf = makeRafHarness();
+
+  const detach = mod.installDirectWheelScroll({
+    documentObj: {
+      querySelector(selector) {
+        if (selector === ".section.active") return { id: "tabQuick" };
+        return rootEl;
+      },
+    },
+    rootEl,
+    clamp: (v, min, max) => Math.max(min, Math.min(max, Number(v))),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 100 },
+    requestAnimationFrameFn: (cb) => raf.requestAnimationFrame(cb),
+    cancelAnimationFrameFn: () => raf.cancelAnimationFrame(),
+  });
+
+  let prevented = false;
+  rootEl.fire("wheel", {
+    isTrusted: true,
+    deltaY: 1,
+    deltaMode: 0,
+    timeStamp: 100,
+    preventDefault: () => {
+      prevented = true;
+    },
+    stopPropagation: () => {},
+  });
+
+  assert.equal(prevented, true);
+  assert.ok(rootEl.scrollTop > 0 && rootEl.scrollTop < 96, "Quick Register should start moving immediately without snapping to the full travel in one tick");
+  raf.flush();
+  assert.ok(Math.abs(rootEl.scrollTop - 96) < 1, "Quick Register should settle to the full travel after the short smooth tail");
+
+  detach();
+  assert.equal(rootEl.listenerCount("wheel"), 0);
+});
+
+test("installDirectWheelScroll gives Quick Register a larger follow-up step during rapid wheel bursts", () => {
+  const rootEl = makeEventTarget({
+    scrollTop: 0,
+    scrollHeight: 3200,
+    clientHeight: 500,
+  });
+  const raf = makeRafHarness();
+
+  const detach = mod.installDirectWheelScroll({
+    documentObj: {
+      querySelector(selector) {
+        if (selector === ".section.active") return { id: "tabQuick" };
+        return rootEl;
+      },
+    },
+    rootEl,
+    clamp: (v, min, max) => Math.max(min, Math.min(max, Number(v))),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 100 },
+    requestAnimationFrameFn: (cb) => raf.requestAnimationFrame(cb),
+    cancelAnimationFrameFn: () => raf.cancelAnimationFrame(),
+  });
+
+  rootEl.fire("wheel", {
+    isTrusted: true,
+    deltaY: 1,
+    deltaMode: 0,
+    timeStamp: 100,
+    preventDefault: () => {},
+    stopPropagation: () => {},
+  });
+  raf.flush();
+  const firstScrollTop = rootEl.scrollTop;
+
+  rootEl.fire("wheel", {
+    isTrusted: true,
+    deltaY: 1,
+    deltaMode: 0,
+    timeStamp: 136,
+    preventDefault: () => {},
+    stopPropagation: () => {},
+  });
+  raf.flush();
+  const secondDelta = rootEl.scrollTop - firstScrollTop;
+
+  assert.ok(Math.abs(firstScrollTop - 96) < 1);
+  assert.ok(
+    secondDelta > firstScrollTop,
+    "Quick Register should accelerate slightly during rapid wheel bursts instead of feeling like fixed 1-step notches",
+  );
+
+  detach();
+});
+
+test("installDirectWheelScroll uses a smaller immediate step on Build", () => {
+  const rootEl = makeEventTarget({
+    scrollTop: 0,
+    scrollHeight: 1600,
+    clientHeight: 400,
+  });
+
+  const detach = mod.installDirectWheelScroll({
+    documentObj: {
+      querySelector(selector) {
+        if (selector === ".section.active") return { id: "tabBuild" };
+        return rootEl;
+      },
+    },
+    rootEl,
+    clamp: (v, min, max) => Math.max(min, Math.min(max, Number(v))),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 100 },
+  });
+
+  rootEl.fire("wheel", {
+    isTrusted: true,
+    deltaY: 1,
+    deltaMode: 0,
+    timeStamp: 100,
+    preventDefault: () => {},
+    stopPropagation: () => {},
+  });
+
+  assert.equal(rootEl.scrollTop, 24, "Build should use a smaller immediate reading step than Quick Register");
+
+  detach();
+  assert.equal(rootEl.listenerCount("wheel"), 0);
+});
+
+test("installDirectWheelScroll routes Build wheel input to the option rail scroller when available", () => {
+  const rootEl = makeEventTarget({
+    scrollTop: 0,
+    scrollHeight: 1600,
+    clientHeight: 400,
+  });
+  const buildCardsScroller = {
+    scrollTop: 0,
+    scrollHeight: 2000,
+    clientHeight: 360,
+  };
+
+  const detach = mod.installDirectWheelScroll({
+    documentObj: {
+      querySelector(selector) {
+        if (selector === ".section.active") return { id: "tabBuild" };
+        return rootEl;
+      },
+      getElementById(id) {
+        if (id === "buildCardsScroller") return buildCardsScroller;
+        return null;
+      },
+    },
+    rootEl,
+    clamp: (v, min, max) => Math.max(min, Math.min(max, Number(v))),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 100 },
+  });
+
+  rootEl.fire("wheel", {
+    isTrusted: true,
+    deltaY: 1,
+    deltaMode: 0,
+    timeStamp: 100,
+    preventDefault: () => {},
+    stopPropagation: () => {},
+  });
+
+  assert.equal(rootEl.scrollTop, 0, "Build root should stay fixed when the option rail scroller is available");
+  assert.equal(buildCardsScroller.scrollTop, 24, "Build wheel should advance the option rail scroller");
+
+  detach();
+  assert.equal(rootEl.listenerCount("wheel"), 0);
+});
+
+test("installDirectWheelScroll routes Quick Register wheel input to the quick table scroller when available", () => {
+  const rootEl = makeEventTarget({
+    scrollTop: 0,
+    scrollHeight: 2200,
+    clientHeight: 600,
+  });
+  const quickTableScroller = {
+    scrollTop: 0,
+    scrollHeight: 2600,
+    clientHeight: 420,
+  };
+  const raf = makeRafHarness();
+
+  const detach = mod.installDirectWheelScroll({
+    documentObj: {
+      querySelector(selector) {
+        if (selector === ".section.active") return { id: "tabQuick" };
+        return rootEl;
+      },
+      getElementById(id) {
+        if (id === "quickTableScroller") return quickTableScroller;
+        return null;
+      },
+    },
+    rootEl,
+    clamp: (v, min, max) => Math.max(min, Math.min(max, Number(v))),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 100 },
+    requestAnimationFrameFn: (cb) => raf.requestAnimationFrame(cb),
+    cancelAnimationFrameFn: () => raf.cancelAnimationFrame(),
+  });
+
+  rootEl.fire("wheel", {
+    isTrusted: true,
+    deltaY: 1,
+    deltaMode: 0,
+    timeStamp: 100,
+    preventDefault: () => {},
+    stopPropagation: () => {},
+  });
+  raf.flush();
+
+  assert.equal(rootEl.scrollTop, 0, "Quick Register root should stay fixed when the quick table scroller is available");
+  assert.ok(quickTableScroller.scrollTop > 0, "Quick Register wheel should advance the quick table scroller");
+
+  detach();
+  assert.equal(rootEl.listenerCount("wheel"), 0);
+});
+
+test("installDirectWheelScroll uses a larger tiny-wheel step for Quick Register than Build", () => {
+  const quickRootEl = makeEventTarget({
+    scrollTop: 0,
+    scrollHeight: 2400,
+    clientHeight: 500,
+  });
+  const buildRootEl = makeEventTarget({
+    scrollTop: 0,
+    scrollHeight: 2400,
+    clientHeight: 500,
+  });
+
+  function makeDoc(rootEl, activeTabId) {
+    return {
+      querySelector(selector) {
+        if (selector === ".root") return rootEl;
+        if (selector === ".section.active") return { id: activeTabId };
+        return null;
+      },
+    };
+  }
+
+  const detachQuick = mod.installDirectWheelScroll({
+    documentObj: makeDoc(quickRootEl, "tabQuick"),
+    clamp: (v, min, max) => Math.max(min, Math.min(max, Number(v))),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 100 },
+  });
+  const detachBuild = mod.installDirectWheelScroll({
+    documentObj: makeDoc(buildRootEl, "tabBuild"),
+    clamp: (v, min, max) => Math.max(min, Math.min(max, Number(v))),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 100 },
+  });
+
+  const wheelEvent = {
+    isTrusted: true,
+    deltaY: 1,
+    deltaMode: 0,
+    timeStamp: 100,
+    preventDefault: () => {},
+    stopPropagation: () => {},
+  };
+
+  quickRootEl.fire("wheel", wheelEvent);
+  buildRootEl.fire("wheel", wheelEvent);
+
+  assert.ok(quickRootEl.scrollTop > 0, "Quick Register should scroll immediately on a tiny wheel delta");
+  assert.ok(buildRootEl.scrollTop > 0, "Build should still scroll immediately on a tiny wheel delta");
+  assert.ok(
+    quickRootEl.scrollTop > buildRootEl.scrollTop,
+    "Quick Register should move farther than Build for the same tiny wheel input",
+  );
+
+  detachQuick();
+  detachBuild();
 });
 
 test("installMouseEventCorrection re-dispatches click for non-element mouseup target", () => {

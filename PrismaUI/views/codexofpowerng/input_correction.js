@@ -36,6 +36,85 @@
     return Date.now();
   }
 
+  function getActiveTabId(doc, options) {
+    if (options && typeof options.getActiveTabId === "function") {
+      const fromOption = options.getActiveTabId();
+      if (typeof fromOption === "string" && fromOption) return fromOption;
+    }
+    if (!doc || typeof doc.querySelector !== "function") return "tabQuick";
+    const activeSection = doc.querySelector(".section.active");
+    return activeSection && typeof activeSection.id === "string" && activeSection.id ? activeSection.id : "tabQuick";
+  }
+
+  function getWheelProfile(tabId) {
+    const normalized = String(tabId || "").toLowerCase();
+    if (normalized === "tabbuild") {
+      return {
+        tinyStepPx: 24,
+        mediumMultiplier: 1.2,
+        maxStepRatio: 0.34,
+        rapidBoostPerBurst: 0,
+        rapidBoostMax: 0,
+      };
+    }
+    if (normalized === "tabquick" || normalized === "tabregistered" || normalized === "tabundo") {
+      return {
+        tinyStepPx: 96,
+        mediumMultiplier: 1.9,
+        maxStepRatio: 0.64,
+        rapidBoostPerBurst: 0.18,
+        rapidBoostMax: 0.54,
+      };
+    }
+    return {
+      tinyStepPx: 32,
+      mediumMultiplier: 1.5,
+      maxStepRatio: 0.45,
+      rapidBoostPerBurst: 0,
+      rapidBoostMax: 0,
+    };
+  }
+
+  function resolveBuildWheelContainer(doc, rootEl, options) {
+    if (options && typeof options.getBuildWheelContainer === "function") {
+      const fromOption = options.getBuildWheelContainer();
+      if (fromOption) return fromOption;
+    }
+    if (!doc || typeof doc.getElementById !== "function") return rootEl;
+    return doc.getElementById("buildCardsScroller") || rootEl;
+  }
+
+  function resolveQuickWheelContainer(doc, rootEl, options) {
+    if (options && typeof options.getQuickWheelContainer === "function") {
+      const fromOption = options.getQuickWheelContainer();
+      if (fromOption) return fromOption;
+    }
+    if (!doc || typeof doc.getElementById !== "function") return rootEl;
+    return doc.getElementById("quickTableScroller") || rootEl;
+  }
+
+  function resolveWheelContainer(doc, rootEl, options) {
+    const activeTabId = getActiveTabId(doc, options);
+    const normalized = String(activeTabId || "").toLowerCase();
+    if (normalized === "tabbuild") {
+      const buildContainer = resolveBuildWheelContainer(doc, rootEl, options);
+      const buildMaxScroll = Math.max(
+        0,
+        Number((buildContainer && buildContainer.scrollHeight) || 0) - Number((buildContainer && buildContainer.clientHeight) || 0),
+      );
+      return buildMaxScroll > 0 ? buildContainer : rootEl;
+    }
+    if (normalized === "tabquick") {
+      const quickContainer = resolveQuickWheelContainer(doc, rootEl, options);
+      const quickMaxScroll = Math.max(
+        0,
+        Number((quickContainer && quickContainer.scrollHeight) || 0) - Number((quickContainer && quickContainer.clientHeight) || 0),
+      );
+      return quickMaxScroll > 0 ? quickContainer : rootEl;
+    }
+    return rootEl;
+  }
+
   function installDirectWheelScroll(opts) {
     const options = opts || {};
     const doc = options.documentObj || (global && global.document) || null;
@@ -49,12 +128,53 @@
       return 1;
     });
     const perfObj = options.performanceObj || (global && global.performance) || null;
+    const requestAnimationFrameFn = asFn(
+      options.requestAnimationFrameFn,
+      typeof global !== "undefined" && typeof global.requestAnimationFrame === "function"
+        ? global.requestAnimationFrame.bind(global)
+        : function (cb) {
+            return global.setTimeout(cb, 16);
+          },
+    );
+    const cancelAnimationFrameFn = asFn(
+      options.cancelAnimationFrameFn,
+      typeof global !== "undefined" && typeof global.cancelAnimationFrame === "function"
+        ? global.cancelAnimationFrame.bind(global)
+        : function (id) {
+            return global.clearTimeout(id);
+          },
+    );
 
     let lastWheelTs = 0;
+    let lastWheelTabId = "";
+    let wheelBurstCount = 0;
+    let tailFrameId = 0;
+    let pendingTailPx = 0;
+    let pendingTailContainer = null;
+
+    function flushTailDelta() {
+      tailFrameId = 0;
+      const container = pendingTailContainer;
+      const tailPx = pendingTailPx;
+      pendingTailPx = 0;
+      pendingTailContainer = null;
+      if (!container || !Number.isFinite(tailPx) || tailPx === 0) return;
+      const maxScroll = currentMaxScroll(container);
+      if (maxScroll <= 0) return;
+      container.scrollTop = clampFn(Number(container.scrollTop || 0) + tailPx, 0, maxScroll);
+    }
+
+    function scheduleTailDelta(container, tailPx) {
+      if (!container || !Number.isFinite(tailPx) || tailPx === 0) return;
+      pendingTailContainer = container;
+      pendingTailPx += tailPx;
+      if (tailFrameId) return;
+      tailFrameId = requestAnimationFrameFn(flushTailDelta);
+    }
 
     function normalizeWheelDelta(e, container) {
       let dy = Number(e.deltaY || 0);
-      if (!Number.isFinite(dy) || dy === 0) return 0;
+      if (!Number.isFinite(dy) || dy === 0) return { immediatePx: 0, tailPx: 0 };
 
       const mode = Number(e.deltaMode || 0);
       if (mode === 1) dy *= 16;
@@ -66,37 +186,83 @@
       const now = wheelNow(e, perfObj);
       const dt = lastWheelTs > 0 ? now - lastWheelTs : 999;
       lastWheelTs = now;
+      const activeTabId = getActiveTabId(doc, options);
+      const normalizedTabId = String(activeTabId || "").toLowerCase();
+      const wheelProfile = getWheelProfile(activeTabId);
 
-      // Tiny deltas from Ultralight notched wheel: use a moderate fixed step.
+      if (activeTabId === lastWheelTabId && dt > 0 && dt < 90) {
+        wheelBurstCount += 1;
+      } else {
+        wheelBurstCount = 0;
+      }
+      lastWheelTabId = activeTabId;
+
+      const rapidBoost =
+        wheelProfile.rapidBoostPerBurst > 0
+          ? Math.min(Number(wheelProfile.rapidBoostMax || 0), wheelBurstCount * Number(wheelProfile.rapidBoostPerBurst || 0))
+          : 0;
+
+      let smoothTail = false;
       if (abs > 0 && abs < 12 && dt > 24) {
-        dy = Math.sign(dy) * 80 * uiScale;
+        dy = Math.sign(dy) * wheelProfile.tinyStepPx * uiScale;
+        smoothTail = normalizedTabId === "tabquick" || normalizedTabId === "tabregistered" || normalizedTabId === "tabundo";
       } else if (abs < 40) {
-        dy = dy * 1.5 * uiScale;
+        dy = dy * wheelProfile.mediumMultiplier * uiScale;
       } else {
         dy = dy * uiScale;
       }
 
-      const maxStep = Number(container.clientHeight || 800) * 0.45;
-      return clampFn(dy, -maxStep, maxStep);
+      if (rapidBoost > 0) {
+        dy *= 1 + rapidBoost;
+      }
+
+      const maxStep = Number(container.clientHeight || 800) * wheelProfile.maxStepRatio;
+      const boundedDy = clampFn(dy, -maxStep, maxStep);
+      if (!smoothTail) return { immediatePx: boundedDy, tailPx: 0 };
+
+      const immediatePx = boundedDy * 0.62;
+      return {
+        immediatePx,
+        tailPx: boundedDy - immediatePx,
+      };
+    }
+
+    function currentMaxScroll(container) {
+      return Math.max(0, Number(container.scrollHeight || 0) - Number(container.clientHeight || 0));
     }
 
     const onWheel = function (e) {
       if (!e || e.isTrusted === false) return;
-      const maxScroll = Math.max(0, Number(rootEl.scrollHeight || 0) - Number(rootEl.clientHeight || 0));
+      const scrollContainer = resolveWheelContainer(doc, rootEl, options);
+      if (!scrollContainer) return;
+      const maxScroll = currentMaxScroll(scrollContainer);
       if (maxScroll <= 0) return;
 
-      const deltaPx = normalizeWheelDelta(e, rootEl);
-      if (!Number.isFinite(deltaPx) || deltaPx === 0) return;
+      const deltaParts = normalizeWheelDelta(e, scrollContainer);
+      const immediatePx = Number(deltaParts.immediatePx || 0);
+      const tailPx = Number(deltaParts.tailPx || 0);
+      if ((!Number.isFinite(immediatePx) || immediatePx === 0) && (!Number.isFinite(tailPx) || tailPx === 0)) return;
 
       if (e.preventDefault) e.preventDefault();
       if (e.stopPropagation) e.stopPropagation();
 
-      rootEl.scrollTop = clampFn(Number(rootEl.scrollTop || 0) + deltaPx, 0, maxScroll);
+      if (Number.isFinite(immediatePx) && immediatePx !== 0) {
+        scrollContainer.scrollTop = clampFn(Number(scrollContainer.scrollTop || 0) + immediatePx, 0, maxScroll);
+      }
+      if (Number.isFinite(tailPx) && tailPx !== 0) {
+        scheduleTailDelta(scrollContainer, tailPx);
+      }
     };
 
     rootEl.addEventListener("wheel", onWheel, { passive: false });
 
     return function detachWheel() {
+      if (tailFrameId) {
+        cancelAnimationFrameFn(tailFrameId);
+        tailFrameId = 0;
+      }
+      pendingTailPx = 0;
+      pendingTailContainer = null;
       if (typeof rootEl.removeEventListener === "function") {
         rootEl.removeEventListener("wheel", onWheel, false);
       }

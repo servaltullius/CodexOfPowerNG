@@ -81,6 +81,7 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   const tabBtn = makeElement("tabBtn");
   tabBtn.dataset.tab = "tabQuick";
   const quickBody = makeElement("quickBody");
+  const quickTableScroller = makeElement("quickTableScroller");
   const undoBody = makeElement("undoBody");
   const buildPanelEl = makeElement("buildPanel");
   const invPageSizeEl = makeElement("invPageSize");
@@ -89,6 +90,7 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   const rootScrollEl = makeElement("rootScroll");
 
   map.set("quickBody", quickBody);
+  map.set("quickTableScroller", quickTableScroller);
   map.set("undoBody", undoBody);
   map.set("buildPanel", buildPanelEl);
   map.set("invPageSize", invPageSizeEl);
@@ -136,12 +138,14 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   let quickBodyClickCount = 0;
   let undoBodyClickCount = 0;
   let buildPanelClickCount = 0;
+  let virtualRenderCount = 0;
   let setTabValue = "";
 
   mod.installUIWiring({
     documentObj: doc,
     windowObj: win,
     rootScrollEl,
+    quickScrollEl: quickTableScroller,
     quickBody,
     undoBody,
     buildPanelEl,
@@ -171,7 +175,9 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
     renderUndo: () => {
       renderUndoCount += 1;
     },
-    scheduleVirtualRender: () => {},
+    scheduleVirtualRender: () => {
+      virtualRenderCount += 1;
+    },
     renderBuild: () => {
       renderBuildCount += 1;
     },
@@ -236,22 +242,24 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   assert.equal(setTabValue, "tabQuick");
 
   map.get("btnRefreshState").fire("click");
-  assert.deepEqual(safeCalls.slice(0, 2), [
-    { name: "copng_requestState", payload: {} },
-    { name: "copng_getSettings", payload: {} },
-  ]);
+  assert.deepEqual(pageRequests[0], 0);
+  assert.deepEqual(
+    safeCalls.slice(0, 5).map((entry) => entry.name),
+    ["copng_requestState", "copng_getSettings", "copng_requestRegistered", "copng_requestUndoList", "copng_requestBuild"],
+  );
 
   map.get("btnClose").fire("click");
-  assert.equal(safeCalls[2].name, "copng_requestToggle");
+  const toggleCall = safeCalls.find((entry) => entry.name === "copng_requestToggle");
+  assert.ok(toggleCall, "Close action should call copng_requestToggle");
 
   invPageSizeEl.value = "300";
   invPageSizeEl.fire("change");
   assert.equal(setPageSize[0], 300);
-  assert.equal(pageRequests[0], 0);
+  assert.equal(pageRequests[1], 0);
 
   btnInvPrev.fire("click");
   btnInvNext.fire("click");
-  assert.deepEqual(pageRequests.slice(1, 3), [1, 3]);
+  assert.deepEqual(pageRequests.slice(2, 4), [1, 3]);
 
   map.get("quickFilter").fire("input");
   map.get("regFilter").fire("input");
@@ -264,6 +272,10 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   assert.equal(quickBodyClickCount, 1);
   assert.equal(undoBodyClickCount, 1);
   assert.equal(buildPanelClickCount, 1);
+
+  rootScrollEl.fire("scroll");
+  quickTableScroller.fire("scroll");
+  assert.equal(virtualRenderCount, 2);
 
   map.get("btnSaveSettings").fire("click");
   assert.equal(saveSettingsCount, 1);
@@ -312,4 +324,65 @@ test("installUIWiring binds core controls and forwards callbacks", async () => {
   assert.equal(renderBuildCount, 1);
   assert.equal(openLangMenuCount, 0);
   assert.equal(closeLangMenuCount, 0);
+});
+
+test("global refresh requests inventory and registered/build data in addition to state", () => {
+  const map = new Map([["btnRefreshState", makeElement("btnRefreshState")]]);
+  const doc = {
+    getElementById(id) {
+      return map.get(id) || null;
+    },
+    querySelectorAll() {
+      return [];
+    },
+  };
+
+  const safeCalls = [];
+  const pageRequests = [];
+
+  mod.installUIWiring({
+    documentObj: doc,
+    windowObj: { addEventListener() {} },
+    safeCall: (name, payload) => safeCalls.push({ name, payload }),
+    setTab: () => {},
+    requestInventoryPage: (page) => pageRequests.push(page),
+    getInventoryPage: () => ({ page: 0, pageSize: 200 }),
+    setInventoryPageSize: () => {},
+    showConfirm: async () => false,
+    t: (_key, fallback) => fallback,
+    scheduleRenderQuick: () => {},
+    scheduleRenderRegistered: () => {},
+    renderUndo: () => {},
+    scheduleVirtualRender: () => {},
+    renderBuild: () => {},
+    onQuickBodyClick: () => {},
+    onUndoBodyClick: () => {},
+    onBuildPanelClick: () => {},
+    onSaveSettings: () => {},
+    updateToggleKeyResolved: () => {},
+    setCaptureToggleKey: () => {},
+    showToast: () => {},
+    closeLangMenu: () => {},
+    openLangMenu: () => {},
+    syncLangDropdown: () => {},
+    isLangMenuOpen: () => false,
+    loadUiScalePrefs: () => {},
+    syncUiScaleControls: () => {},
+    applyUiScaleFromPrefs: () => {},
+    syncInputScaleControls: () => {},
+    scheduleAutoUiScale: () => {},
+    getPerfMode: () => "auto",
+    onPerfModeChanged: () => {},
+    onUiScaleModeChanged: () => {},
+    onManualScaleChange: () => {},
+    onInputScaleChange: () => {},
+  });
+
+  map.get("btnRefreshState").fire("click");
+
+  assert.deepEqual(pageRequests, [0]);
+  assert.deepEqual(
+    safeCalls.map((entry) => entry.name),
+    ["copng_requestState", "copng_getSettings", "copng_requestRegistered", "copng_requestUndoList", "copng_requestBuild"],
+  );
 });

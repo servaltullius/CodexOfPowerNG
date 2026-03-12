@@ -263,6 +263,8 @@
 
     safeCall("copng_requestState", {});
     safeCall("copng_getSettings", {});
+    safeCall("copng_requestInventory", { page: 0, pageSize: 200 });
+    safeCall("copng_requestRegistered", {});
     safeCall("copng_requestUndoList", {});
     safeCall("copng_requestBuild", {});
 

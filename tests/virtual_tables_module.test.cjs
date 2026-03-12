@@ -73,6 +73,65 @@ test("quick renderer bypasses virtualization for small lists", () => {
   assert.doesNotMatch(quickBody.innerHTML, /spacerRow/);
 });
 
+test("quick renderer uses quickScrollEl as its scroll surface when provided", () => {
+  const rootScrollEl = {
+    scrollTop: 0,
+    clientHeight: 900,
+    getBoundingClientRect: () => fakeRect(0),
+  };
+  const quickScrollEl = {
+    scrollTop: 140,
+    clientHeight: 120,
+    getBoundingClientRect: () => fakeRect(100),
+  };
+  const quickBody = {
+    innerHTML: "",
+    getBoundingClientRect: () => fakeRect(110 - Number(quickScrollEl.scrollTop || 0)),
+  };
+  const regBody = {
+    innerHTML: "",
+    getBoundingClientRect: () => fakeRect(10),
+  };
+  const quickVirtual = {
+    rows: [
+      { formId: 1, regKey: 11, group: "A", name: "A1", safeCount: 1, totalCount: 1 },
+      { formId: 2, regKey: 12, group: "A", name: "A2", safeCount: 1, totalCount: 1 },
+      { formId: 3, regKey: 13, group: "A", name: "A3", safeCount: 1, totalCount: 1 },
+      { formId: 4, regKey: 14, group: "A", name: "A4", safeCount: 1, totalCount: 1 },
+      { formId: 5, regKey: 15, group: "A", name: "A5", safeCount: 1, totalCount: 1 },
+      { formId: 6, regKey: 16, group: "A", name: "A6", safeCount: 1, totalCount: 1 },
+    ],
+    lastStart: -1,
+    lastEnd: -1,
+    tbodyTopPx: NaN,
+    rowHeightPx: 0,
+  };
+  const regVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
+
+  const mgr = mod.createVirtualTableManager({
+    rootScrollEl,
+    quickScrollEl,
+    quickBody,
+    regBody,
+    quickVirtual,
+    regVirtual,
+    minRows: 1,
+    overscan: 0,
+    quickRowBasePx: 60,
+    getActiveSectionId: () => "tabQuick",
+    getQuickSelectedId: () => 0,
+    t: (_k, fallback) => fallback,
+    coalesce: (v, f) => (v == null ? f : v),
+    toHex32: (v) => `0x${(Number(v) >>> 0).toString(16).toUpperCase()}`,
+    escapeHtml: (s) => String(s),
+    getCurrentUiScale: () => 1,
+  });
+
+  mgr.renderQuickVirtual({ force: true });
+  assert.match(quickBody.innerHTML, /A3|A4|A5/, "Quick virtualization should use the inner quick scroller viewport instead of the root viewport");
+  assert.doesNotMatch(quickBody.innerHTML, /A1/, "Rows above the quick scroller viewport should be virtualized out");
+});
+
 test("registered renderer uses spacer rows when virtualization is active", () => {
   const rootScrollEl = {
     scrollTop: 0,
@@ -178,4 +237,44 @@ test("scheduleVirtualRender queues with requestAnimationFrame and renders on flu
   assert.equal(quickBody.innerHTML, "");
   queue.shift()();
   assert.match(quickBody.innerHTML, /data-row-id="1"/);
+});
+
+test("quick virtual renderer respects grouped mode marker even without dataset support", () => {
+  const rootScrollEl = {
+    scrollTop: 0,
+    clientHeight: 900,
+    getBoundingClientRect: () => fakeRect(0),
+  };
+  const quickBody = {
+    innerHTML: '<tr><td colspan="5">grouped rows stay</td></tr>',
+    _attrs: { "data-virtual-mode": "grouped" },
+    getBoundingClientRect: () => fakeRect(10),
+    getAttribute(name) {
+      return Object.prototype.hasOwnProperty.call(this._attrs, name) ? this._attrs[name] : null;
+    },
+  };
+  const regBody = {
+    innerHTML: "",
+    getBoundingClientRect: () => fakeRect(10),
+  };
+  const quickVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
+  const regVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
+
+  const mgr = mod.createVirtualTableManager({
+    rootScrollEl,
+    quickBody,
+    regBody,
+    quickVirtual,
+    regVirtual,
+    getActiveSectionId: () => "tabQuick",
+    getQuickSelectedId: () => 0,
+    t: (_k, fallback) => fallback,
+    coalesce: (v, f) => (v == null ? f : v),
+    toHex32: (v) => `0x${(Number(v) >>> 0).toString(16).toUpperCase()}`,
+    escapeHtml: (s) => String(s),
+    getCurrentUiScale: () => 1,
+  });
+
+  mgr.renderQuickVirtual({ force: true });
+  assert.equal(quickBody.innerHTML, '<tr><td colspan="5">grouped rows stay</td></tr>');
 });

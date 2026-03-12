@@ -20,13 +20,16 @@ Apply the reviewed clarity fixes to the current 32-option build catalog without 
 3. Rewrite resource/regen rows to “max/recovery/cooldown” wording.
 4. Rewrite vague special rows (`반격`, `메아리`, `주문흡수`) so they describe the gameplay effect first.
 5. Update JS tests that assert title/description strings.
+6. Preserve the established `슬롯 활성 시 ...` sentence shape and keep exact numbers only where the unit is directly readable to players.
+7. Treat this wording rule as an explicit update to the older `무엇이 얼마나 변하는지` rule: raw magnitudes remain required only when the unit is player-legible.
 
 ## Phase 3: Role Separation Pass
 
-1. Redesign `수호 / 방벽` so they are no longer armor-rating duplicates.
-2. Redesign `정조준 / 급소` so they are no longer critical-chance duplicates.
-3. Update catalog contract tests and runtime tests for the new role split.
-4. Re-run Build UI rendering checks to confirm the new rows still read correctly inside the catalog-first layout.
+1. Redesign `build.defense.guard` (`철갑`) / `build.defense.bulwark` (`방벽`) so they are no longer armor-rating duplicates.
+2. Redesign `build.attack.pinpoint` (`정조준`) / `build.attack.vitals` (`급소`) so they are no longer critical-chance duplicates.
+3. If either redesign can be completed using the current runtime surface, implement it and update catalog/runtime tests.
+4. If either redesign requires new runtime mappings, stop before implementation and write a follow-up redesign/runtime plan instead of forcing it into the naming/clarity batch.
+5. Re-run Build UI rendering checks to confirm the revised rows still read correctly inside the catalog-first layout.
 
 ## Phase 4: Review Gate
 
@@ -48,4 +51,4 @@ Minimum verification for this plan:
 
 - This plan intentionally does not add new catalog rows.
 - This plan intentionally does not include score rebalance.
-- If role-separation changes require new runtime mappings, that work should be split into a separate follow-up plan instead of being folded into the naming/clarity pass.
+- Role separation is part of this review scope, but runtime-expanding redesign work is not. If the overlap fix cannot be expressed with the current runtime surface, it must be recorded as a separate follow-up task rather than hidden inside this pass.

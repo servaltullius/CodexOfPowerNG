@@ -11,7 +11,7 @@ At this size, naming clarity and role separation matter more than before:
 - players scan option rows before opening detail panels
 - duplicated effects create flat slot competition and make theme identity weaker
 
-This review pass is intentionally limited to clarity and role separation.
+This review pass is intentionally limited to clarity and role separation review.
 It does not rebalance numbers yet.
 
 ## Scope
@@ -22,6 +22,7 @@ In scope:
 - option description clarity
 - role overlap within the current 32-option catalog
 - prioritization of which catalog rows need redesign first
+- deciding which overlap fixes can stay inside the current runtime surface and which need a follow-up runtime/design pass
 
 Out of scope:
 
@@ -39,10 +40,10 @@ This is acceptable in a tiny catalog but becomes confusing in a catalog-first UI
 
 Problem pairs:
 
-- attack theme `파괴` vs option `파괴`
-- attack theme `정밀` vs option `정밀`
-- defense theme `수호` vs option `수호`
-- defense theme `보루` vs option `보루`
+- attack theme `파괴` vs option `build.attack.destruction`
+- attack theme `정밀` vs option `build.attack.precision`
+- defense theme `수호` vs option `build.defense.guard`
+- defense theme `보루` vs option `build.defense.bastion`
 
 Decision:
 
@@ -71,9 +72,14 @@ Players need effect intent first, not runtime storage precision.
 
 Decision:
 
-- prioritize player-facing meaning over raw internal magnitude
-- keep `%`, max resource, regeneration, and cooldown language where intuitive
-- avoid exposing raw fractional values when they are not self-explanatory
+- keep the `슬롯 활성 시 ...` structure from the current catalog copy rules
+- keep exact user-facing numbers when the unit is immediately understandable
+  - examples: `%`, max resource, armor rating, carry weight
+- avoid exposing raw fractional values when the engine unit is not self-explanatory
+- when the internal value is not a meaningful player-facing unit, describe the outcome first and omit the raw number
+- this review explicitly refines the earlier `무엇이 얼마나 변하는지` rule:
+  - keep exact magnitudes where the unit is player-legible
+  - allow result-first wording without a raw number where the internal runtime unit is not player-legible
 
 Examples:
 
@@ -95,6 +101,8 @@ Decision:
 
 - rewrite these descriptions in player-result language
 - describe what gets easier, stronger, or more favorable
+- do not fall back to raw engine fractional values just to preserve precision if the unit is not player-legible
+- this is an explicit exception/update to the earlier copy rule, not an accidental drift
 
 Examples:
 
@@ -108,7 +116,7 @@ Some rows are fine as intentional laddering, but two groups are strong redesign 
 
 #### Immediate Redesign Candidates
 
-1. `수호 / 방벽`
+1. `build.defense.guard` (`철갑`) / `build.defense.bulwark` (`방벽`)
 
 - both currently represent armor rating
 - the signpost row is stronger than the standard row
@@ -116,18 +124,18 @@ Some rows are fine as intentional laddering, but two groups are strong redesign 
 
 Decision:
 
-- keep `수호` as the core armor/guard signpost
-- redesign `방벽` into a distinct guard-side survivability effect rather than a weaker armor duplicate
+- keep `build.defense.guard` as the core armor/guard signpost
+- redesign `build.defense.bulwark` into a distinct guard-side survivability effect rather than a weaker armor duplicate
 
-2. `정조준 / 급소`
+2. `build.attack.pinpoint` (`정조준`) / `build.attack.vitals` (`급소`)
 
 - both currently increase critical chance
 - precision theme loses variation because two rows express the same decision with different strength
 
 Decision:
 
-- keep `정조준` as the base critical row
-- redesign `급소` into a different precision payoff rather than a stronger crit duplicate
+- keep `build.attack.pinpoint` as the base critical row
+- redesign `build.attack.vitals` into a different precision payoff rather than a stronger crit duplicate
 
 #### Acceptable For Now, But Likely To Need Differentiation Later
 
@@ -159,8 +167,8 @@ These can still function as signpost/standard pairs today, but they should be wa
 
 ### Pass 3: Role Separation
 
-- redesign `수호 / 방벽`
-- redesign `정조준 / 급소`
+- redesign `build.defense.guard` / `build.defense.bulwark`
+- redesign `build.attack.pinpoint` / `build.attack.vitals`
 
 ### Pass 4: Follow-up Review
 
@@ -172,6 +180,6 @@ These can still function as signpost/standard pairs today, but they should be wa
 This review pass is successful when:
 
 - no option shares its displayed name with its parent theme
-- descriptions read as player-facing outcomes rather than runtime internals
-- the two strongest overlap pairs are redesigned into distinct choices
+- descriptions keep the current `슬롯 활성 시 ...` shape while reading as player-facing outcomes rather than runtime internals
+- the two strongest overlap pairs are either redesigned into distinct choices within the current runtime surface or split into an explicit follow-up redesign task when new runtime support is required
 - future balance feedback can talk about option strength without first needing to decode what the option means

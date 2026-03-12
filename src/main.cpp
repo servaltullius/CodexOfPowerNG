@@ -1,4 +1,5 @@
 #include "CodexOfPowerNG/Constants.h"
+#include "CodexOfPowerNG/BuildEffectRuntime.h"
 #include "CodexOfPowerNG/BuildProgression.h"
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/Events.h"
@@ -250,6 +251,7 @@ namespace CodexOfPowerNG
 			break;
 		case SKSE::MessagingInterface::kPreLoadGame:
 			Rewards::ResetSyncSchedulersForLoad();
+			BuildEffectRuntime::ResetForLoad();
 			PrismaUIManager::OnPreLoadGame();
 			break;
 		case SKSE::MessagingInterface::kDataLoaded:
@@ -261,12 +263,14 @@ namespace CodexOfPowerNG
 			// Ensure old sync workers never leak into a fresh run.
 			if (message->type == SKSE::MessagingInterface::kNewGame) {
 				Rewards::ResetSyncSchedulersForLoad();
+				BuildEffectRuntime::ResetForLoad();
 			}
 			// Avoid doing UI work at the main menu. Create the view lazily on hotkey.
 			PrismaUIManager::OnGameLoaded();
 			Events::Install();
 			Events::OnGameLoaded();
 			ProcessBuildMigrationState();
+			BuildEffectRuntime::SyncCurrentBuildEffectsToPlayer();
 			NotifyLegacyResidueIfNeeded();
 			break;
 		default:

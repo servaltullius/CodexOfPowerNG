@@ -13,6 +13,7 @@ namespace CodexOfPowerNG::SerializationStateStore::Ops
 		snapshot.blockedItems = state.blockedItems;
 		snapshot.notifiedItems = state.notifiedItems;
 		snapshot.rewardTotals = state.rewardTotals;
+		snapshot.buildAppliedEffectTotals = state.buildAppliedEffectTotals;
 		snapshot.attackScore = state.attackScore;
 		snapshot.defenseScore = state.defenseScore;
 		snapshot.utilityScore = state.utilityScore;
@@ -32,6 +33,7 @@ namespace CodexOfPowerNG::SerializationStateStore::Ops
 		state.blockedItems = std::move(snapshot.blockedItems);
 		state.notifiedItems = std::move(snapshot.notifiedItems);
 		state.rewardTotals = std::move(snapshot.rewardTotals);
+		state.buildAppliedEffectTotals = std::move(snapshot.buildAppliedEffectTotals);
 		state.attackScore = snapshot.attackScore;
 		state.defenseScore = snapshot.defenseScore;
 		state.utilityScore = snapshot.utilityScore;
@@ -50,6 +52,7 @@ namespace CodexOfPowerNG::SerializationStateStore::Ops
 		state.blockedItems.clear();
 		state.notifiedItems.clear();
 		state.rewardTotals.clear();
+		state.buildAppliedEffectTotals.clear();
 		state.attackScore = 0;
 		state.defenseScore = 0;
 		state.utilityScore = 0;

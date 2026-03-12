@@ -16,6 +16,7 @@ test("serialization load stages records before committing runtime state", () => 
   assert.match(src, /loadedState\.blockedItems/);
   assert.match(src, /loadedState\.notifiedItems/);
   assert.match(src, /loadedState\.rewardTotals/);
+  assert.match(src, /loadedState\.buildAppliedEffectTotals/);
   assert.match(src, /loadedState\.undoHistory/);
   assert.match(src, /loadedState\.undoNextActionId/);
   assert.match(src, /SerializationStateStore::ReplaceState\(std::move\(loadedState\)\);/);

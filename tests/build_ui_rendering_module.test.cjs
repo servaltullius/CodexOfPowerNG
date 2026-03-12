@@ -8,6 +8,7 @@ const modulePath = path.join(__dirname, "..", "PrismaUI", "views", "codexofpower
 
 const html = fs.readFileSync(viewPath, "utf8");
 const mod = require(modulePath);
+const i18n = require(path.join(__dirname, "..", "PrismaUI", "views", "codexofpowerng", "ui_i18n.js"));
 
 test("view loads build panel module before inline bootstrap", () => {
   assert.match(html, /<script src="ui_build_panel\.js"><\/script>/);
@@ -18,38 +19,48 @@ test("build panel module exports renderer", () => {
 });
 
 test("build panel renders slots, states, actions, and migration notice", () => {
+  const translator = i18n.createTranslator({ getLanguage: () => "ko" });
   const renderedHtml = mod.renderBuildPanelHtml(
     {
       disciplines: {
-        attack: { score: 12, unlockedBaselineCount: 1 },
-        defense: { score: 4, unlockedBaselineCount: 0 },
-        utility: { score: 7, unlockedBaselineCount: 0 },
+        attack: { score: 32, unlockedBaselineCount: 2 },
+        defense: { score: 30, unlockedBaselineCount: 1 },
+        utility: { score: 30, unlockedBaselineCount: 1 },
       },
       options: [
         {
-          id: "build.attack.ferocity",
+          id: "build.attack.vitals",
           discipline: "attack",
-          unlockScore: 5,
+          unlockScore: 30,
           unlocked: true,
-          titleKey: "build.attack.ferocity.title",
-          descriptionKey: "build.attack.ferocity.description",
+          titleKey: "build.attack.vitals.title",
+          descriptionKey: "build.attack.vitals.description",
           slotCompatibility: "same_or_wildcard",
         },
         {
-          id: "build.defense.guard",
+          id: "build.defense.endurance",
           discipline: "defense",
-          unlockScore: 10,
-          unlocked: false,
-          titleKey: "build.defense.guard.title",
-          descriptionKey: "build.defense.guard.description",
+          unlockScore: 30,
+          unlocked: true,
+          titleKey: "build.defense.endurance.title",
+          descriptionKey: "build.defense.endurance.description",
+          slotCompatibility: "same_or_wildcard",
+        },
+        {
+          id: "build.utility.mobility",
+          discipline: "utility",
+          unlockScore: 30,
+          unlocked: true,
+          titleKey: "build.utility.mobility.title",
+          descriptionKey: "build.utility.mobility.description",
           slotCompatibility: "same_or_wildcard",
         },
       ],
       activeSlots: [
-        { slotId: "attack_1", slotKind: "attack", optionId: "build.attack.ferocity", occupied: true },
+        { slotId: "attack_1", slotKind: "attack", optionId: "build.attack.vitals", occupied: true },
         { slotId: "attack_2", slotKind: "attack", optionId: null, occupied: false },
-        { slotId: "defense_1", slotKind: "defense", optionId: null, occupied: false },
-        { slotId: "utility_1", slotKind: "utility", optionId: null, occupied: false },
+        { slotId: "defense_1", slotKind: "defense", optionId: "build.defense.endurance", occupied: true },
+        { slotId: "utility_1", slotKind: "utility", optionId: "build.utility.mobility", occupied: true },
         { slotId: "utility_2", slotKind: "utility", optionId: null, occupied: false },
         { slotId: "wildcard_1", slotKind: "wildcard", optionId: null, occupied: false },
       ],
@@ -60,14 +71,13 @@ test("build panel renders slots, states, actions, and migration notice", () => {
       },
     },
     {
-      t: (key, fallback) => fallback || key,
-      tFmt: (_key, fallback, vars) =>
-        String(fallback).replace(/\{([a-zA-Z0-9_]+)\}/g, (_, name) => String(vars[name])),
+      t: translator.t,
+      tFmt: translator.tFmt,
       escapeHtml: (value) => String(value == null ? "" : value),
     },
   );
 
-  assert.match(renderedHtml, /Active Slots/);
+  assert.match(renderedHtml, /활성 슬롯/);
   assert.match(renderedHtml, /buildSummaryBar/);
   assert.match(renderedHtml, /buildSummaryCard disc-attack/);
   assert.match(renderedHtml, /buildSummaryCard disc-defense/);
@@ -76,20 +86,26 @@ test("build panel renders slots, states, actions, and migration notice", () => {
   assert.match(renderedHtml, /buildSlotStage/);
   assert.match(renderedHtml, /buildSlotCluster/);
   assert.match(renderedHtml, /buildOptionRailHeader/);
-  assert.match(renderedHtml, /Build score opens options permanently, but only your active slots apply to the current build\./);
+  assert.match(renderedHtml, /현재 빌드에는 활성 슬롯에 넣은 효과만 적용됩니다\./);
   assert.match(renderedHtml, /buildOptionRailBody/);
   assert.match(renderedHtml, /id="buildCardsScroller"/);
   assert.match(renderedHtml, /buildOptionRail/);
   assert.match(renderedHtml, /buildAltarPanel buildStaticPanel/);
   assert.match(renderedHtml, /buildFocusPanel[\s\S]*buildStaticPanel/);
   assert.doesNotMatch(renderedHtml, /rewardCharacterImg/);
-  assert.match(renderedHtml, /Compatible Slots|Slot Match|Slots/);
-  assert.match(renderedHtml, /Locked|Unlocked|Active/);
-  assert.match(renderedHtml, /Requires|Need .* Score/);
-  assert.match(renderedHtml, /Legacy rewards migrated|historical registrations could not be converted/);
-  assert.match(renderedHtml, /Activate/);
-  assert.match(renderedHtml, /Deactivate|Swap/);
-  assert.match(renderedHtml, /Attack|Defense|Utility/);
+  assert.match(renderedHtml, /호환 슬롯|슬롯/);
+  assert.match(renderedHtml, /잠김|해금됨|활성 중/);
+  assert.match(renderedHtml, /점수 \d+ 필요/);
+  assert.match(renderedHtml, /기존 보상이 새 빌드 진행도로 이관되었습니다|과거 등록/);
+  assert.match(renderedHtml, /활성화/);
+  assert.match(renderedHtml, /비활성화|교체/);
+  assert.match(renderedHtml, /공격|방어|유틸/);
+  assert.match(renderedHtml, /급소/);
+  assert.match(renderedHtml, /슬롯 활성 시 치명타 확률이 3% 증가합니다\./);
+  assert.match(renderedHtml, /인내/);
+  assert.match(renderedHtml, /슬롯 활성 시 최대 체력이 15 증가합니다\./);
+  assert.match(renderedHtml, /기동/);
+  assert.match(renderedHtml, /슬롯 활성 시 이동 속도가 3% 증가합니다\./);
 });
 
 test("build view source includes a fixed, more opaque performance-first layout contract", () => {

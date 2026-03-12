@@ -1,5 +1,6 @@
 #include "CodexOfPowerNG/Registration.h"
 
+#include "CodexOfPowerNG/BuildEffectRuntime.h"
 #include "CodexOfPowerNG/BuildProgression.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/RewardCaps.h"
@@ -132,6 +133,9 @@ namespace CodexOfPowerNG::Registration
 				"Undo progression rollback: no state changes applied (actionId={}, regKey=0x{:08X})",
 				record.actionId,
 				static_cast<std::uint32_t>(record.regKey));
+		}
+		if (record.buildContribution.has_value()) {
+			BuildEffectRuntime::SyncCurrentBuildEffectsToPlayer();
 		}
 		InvalidateQuickRegisterCache();
 

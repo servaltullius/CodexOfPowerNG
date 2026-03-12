@@ -133,13 +133,13 @@ namespace
 		constexpr std::array expectedOptions{
 			ExpectedOption{ "build.attack.ferocity", BuildDiscipline::Attack, 5u, BuildEffectType::ActorValue, "attack_damage_mult" },
 			ExpectedOption{ "build.attack.precision", BuildDiscipline::Attack, 15u, BuildEffectType::ActorValue, "weapon_speed_mult" },
-			ExpectedOption{ "build.attack.momentum", BuildDiscipline::Attack, 30u, BuildEffectType::UtilityFlag, "attack_chain_window" },
+			ExpectedOption{ "build.attack.vitals", BuildDiscipline::Attack, 30u, BuildEffectType::ActorValue, "critical_chance" },
 			ExpectedOption{ "build.defense.guard", BuildDiscipline::Defense, 5u, BuildEffectType::ActorValue, "damage_resist" },
-			ExpectedOption{ "build.defense.bastion", BuildDiscipline::Defense, 15u, BuildEffectType::ActorValue, "block_percent" },
-			ExpectedOption{ "build.defense.stalwart", BuildDiscipline::Defense, 30u, BuildEffectType::CarryWeight, "carry_weight" },
+			ExpectedOption{ "build.defense.bastion", BuildDiscipline::Defense, 15u, BuildEffectType::ActorValue, "block_power_modifier" },
+			ExpectedOption{ "build.defense.endurance", BuildDiscipline::Defense, 30u, BuildEffectType::ActorValue, "health" },
 			ExpectedOption{ "build.utility.cache", BuildDiscipline::Utility, 5u, BuildEffectType::CarryWeight, "carry_weight" },
-			ExpectedOption{ "build.utility.barter", BuildDiscipline::Utility, 15u, BuildEffectType::Economy, "vendor_price_bonus" },
-			ExpectedOption{ "build.utility.scout", BuildDiscipline::Utility, 30u, BuildEffectType::UtilityFlag, "loot_reveal_radius" },
+			ExpectedOption{ "build.utility.barter", BuildDiscipline::Utility, 15u, BuildEffectType::Economy, "speechcraft_modifier" },
+			ExpectedOption{ "build.utility.mobility", BuildDiscipline::Utility, 30u, BuildEffectType::ActorValue, "speed_mult" },
 		};
 
 		const auto actual = GetBuildOptionCatalog();
@@ -172,7 +172,7 @@ namespace
 			ExpectedMilestone{ BuildDiscipline::Attack, 25u, BuildEffectType::ActorValue, "attack_damage_mult" },
 			ExpectedMilestone{ BuildDiscipline::Defense, 10u, BuildEffectType::ActorValue, "damage_resist" },
 			ExpectedMilestone{ BuildDiscipline::Defense, 25u, BuildEffectType::ActorValue, "damage_resist" },
-			ExpectedMilestone{ BuildDiscipline::Utility, 10u, BuildEffectType::Economy, "vendor_price_bonus" },
+			ExpectedMilestone{ BuildDiscipline::Utility, 10u, BuildEffectType::Economy, "speechcraft_modifier" },
 			ExpectedMilestone{ BuildDiscipline::Utility, 25u, BuildEffectType::CarryWeight, "carry_weight" },
 		};
 

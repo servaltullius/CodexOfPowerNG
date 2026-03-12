@@ -17,6 +17,7 @@ namespace
 		std::unordered_set<std::uint32_t>                blockedItems;
 		std::unordered_set<std::uint32_t>                notifiedItems;
 		std::unordered_map<int, float>                   rewardTotals;
+		std::unordered_map<int, float>                   buildAppliedEffectTotals;
 		std::uint32_t                                    attackScore{ 0 };
 		std::uint32_t                                    defenseScore{ 0 };
 		std::uint32_t                                    utilityScore{ 0 };
@@ -34,6 +35,7 @@ namespace
 		std::unordered_set<std::uint32_t>                blockedItems;
 		std::unordered_set<std::uint32_t>                notifiedItems;
 		std::unordered_map<int, float>                   rewardTotals;
+		std::unordered_map<int, float>                   buildAppliedEffectTotals;
 		std::uint32_t                                    attackScore{ 0 };
 		std::uint32_t                                    defenseScore{ 0 };
 		std::uint32_t                                    utilityScore{ 0 };
@@ -55,6 +57,7 @@ int main()
 	state.blockedItems.insert(0x11111111u);
 	state.notifiedItems.insert(0x22222222u);
 	state.rewardTotals.insert_or_assign(4, 12.5f);
+	state.buildAppliedEffectTotals.insert_or_assign(8, 0.75f);
 	state.attackScore = 3;
 	state.defenseScore = 4;
 	state.utilityScore = 5;
@@ -70,6 +73,7 @@ int main()
 	assert(snapshot.blockedItems == state.blockedItems);
 	assert(snapshot.notifiedItems == state.notifiedItems);
 	assert(snapshot.rewardTotals == state.rewardTotals);
+	assert(snapshot.buildAppliedEffectTotals == state.buildAppliedEffectTotals);
 	assert(snapshot.attackScore == state.attackScore);
 	assert(snapshot.defenseScore == state.defenseScore);
 	assert(snapshot.utilityScore == state.utilityScore);
@@ -86,6 +90,7 @@ int main()
 	FakeSnapshot replacement{};
 	replacement.registeredItems.emplace(9u, 3u);
 	replacement.rewardTotals.insert_or_assign(7, 2.0f);
+	replacement.buildAppliedEffectTotals.insert_or_assign(11, 1.25f);
 	replacement.attackScore = 11;
 	replacement.activeBuildSlots[1] = "build.attack.precision";
 	replacement.buildMigrationVersion = 5;
@@ -96,6 +101,7 @@ int main()
 	Ops::ReplaceState(state, std::move(replacement));
 	assert(state.registeredItems.contains(9u));
 	assert(state.rewardTotals.contains(7));
+	assert(state.buildAppliedEffectTotals.contains(11));
 	assert(state.attackScore == 11);
 	assert(state.activeBuildSlots[1] == "build.attack.precision");
 	assert(state.buildMigrationVersion == 5);
@@ -111,6 +117,7 @@ int main()
 	assert(state.blockedItems.empty());
 	assert(state.notifiedItems.empty());
 	assert(state.rewardTotals.empty());
+	assert(state.buildAppliedEffectTotals.empty());
 	assert(state.attackScore == 0);
 	assert(state.defenseScore == 0);
 	assert(state.utilityScore == 0);

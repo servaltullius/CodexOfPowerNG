@@ -38,6 +38,19 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.altarTitle":\s*"빌드 제단"/);
   assert.match(moduleSource, /"build\.compatibleSlots":\s*"Compatible Slots: \{slots\}"/);
   assert.match(moduleSource, /"build\.compatibleSlots":\s*"호환 슬롯: \{slots\}"/);
+  assert.match(moduleSource, /"build\.attack\.vitals\.title":\s*"Vitals"/);
+  assert.match(moduleSource, /"build\.attack\.vitals\.description":\s*"\+3% critical chance while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.defense\.endurance\.title":\s*"Endurance"/);
+  assert.match(moduleSource, /"build\.defense\.endurance\.description":\s*"\+15 max health while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.utility\.mobility\.title":\s*"Mobility"/);
+  assert.match(moduleSource, /"build\.utility\.mobility\.description":\s*"\+3% movement speed while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.attack\.vitals\.title":\s*"급소"/);
+  assert.match(moduleSource, /"build\.attack\.vitals\.description":\s*"슬롯 활성 시 치명타 확률이 3% 증가합니다\."/);
+  assert.match(moduleSource, /"build\.defense\.endurance\.title":\s*"인내"/);
+  assert.match(moduleSource, /"build\.defense\.endurance\.description":\s*"슬롯 활성 시 최대 체력이 15 증가합니다\."/);
+  assert.match(moduleSource, /"build\.utility\.mobility\.title":\s*"기동"/);
+  assert.match(moduleSource, /"build\.utility\.mobility\.description":\s*"슬롯 활성 시 이동 속도가 3% 증가합니다\."/);
+  assert.match(moduleSource, /"build\.utility\.barter\.description":\s*"슬롯 활성 시 상점 구매\/판매 가격이 10% 유리해집니다\."/);
   assert.match(moduleSource, /return base\.replace/);
 });
 

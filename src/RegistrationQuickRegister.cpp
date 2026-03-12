@@ -1,5 +1,6 @@
 #include "CodexOfPowerNG/Registration.h"
 
+#include "CodexOfPowerNG/BuildEffectRuntime.h"
 #include "CodexOfPowerNG/BuildProgression.h"
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/Inventory.h"
@@ -288,6 +289,7 @@ namespace CodexOfPowerNG::Registration
 		const auto buildContribution = BuildProgression::MakeRegistrationContribution(group);
 		if (buildContribution.has_value()) {
 			(void)BuildProgression::ApplyRegistrationContribution(buildContribution.value());
+			BuildEffectRuntime::SyncCurrentBuildEffectsToPlayer();
 		}
 
 		UndoRecord undoRecord{};

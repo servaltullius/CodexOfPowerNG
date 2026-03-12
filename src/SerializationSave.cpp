@@ -149,6 +149,31 @@ namespace CodexOfPowerNG::Serialization::Internal
 			       a_intfc->WriteRecordData(state.buildMigrationNotice.unresolvedHistoricalRegistrations);
 		}
 
+		[[nodiscard]] bool WriteBuildAppliedEffectsRecord(
+			SKSE::SerializationInterface*           a_intfc,
+			const SerializationStateStore::Snapshot& state) noexcept
+		{
+			if (!a_intfc->OpenRecord(kRecordBuildAppliedEffects, 1u)) {
+				SKSE::log::error("Failed to open co-save record BEFX");
+				return false;
+			}
+
+			const std::uint32_t count = static_cast<std::uint32_t>(state.buildAppliedEffectTotals.size());
+			if (!a_intfc->WriteRecordData(count)) {
+				SKSE::log::error("Failed to write build applied effect count");
+				return false;
+			}
+
+			for (const auto& [av, total] : state.buildAppliedEffectTotals) {
+				const auto avRaw = static_cast<std::uint32_t>(av);
+				if (!a_intfc->WriteRecordData(avRaw) || !a_intfc->WriteRecordData(total)) {
+					SKSE::log::error("Failed to write build applied effect entry");
+					return false;
+				}
+			}
+			return true;
+		}
+
 		[[nodiscard]] bool WriteRewardsRecord(SKSE::SerializationInterface* a_intfc,
 			const SerializationStateStore::Snapshot& state) noexcept
 		{
@@ -236,6 +261,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 			[&]() { return WriteBuildScoresRecord(a_intfc, state); },
 			[&]() { return WriteBuildSlotsRecord(a_intfc, state); },
 			[&]() { return WriteBuildMigrationRecord(a_intfc, state); },
+			[&]() { return WriteBuildAppliedEffectsRecord(a_intfc, state); },
 			[&]() { return WriteRewardsRecord(a_intfc, state); },
 			[&]() { return WriteUndoRecord(a_intfc, state); });
 		if (!allOk) {

@@ -1,5 +1,6 @@
 #include "PrismaUIRequestOps.h"
 
+#include "CodexOfPowerNG/BuildEffectRuntime.h"
 #include "CodexOfPowerNG/BuildStateStore.h"
 #include "CodexOfPowerNG/Config.h"
 #include "CodexOfPowerNG/PrismaUIManager.h"
@@ -476,6 +477,9 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		const auto request = *requestOpt;
 		if (QueueMainTask([request]() {
 				const auto applied = BuildStateStore::SetActiveSlot(request.slotId, request.optionId);
+				if (applied) {
+					BuildEffectRuntime::SyncCurrentBuildEffectsToPlayer();
+				}
 				(void)QueueUITask([applied]() {
 					ShowToast(applied ? "info" : "error", applied ? "Build option activated" : "Build option unavailable");
 					SendStateToUI();
@@ -512,6 +516,7 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		const auto request = *requestOpt;
 		if (QueueMainTask([request]() {
 				BuildStateStore::ClearActiveSlot(request.slotId);
+				BuildEffectRuntime::SyncCurrentBuildEffectsToPlayer();
 				(void)QueueUITask([]() {
 					ShowToast("info", "Build option deactivated");
 					SendStateToUI();
@@ -554,6 +559,8 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 					applied = BuildStateStore::SetActiveSlot(request.toSlotId, request.optionId);
 					if (!applied) {
 						(void)BuildStateStore::SetActiveSlot(request.fromSlotId, request.optionId);
+					} else {
+						BuildEffectRuntime::SyncCurrentBuildEffectsToPlayer();
 					}
 				}
 

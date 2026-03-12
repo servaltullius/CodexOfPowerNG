@@ -25,7 +25,7 @@ test("scripts/test.sh links build catalog implementation for contract test", () 
 test("scripts/test.sh skips RE-dependent build helper tests in host mode", () => {
   assert.match(
     src,
-    /build_migration_rules\.test\.cpp\|build_state_store_ops\.test\.cpp\|build_request_guards\.test\.cpp\|registration_build_progression\.test\.cpp\)/,
+    /build_migration_rules\.test\.cpp\|build_state_store_ops\.test\.cpp\|build_request_guards\.test\.cpp\|registration_build_progression\.test\.cpp\|build_effect_runtime\.test\.cpp\)/,
     "Host test runner should skip the known RE-dependent build helper tests",
   );
 });

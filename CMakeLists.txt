@@ -69,6 +69,23 @@ target_link_libraries(${PROJECT_NAME}_build_progression_support
     CommonLibSSE::CommonLibSSE
 )
 
+add_library(${PROJECT_NAME}_build_effect_runtime_support STATIC
+  src/BuildEffectRuntime.cpp
+  include/CodexOfPowerNG/BuildEffectRuntime.h
+)
+
+target_include_directories(${PROJECT_NAME}_build_effect_runtime_support
+  PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_link_libraries(${PROJECT_NAME}_build_effect_runtime_support
+  PUBLIC
+    ${PROJECT_NAME}_build_catalog
+    ${PROJECT_NAME}_build_state_support
+    CommonLibSSE::CommonLibSSE
+)
+
 add_library(${PROJECT_NAME}_build_request_support STATIC
   src/PrismaUIRequestOpsBuild.cpp
   src/PrismaUIRequestOps.h
@@ -111,6 +128,7 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     src/PrismaUIPayloadsInventory.cpp
     src/PrismaUIPayloadsBuild.cpp
     src/PrismaUIPayloadsRewards.cpp
+    src/BuildEffectRuntime.cpp
     src/BuildProgression.cpp
     src/BuildStateStore.cpp
     src/RegistrationMaps.cpp
@@ -136,6 +154,7 @@ add_commonlibsse_plugin(${PROJECT_NAME}
     src/State.cpp
     src/TaskScheduler.cpp
     include/CodexOfPowerNG/Constants.h
+    include/CodexOfPowerNG/BuildEffectRuntime.h
     include/CodexOfPowerNG/BuildProgression.h
     include/CodexOfPowerNG/BuildOptionCatalog.h
     include/CodexOfPowerNG/BuildStateStore.h
@@ -213,6 +232,8 @@ if(BUILD_TESTING AND COPNG_BUILD_CPP_TEST_TARGETS)
       target_link_libraries("${test_target}" PRIVATE ${PROJECT_NAME}_build_progression_support CommonLibSSE::CommonLibSSE)
     elseif(test_name STREQUAL "registration_build_progression")
       target_link_libraries("${test_target}" PRIVATE ${PROJECT_NAME}_build_progression_support CommonLibSSE::CommonLibSSE)
+    elseif(test_name STREQUAL "build_effect_runtime")
+      target_link_libraries("${test_target}" PRIVATE ${PROJECT_NAME}_build_effect_runtime_support CommonLibSSE::CommonLibSSE)
     elseif(test_name STREQUAL "build_request_guards")
       target_include_directories("${test_target}" PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/src")
       target_link_libraries("${test_target}" PRIVATE ${PROJECT_NAME}_build_request_support CommonLibSSE::CommonLibSSE)

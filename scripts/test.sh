@@ -34,7 +34,7 @@ else
   for test_src in "${CPP_TESTS[@]}"; do
     extra_sources=()
     case "$(basename "$test_src")" in
-      build_migration_rules.test.cpp|build_state_store_ops.test.cpp|build_request_guards.test.cpp|registration_build_progression.test.cpp)
+      build_migration_rules.test.cpp|build_state_store_ops.test.cpp|build_request_guards.test.cpp|registration_build_progression.test.cpp|build_effect_runtime.test.cpp)
         echo "[copng] SKIP (requires Skyrim/CommonLib support): $(basename "$test_src")"
         continue
         ;;

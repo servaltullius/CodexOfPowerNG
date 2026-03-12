@@ -79,6 +79,24 @@ namespace CodexOfPowerNG::Serialization::Internal
 			}
 		}
 
+		[[nodiscard]] bool IsSupportedBuildEffectActorValue(std::uint32_t avRaw) noexcept
+		{
+			switch (static_cast<RE::ActorValue>(avRaw)) {
+			case RE::ActorValue::kAttackDamageMult:
+			case RE::ActorValue::kWeaponSpeedMult:
+			case RE::ActorValue::kCriticalChance:
+			case RE::ActorValue::kDamageResist:
+			case RE::ActorValue::kBlockPowerModifier:
+			case RE::ActorValue::kHealth:
+			case RE::ActorValue::kCarryWeight:
+			case RE::ActorValue::kSpeechcraftModifier:
+			case RE::ActorValue::kSpeedMult:
+				return true;
+			default:
+				return false;
+			}
+		}
+
 		void Skip(SKSE::SerializationInterface* a_intfc, std::uint32_t length) noexcept
 		{
 			std::array<std::byte, 256> buffer{};
@@ -377,6 +395,55 @@ namespace CodexOfPowerNG::Serialization::Internal
 					const auto skipBytes = skippedEntries * entrySize;
 					Skip(a_intfc, skipBytes);
 					remaining -= skipBytes;
+				}
+
+				if (remaining > 0) {
+					Skip(a_intfc, remaining);
+				}
+				break;
+			}
+			case kRecordBuildAppliedEffects: {
+				if (version != 1u) {
+					SKSE::log::warn("Unsupported BEFX version {}", version);
+					Skip(a_intfc, length);
+					break;
+				}
+
+				std::uint32_t count{};
+				if (length < sizeof(count) || a_intfc->ReadRecordData(count) != sizeof(count)) {
+					SKSE::log::error("Failed to read build applied effect count");
+					return;
+				}
+
+				auto remaining = length - static_cast<std::uint32_t>(sizeof(count));
+				const auto entrySize = static_cast<std::uint32_t>(sizeof(std::uint32_t) + sizeof(float));
+				const auto maxCount = remaining / entrySize;
+				const auto readableCount = (std::min)(count, maxCount);
+
+				for (std::uint32_t i = 0; i < readableCount; ++i) {
+					std::uint32_t avRaw{};
+					float         total{};
+					if (a_intfc->ReadRecordData(avRaw) != sizeof(avRaw) || a_intfc->ReadRecordData(total) != sizeof(total)) {
+						SKSE::log::error("Failed to read build applied effect entry");
+						return;
+					}
+					remaining -= entrySize;
+
+					if (!IsSupportedBuildEffectActorValue(avRaw)) {
+						SKSE::log::warn("Serialization load: skipping unsupported build effect actor value {}", avRaw);
+						continue;
+					}
+
+					const auto av = static_cast<RE::ActorValue>(avRaw);
+					const float clamped = Rewards::ClampRewardTotal(av, total);
+					if (std::abs(clamped - total) > Rewards::kRewardCapEpsilon) {
+						SKSE::log::warn(
+							"Serialization load: clamped build effect total for AV {} from {:.4f} to {:.4f}",
+							avRaw,
+							total,
+							clamped);
+					}
+					loadedState.buildAppliedEffectTotals.insert_or_assign(av, clamped);
 				}
 
 				if (remaining > 0) {

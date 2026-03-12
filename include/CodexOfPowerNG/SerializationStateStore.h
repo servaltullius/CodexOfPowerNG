@@ -21,6 +21,7 @@ namespace CodexOfPowerNG::SerializationStateStore
 		std::unordered_set<RE::FormID>                            blockedItems;
 		std::unordered_set<RE::FormID>                            notifiedItems;
 		std::unordered_map<RE::ActorValue, float, ActorValueHash> rewardTotals;
+		std::unordered_map<RE::ActorValue, float, ActorValueHash> buildAppliedEffectTotals;
 		std::uint32_t                                             attackScore{ 0 };
 		std::uint32_t                                             defenseScore{ 0 };
 		std::uint32_t                                             utilityScore{ 0 };

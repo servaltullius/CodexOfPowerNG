@@ -822,9 +822,7 @@
         gap: calc(12px * var(--uiScale));
       }
       .buildCatalogRow {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: calc(10px * var(--uiScale));
+        display: block;
         padding: calc(12px * var(--uiScale));
         border-radius: calc(12px * var(--uiScale));
         border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.1));
@@ -832,15 +830,6 @@
       }
       .buildCatalogRow.isFocused {
         box-shadow: inset 0 0 0 1px var(--discipline-line, rgba(255, 255, 255, 0.18));
-      }
-      .buildCatalogRow.isSignpost {
-        border-width: calc(2px * var(--uiScale));
-        background:
-          linear-gradient(90deg, var(--discipline-soft, rgba(255, 255, 255, 0.1)), rgba(10, 12, 18, 0.9) 38%),
-          rgba(10, 12, 18, 0.94);
-      }
-      .buildCatalogRow.isSpecial {
-        border-style: dashed;
       }
       .buildCatalogRowMain {
         padding: 0;
@@ -858,6 +847,12 @@
       .buildCatalogMeta {
         display: grid;
         gap: calc(6px * var(--uiScale));
+      }
+      .buildCatalogEffect {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 100%;
       }
       .buildCatalogTitleRow {
         display: flex;

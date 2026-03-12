@@ -145,7 +145,9 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
   assert.match(renderedHtml, /buildSummaryCard disc-utility/);
   assert.match(renderedHtml, /buildCatalogHeader/);
   assert.match(renderedHtml, /buildThemeTab isActive/);
-  assert.match(renderedHtml, /buildCatalogRow [^"]*isSignpost/);
+  assert.match(renderedHtml, /buildThemeTab isActive[\s\S]*정밀/);
+  assert.doesNotMatch(renderedHtml, /buildCatalogRow [^"]*isSignpost/);
+  assert.doesNotMatch(renderedHtml, /buildCatalogRow [^"]*isSpecial/);
   assert.match(renderedHtml, /buildCatalogState/);
   assert.match(renderedHtml, /buildSelectedOptionPanel/);
   assert.match(renderedHtml, /buildSlotMatrixCard/);
@@ -263,6 +265,7 @@ test("build panel prefers grouped theme rows and selected detail payloads over r
   );
 
   assert.match(renderedHtml, /Vitals/);
+  assert.match(renderedHtml, /buildThemeTab isActive[\s\S]*Precision/);
   assert.doesNotMatch(renderedHtml, /Ferocity/);
 });
 
@@ -283,8 +286,10 @@ test("build view source includes a fixed catalog-first layout contract", () => {
   assert.match(html, /\.buildSlotMatrix\s*\{/);
   assert.match(html, /\.buildSummaryCard\s*\{[\s\S]*rgba\(12,\s*14,\s*22,\s*0\.94\)/);
   assert.match(html, /\.buildSummaryValue\s*\{[\s\S]*font-size:\s*calc\(32px \* var\(--uiScale\)\)/);
-  assert.match(html, /\.buildCatalogRow\.isSignpost\s*\{/);
-  assert.match(html, /\.buildCatalogRow\.isSpecial\s*\{/);
+  assert.match(html, /\.buildCatalogEffect\s*\{[\s\S]*white-space:\s*nowrap/);
+  assert.match(html, /\.buildCatalogEffect\s*\{[\s\S]*text-overflow:\s*ellipsis/);
+  assert.doesNotMatch(html, /\.buildCatalogRow\.isSignpost\s*\{/);
+  assert.doesNotMatch(html, /\.buildCatalogRow\.isSpecial\s*\{/);
   assert.match(html, /\.heroHeader\s*\{/);
   assert.match(html, /\.heroMain\s*\{[\s\S]*display:\s*grid/);
   assert.match(html, /\.heroAside\s*\{[\s\S]*display:\s*flex/);

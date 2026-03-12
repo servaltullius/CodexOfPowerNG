@@ -124,7 +124,7 @@
     const regVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
     let rewards = { totals: [] };
     let build = createDefaultBuildState();
-    let buildSelection = { discipline: "attack", theme: "", optionId: "" };
+    let buildSelection = { discipline: "", theme: "", optionId: "" };
     let settings = null;
     let keyNavRaf = 0;
 

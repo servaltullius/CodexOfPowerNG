@@ -161,3 +161,41 @@ test("ui state prefers grouped theme rows for the active build selection", () =>
   const rows = state.getBuildRowsForSelection({ discipline: "attack", theme: "precision" });
   assert.deepEqual(rows.map((row) => row.id), ["build.attack.vitals"]);
 });
+
+test("ui state honors payload-selected discipline/theme/option before any local build interaction", () => {
+  const state = mod.createUIState({
+    documentObj: null,
+    windowObj: null,
+    refs: {},
+    t: (_key, fallback) => fallback,
+    safeCall: () => {},
+  });
+
+  state.setBuild({
+    disciplines: {
+      attack: { score: 32, unlockedBaselineCount: 2 },
+      defense: { score: 30, unlockedBaselineCount: 2 },
+      utility: { score: 5, unlockedBaselineCount: 0 },
+    },
+    themeMap: {
+      attack: [{ id: "devastation", titleKey: "build.theme.attack.devastation", optionCount: 1 }],
+      defense: [{ id: "guard", titleKey: "build.theme.defense.guard", optionCount: 1 }],
+      utility: [{ id: "livelihood", titleKey: "build.theme.utility.livelihood", optionCount: 1 }],
+    },
+    selectedDiscipline: "defense",
+    selectedTheme: "guard",
+    selectedOptionId: "build.defense.endurance",
+    selectedThemeRows: [{ id: "build.defense.endurance", discipline: "defense", themeId: "guard", unlocked: true }],
+    options: [
+      { id: "build.attack.ferocity", discipline: "attack", themeId: "devastation", unlocked: true },
+      { id: "build.defense.endurance", discipline: "defense", themeId: "guard", unlocked: true },
+    ],
+    activeSlots: [{ slotId: "defense_1", optionId: "build.defense.endurance" }],
+  });
+
+  assert.deepEqual(state.getBuildSelection(), {
+    discipline: "defense",
+    theme: "guard",
+    optionId: "build.defense.endurance",
+  });
+});

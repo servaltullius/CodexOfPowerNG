@@ -456,6 +456,7 @@
       ? groupedThemes.map((theme) => ({
           id: String((theme && theme.id) || "").toLowerCase(),
           titleKey: String((theme && theme.titleKey) || ""),
+          label: themeLabel(selectedDiscipline, theme && theme.id, theme && theme.titleKey, t),
           optionCount: Number((theme && theme.optionCount) || (Array.isArray(theme && theme.rows) ? theme.rows.length : 0) || 0) >>> 0,
         }))
       : Array.isArray(themeMap[selectedDiscipline])
@@ -484,7 +485,7 @@
             const focusClass = focusedView && focusedView.optionId === view.optionId ? " isFocused" : "";
             return `
               <article
-                class="buildCatalogRow ${view.disciplineClass} ${view.stateClass} ${view.hierarchyClass}${focusClass}"
+                class="buildCatalogRow ${view.disciplineClass} ${view.stateClass}${focusClass}"
                 data-option-id="${escapeHtml(view.optionId)}"
               >
                 <button
@@ -498,7 +499,7 @@
                       <strong>${escapeHtml(view.title)}</strong>
                       <span class="buildCatalogState ${view.stateClass}">${escapeHtml(view.stateText)}</span>
                     </div>
-                    <div class="small">${escapeHtml(view.description)}</div>
+                    <div class="small buildCatalogEffect">${escapeHtml(view.description)}</div>
                   </div>
                   <div class="buildCatalogMeta">
                     <span class="small mono">${escapeHtml(view.unlockText)}</span>

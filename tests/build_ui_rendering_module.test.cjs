@@ -296,8 +296,8 @@ test("build panel renders supported-first option descriptions from grouped catal
     ],
     "build.attack.brawler",
   );
-  assert.match(devastationHtml, /Brawler/);
-  assert.match(devastationHtml, /\+0\.2 unarmed damage while this option is slotted\./);
+  assert.match(devastationHtml, /Destruction Adept|파괴숙련/);
+  assert.match(devastationHtml, /Destruction spells cost less while this option is slotted\.|슬롯 활성 시 파괴 주문 비용이 감소합니다\./);
 
   const furyHtml = renderSelection(
     "attack",
@@ -393,7 +393,7 @@ test("build panel renders supported-first option descriptions from grouped catal
     "build.defense.recovery",
   );
   assert.match(guardSustainHtml, /Recovery/);
-  assert.match(guardSustainHtml, /\+0\.02 health regeneration while this option is slotted\./);
+  assert.match(guardSustainHtml, /Health regenerates faster while this option is slotted\./);
 
   const bastionSpecialHtml = renderSelection(
     "defense",
@@ -425,7 +425,7 @@ test("build panel renders supported-first option descriptions from grouped catal
     "build.defense.reprisal",
   );
   assert.match(bastionSpecialHtml, /Reprisal/);
-  assert.match(bastionSpecialHtml, /\+0\.3 reflected damage while this option is slotted\./);
+  assert.match(bastionSpecialHtml, /A portion of incoming damage is reflected while this option is slotted\./);
 
   const resistanceHtml = renderSelection(
     "defense",
@@ -502,7 +502,7 @@ test("build panel renders supported-first option descriptions from grouped catal
     "build.utility.smithing",
   );
   assert.match(livelihoodHtml, /Smithing/);
-  assert.match(livelihoodHtml, /\+0\.5 smithing effectiveness while this option is slotted\./);
+  assert.match(livelihoodHtml, /Smithing results improve while this option is slotted\./);
 
   const livelihoodResourceHtml = renderSelection(
     "utility",
@@ -598,7 +598,7 @@ test("build panel renders supported-first option descriptions from grouped catal
     "build.utility.echo",
   );
   assert.match(explorationSpecialHtml, /Echo/);
-  assert.match(explorationSpecialHtml, /Shout cooldown recovers 2% faster while this option is slotted\./);
+  assert.match(explorationSpecialHtml, /Shout cooldown recovers faster while this option is slotted\./);
 
   const trickeryHtml = renderSelection(
     "utility",
@@ -630,7 +630,7 @@ test("build panel renders supported-first option descriptions from grouped catal
     "build.utility.sneak",
   );
   assert.match(trickeryHtml, /Sneak/);
-  assert.match(trickeryHtml, /\+0\.5 sneak effectiveness while this option is slotted\./);
+  assert.match(trickeryHtml, /You become harder to detect while this option is slotted\./);
 });
 
 test("build panel prefers grouped theme rows and selected detail payloads over refiltering the flat catalog", () => {

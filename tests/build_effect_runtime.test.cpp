@@ -30,19 +30,33 @@ namespace
 
 	bool CuratedAttackEffectsResolveToConcreteActorValues()
 	{
-		BuildRuntimeSnapshot snapshot{};
-		snapshot.attackScore = 30u;
-		snapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack1)] = "build.attack.ferocity";
-		snapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack2)] = "build.attack.precision";
-		snapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.attack.vitals";
+		BuildRuntimeSnapshot anchorSnapshot{};
+		anchorSnapshot.attackScore = 30u;
+		anchorSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack1)] = "build.attack.ferocity";
+		anchorSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack2)] = "build.attack.precision";
+		anchorSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.attack.vitals";
 
-		const auto totals = ComputeDerivedBuildActorValueTotals(snapshot);
-		return LookupTotal(totals, RE::ActorValue::kAttackDamageMult).has_value() &&
-		       NearlyEqual(*LookupTotal(totals, RE::ActorValue::kAttackDamageMult), 0.11f) &&
-		       LookupTotal(totals, RE::ActorValue::kWeaponSpeedMult).has_value() &&
-		       NearlyEqual(*LookupTotal(totals, RE::ActorValue::kWeaponSpeedMult), 0.03f) &&
-		       LookupTotal(totals, RE::ActorValue::kCriticalChance).has_value() &&
-		       NearlyEqual(*LookupTotal(totals, RE::ActorValue::kCriticalChance), 3.0f);
+		const auto anchorTotals = ComputeDerivedBuildActorValueTotals(anchorSnapshot);
+		if (!LookupTotal(anchorTotals, RE::ActorValue::kAttackDamageMult).has_value() ||
+		    !NearlyEqual(*LookupTotal(anchorTotals, RE::ActorValue::kAttackDamageMult), 0.11f) ||
+		    !LookupTotal(anchorTotals, RE::ActorValue::kWeaponSpeedMult).has_value() ||
+		    !NearlyEqual(*LookupTotal(anchorTotals, RE::ActorValue::kWeaponSpeedMult), 0.03f) ||
+		    !LookupTotal(anchorTotals, RE::ActorValue::kCriticalChance).has_value() ||
+		    !NearlyEqual(*LookupTotal(anchorTotals, RE::ActorValue::kCriticalChance), 3.0f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot expansionSnapshot{};
+		expansionSnapshot.attackScore = 30u;
+		expansionSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack1)] = "build.attack.precision";
+		expansionSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack2)] = "build.attack.pinpoint";
+		expansionSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.attack.vitals";
+
+		const auto expansionTotals = ComputeDerivedBuildActorValueTotals(expansionSnapshot);
+		return LookupTotal(expansionTotals, RE::ActorValue::kWeaponSpeedMult).has_value() &&
+		       NearlyEqual(*LookupTotal(expansionTotals, RE::ActorValue::kWeaponSpeedMult), 0.03f) &&
+		       LookupTotal(expansionTotals, RE::ActorValue::kCriticalChance).has_value() &&
+		       NearlyEqual(*LookupTotal(expansionTotals, RE::ActorValue::kCriticalChance), 5.0f);
 	}
 
 	bool CuratedDefenseEffectsResolveToConcreteActorValues()
@@ -60,9 +74,20 @@ namespace
 			return false;
 		}
 
-		snapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.endurance";
-		snapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)].clear();
-		const auto enduranceTotals = ComputeDerivedBuildActorValueTotals(snapshot);
+		BuildRuntimeSnapshot bulwarkSnapshot{};
+		bulwarkSnapshot.defenseScore = 30u;
+		bulwarkSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.guard";
+		bulwarkSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.defense.bulwark";
+		const auto bulwarkTotals = ComputeDerivedBuildActorValueTotals(bulwarkSnapshot);
+		if (!LookupTotal(bulwarkTotals, RE::ActorValue::kDamageResist).has_value() ||
+		    !NearlyEqual(*LookupTotal(bulwarkTotals, RE::ActorValue::kDamageResist), 33.0f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot enduranceSnapshot{};
+		enduranceSnapshot.defenseScore = 30u;
+		enduranceSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.endurance";
+		const auto enduranceTotals = ComputeDerivedBuildActorValueTotals(enduranceSnapshot);
 		return LookupTotal(enduranceTotals, RE::ActorValue::kHealth).has_value() &&
 		       NearlyEqual(*LookupTotal(enduranceTotals, RE::ActorValue::kHealth), 15.0f) &&
 		       !LookupTotal(enduranceTotals, RE::ActorValue::kBlockPowerModifier).has_value();
@@ -70,19 +95,28 @@ namespace
 
 	bool CuratedUtilityEffectsResolveToConcreteActorValues()
 	{
-		BuildRuntimeSnapshot snapshot{};
-		snapshot.utilityScore = 30u;
-		snapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility1)] = "build.utility.cache";
-		snapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility2)] = "build.utility.barter";
-		snapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.utility.mobility";
+		BuildRuntimeSnapshot livelihoodSnapshot{};
+		livelihoodSnapshot.utilityScore = 30u;
+		livelihoodSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility1)] = "build.utility.cache";
+		livelihoodSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility2)] = "build.utility.barter";
+		livelihoodSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.utility.hauler";
 
-		const auto totals = ComputeDerivedBuildActorValueTotals(snapshot);
-		return LookupTotal(totals, RE::ActorValue::kCarryWeight).has_value() &&
-		       NearlyEqual(*LookupTotal(totals, RE::ActorValue::kCarryWeight), 40.0f) &&
-		       LookupTotal(totals, RE::ActorValue::kSpeechcraftModifier).has_value() &&
-		       NearlyEqual(*LookupTotal(totals, RE::ActorValue::kSpeechcraftModifier), 0.75f) &&
-		       LookupTotal(totals, RE::ActorValue::kSpeedMult).has_value() &&
-		       NearlyEqual(*LookupTotal(totals, RE::ActorValue::kSpeedMult), 0.03f);
+		const auto livelihoodTotals = ComputeDerivedBuildActorValueTotals(livelihoodSnapshot);
+		if (!LookupTotal(livelihoodTotals, RE::ActorValue::kCarryWeight).has_value() ||
+		    !NearlyEqual(*LookupTotal(livelihoodTotals, RE::ActorValue::kCarryWeight), 55.0f) ||
+		    !LookupTotal(livelihoodTotals, RE::ActorValue::kSpeechcraftModifier).has_value() ||
+		    !NearlyEqual(*LookupTotal(livelihoodTotals, RE::ActorValue::kSpeechcraftModifier), 0.75f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot explorationSnapshot{};
+		explorationSnapshot.utilityScore = 30u;
+		explorationSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility1)] = "build.utility.wayfinder";
+		explorationSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.utility.mobility";
+
+		const auto explorationTotals = ComputeDerivedBuildActorValueTotals(explorationSnapshot);
+		return LookupTotal(explorationTotals, RE::ActorValue::kSpeedMult).has_value() &&
+		       NearlyEqual(*LookupTotal(explorationTotals, RE::ActorValue::kSpeedMult), 0.045f);
 	}
 
 	bool OnceOnlyEffectsDoNotDoubleStackAcrossSlots()

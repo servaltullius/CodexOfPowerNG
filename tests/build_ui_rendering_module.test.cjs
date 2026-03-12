@@ -169,6 +169,196 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
   assert.doesNotMatch(renderedHtml, /핵심 표지|일반|특수/);
 });
 
+test("build panel renders supported-first option descriptions from grouped catalog rows", () => {
+  const translator = i18n.createTranslator({ getLanguage: () => "en" });
+  const baseDisciplines = {
+    attack: { score: 32, unlockedBaselineCount: 2 },
+    defense: { score: 30, unlockedBaselineCount: 1 },
+    utility: { score: 30, unlockedBaselineCount: 1 },
+  };
+  const baseActiveSlots = [
+    { slotId: "attack_1", slotKind: "attack", optionId: null, occupied: false },
+    { slotId: "attack_2", slotKind: "attack", optionId: null, occupied: false },
+    { slotId: "defense_1", slotKind: "defense", optionId: null, occupied: false },
+    { slotId: "utility_1", slotKind: "utility", optionId: null, occupied: false },
+    { slotId: "utility_2", slotKind: "utility", optionId: null, occupied: false },
+    { slotId: "wildcard_1", slotKind: "wildcard", optionId: null, occupied: false },
+  ];
+
+  function renderSelection(selectedDiscipline, selectedTheme, rows, focusedOptionId) {
+    const selectedOptionDetail = rows.find((row) => row.id === focusedOptionId) || rows[0] || null;
+    const activeSlots = baseActiveSlots.map((slot) =>
+      slot.slotKind === selectedDiscipline && slot.optionId == null && selectedOptionDetail
+        ? { ...slot, optionId: selectedOptionDetail.id, occupied: true }
+        : slot,
+    );
+
+    return mod.renderBuildPanelHtml(
+      {
+        disciplines: baseDisciplines,
+        selectedDiscipline,
+        selectedTheme,
+        selectedOptionId: selectedOptionDetail ? selectedOptionDetail.id : "",
+        themeMap: {
+          attack: [{ id: "precision", titleKey: "build.theme.attack.precision", optionCount: 2 }],
+          defense: [{ id: "guard", titleKey: "build.theme.defense.guard", optionCount: 2 }],
+          utility: [
+            { id: "livelihood", titleKey: "build.theme.utility.livelihood", optionCount: 2 },
+            { id: "exploration", titleKey: "build.theme.utility.exploration", optionCount: 2 },
+          ],
+        },
+        groupedCatalog: {
+          [selectedDiscipline]: {
+            themes: [{ id: selectedTheme, titleKey: "build.theme." + selectedDiscipline + "." + selectedTheme, optionCount: rows.length }],
+          },
+        },
+        selectedThemeRows: rows,
+        selectedOptionDetail,
+        options: rows,
+        activeSlots,
+        migrationNotice: {
+          needsNotice: false,
+          legacyRewardsMigrated: false,
+          unresolvedHistoricalRegistrations: 0,
+        },
+      },
+      {
+        t: translator.t,
+        tFmt: translator.tFmt,
+        escapeHtml: (value) => String(value == null ? "" : value),
+      },
+    );
+  }
+
+  const attackHtml = renderSelection(
+    "attack",
+    "precision",
+    [
+      {
+        id: "build.attack.pinpoint",
+        discipline: "attack",
+        themeId: "precision",
+        hierarchy: "standard",
+        unlockScore: 20,
+        unlocked: true,
+        titleKey: "build.attack.pinpoint.title",
+        descriptionKey: "build.attack.pinpoint.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.attack.vitals",
+        discipline: "attack",
+        themeId: "precision",
+        hierarchy: "special",
+        unlockScore: 30,
+        unlocked: true,
+        titleKey: "build.attack.vitals.title",
+        descriptionKey: "build.attack.vitals.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.attack.pinpoint",
+  );
+  assert.match(attackHtml, /Pinpoint/);
+  assert.match(attackHtml, /\+2% critical chance while this option is slotted\./);
+
+  const defenseHtml = renderSelection(
+    "defense",
+    "guard",
+    [
+      {
+        id: "build.defense.bulwark",
+        discipline: "defense",
+        themeId: "guard",
+        hierarchy: "standard",
+        unlockScore: 20,
+        unlocked: true,
+        titleKey: "build.defense.bulwark.title",
+        descriptionKey: "build.defense.bulwark.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.defense.endurance",
+        discipline: "defense",
+        themeId: "guard",
+        hierarchy: "special",
+        unlockScore: 30,
+        unlocked: true,
+        titleKey: "build.defense.endurance.title",
+        descriptionKey: "build.defense.endurance.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.defense.bulwark",
+  );
+  assert.match(defenseHtml, /Bulwark/);
+  assert.match(defenseHtml, /\+8 armor rating while this option is slotted\./);
+
+  const livelihoodHtml = renderSelection(
+    "utility",
+    "livelihood",
+    [
+      {
+        id: "build.utility.hauler",
+        discipline: "utility",
+        themeId: "livelihood",
+        hierarchy: "standard",
+        unlockScore: 20,
+        unlocked: true,
+        titleKey: "build.utility.hauler.title",
+        descriptionKey: "build.utility.hauler.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.utility.barter",
+        discipline: "utility",
+        themeId: "livelihood",
+        hierarchy: "standard",
+        unlockScore: 15,
+        unlocked: true,
+        titleKey: "build.utility.barter.title",
+        descriptionKey: "build.utility.barter.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.utility.hauler",
+  );
+  assert.match(livelihoodHtml, /Hauler/);
+  assert.match(livelihoodHtml, /\+15 carry weight while this option is slotted\./);
+
+  const explorationHtml = renderSelection(
+    "utility",
+    "exploration",
+    [
+      {
+        id: "build.utility.wayfinder",
+        discipline: "utility",
+        themeId: "exploration",
+        hierarchy: "standard",
+        unlockScore: 20,
+        unlocked: true,
+        titleKey: "build.utility.wayfinder.title",
+        descriptionKey: "build.utility.wayfinder.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.utility.mobility",
+        discipline: "utility",
+        themeId: "exploration",
+        hierarchy: "signpost",
+        unlockScore: 30,
+        unlocked: true,
+        titleKey: "build.utility.mobility.title",
+        descriptionKey: "build.utility.mobility.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.utility.wayfinder",
+  );
+  assert.match(explorationHtml, /Wayfinder/);
+  assert.match(explorationHtml, /\+1\.5% movement speed while this option is slotted\./);
+});
+
 test("build panel prefers grouped theme rows and selected detail payloads over refiltering the flat catalog", () => {
   const translator = i18n.createTranslator({ getLanguage: () => "en" });
   const renderedHtml = mod.renderBuildPanelHtml(

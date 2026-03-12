@@ -180,13 +180,17 @@ namespace
 		constexpr std::array expectedOptions{
 			ExpectedOption{ "build.attack.ferocity", BuildDiscipline::Attack, "devastation", "build.theme.attack.devastation", "signpost", 5u, BuildEffectType::ActorValue, "attack_damage_mult" },
 			ExpectedOption{ "build.attack.precision", BuildDiscipline::Attack, "precision", "build.theme.attack.precision", "standard", 15u, BuildEffectType::ActorValue, "weapon_speed_mult" },
+			ExpectedOption{ "build.attack.pinpoint", BuildDiscipline::Attack, "precision", "build.theme.attack.precision", "standard", 20u, BuildEffectType::ActorValue, "critical_chance" },
 			ExpectedOption{ "build.attack.vitals", BuildDiscipline::Attack, "precision", "build.theme.attack.precision", "special", 30u, BuildEffectType::ActorValue, "critical_chance" },
 			ExpectedOption{ "build.defense.guard", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "signpost", 5u, BuildEffectType::ActorValue, "damage_resist" },
+			ExpectedOption{ "build.defense.bulwark", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "standard", 20u, BuildEffectType::ActorValue, "damage_resist" },
 			ExpectedOption{ "build.defense.bastion", BuildDiscipline::Defense, "bastion", "build.theme.defense.bastion", "standard", 15u, BuildEffectType::ActorValue, "block_power_modifier" },
 			ExpectedOption{ "build.defense.endurance", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "special", 30u, BuildEffectType::ActorValue, "health" },
 			ExpectedOption{ "build.utility.cache", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "signpost", 5u, BuildEffectType::CarryWeight, "carry_weight" },
 			ExpectedOption{ "build.utility.barter", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 15u, BuildEffectType::Economy, "speechcraft_modifier" },
+			ExpectedOption{ "build.utility.hauler", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 20u, BuildEffectType::CarryWeight, "carry_weight" },
 			ExpectedOption{ "build.utility.mobility", BuildDiscipline::Utility, "exploration", "build.theme.utility.exploration", "signpost", 30u, BuildEffectType::ActorValue, "speed_mult" },
+			ExpectedOption{ "build.utility.wayfinder", BuildDiscipline::Utility, "exploration", "build.theme.utility.exploration", "standard", 20u, BuildEffectType::ActorValue, "speed_mult" },
 		};
 
 		const auto actual = GetBuildOptionCatalog();

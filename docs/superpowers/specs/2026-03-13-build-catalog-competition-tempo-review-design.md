@@ -157,6 +157,20 @@ Decision:
 - do not solve resistance only by moving scores
 - treat resistance as a theme-structure problem first and a pacing problem second
 
+### 6. Post-pass Resistance Reassessment
+
+After the utility, attack, guard, and exploration timing passes:
+
+- resistance rows still compete for the same `Defense1` / `Wildcard1` economy
+- the theme still asks the player to spend a scarce defense slot on narrow elemental or status coverage
+- early access alone does not offset the opportunity cost of skipping broad guard or bastion rows
+
+Conclusion:
+
+- score-only tuning is closed for resistance in this review pass
+- the next resistance pass must broaden row breadth instead of shifting unlock scores again
+- valid follow-up directions include bundled elemental coverage, broader magical mitigation packages, or other multi-threat defensive rows
+
 ## Design Rules For The Next Revision
 
 1. Signpost rows should introduce a theme, not trail behind its standard rows.

@@ -127,7 +127,7 @@
         "disciplines": ["defense"],
         "themes": ["resistance"],
         "legacyKeys": ["av.magicResist", "av.fireResist", "av.frostResist", "av.electricResist", "av.poisonResist", "av.diseaseResist", "av.absorbChance"],
-        "notes": "Shared resistance/magical mitigation mapping batch."
+        "notes": "Shared resistance/magical mitigation mapping batch. Runtime support shipped, but post-pass review concluded the theme still loses slot competition because rows are too narrow. The next pass should broaden resistance rows instead of shifting unlock scores again."
       },
       {
         "id": "utility-modifier-runtime",

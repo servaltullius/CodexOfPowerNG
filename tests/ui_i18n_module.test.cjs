@@ -39,7 +39,7 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.compatibleSlots":\s*"Compatible Slots: \{slots\}"/);
   assert.match(moduleSource, /"build\.compatibleSlots":\s*"호환 슬롯: \{slots\}"/);
   assert.match(moduleSource, /"build\.attack\.vitals\.title":\s*"Vitals"/);
-  assert.match(moduleSource, /"build\.attack\.vitals\.description":\s*"\+3% critical chance while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.attack\.vitals\.description":\s*"\+3% attack damage while this option is slotted\."/);
   assert.match(moduleSource, /"build\.attack\.pinpoint\.title":\s*"Pinpoint"/);
   assert.match(moduleSource, /"build\.attack\.pinpoint\.description":\s*"\+2% critical chance while this option is slotted\."/);
   assert.match(moduleSource, /"build\.attack\.brawler\.title":\s*"Brawler"/);
@@ -52,8 +52,8 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.attack\.destruction\.description":\s*"Destruction spells cost less while this option is slotted\."/);
   assert.match(moduleSource, /"build\.defense\.endurance\.title":\s*"Endurance"/);
   assert.match(moduleSource, /"build\.defense\.endurance\.description":\s*"\+15 max health while this option is slotted\."/);
-  assert.match(moduleSource, /"build\.defense\.bulwark\.title":\s*"Bulwark"/);
-  assert.match(moduleSource, /"build\.defense\.bulwark\.description":\s*"\+8 armor rating while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.defense\.bulwark\.title":\s*"Stalwart"/);
+  assert.match(moduleSource, /"build\.defense\.bulwark\.description":\s*"\+8 max health while this option is slotted\."/);
   assert.match(moduleSource, /"build\.defense\.recovery\.title":\s*"Recovery"/);
   assert.match(moduleSource, /"build\.defense\.recovery\.description":\s*"Health regenerates faster while this option is slotted\."/);
   assert.match(moduleSource, /"build\.defense\.restoration\.title":\s*"Restoration"/);
@@ -97,7 +97,7 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.utility\.illusion\.title":\s*"Illusion"/);
   assert.match(moduleSource, /"build\.utility\.illusion\.description":\s*"Illusion spells cost less while this option is slotted\."/);
   assert.match(moduleSource, /"build\.attack\.vitals\.title":\s*"급소"/);
-  assert.match(moduleSource, /"build\.attack\.vitals\.description":\s*"슬롯 활성 시 치명타 확률이 3% 증가합니다\."/);
+  assert.match(moduleSource, /"build\.attack\.vitals\.description":\s*"슬롯 활성 시 공격 피해가 3% 증가합니다\."/);
   assert.match(moduleSource, /"build\.attack\.pinpoint\.title":\s*"정조준"/);
   assert.match(moduleSource, /"build\.attack\.pinpoint\.description":\s*"슬롯 활성 시 치명타 확률이 2% 증가합니다\."/);
   assert.match(moduleSource, /"build\.attack\.brawler\.title":\s*"투사"/);
@@ -111,8 +111,8 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.attack\.destruction\.description":\s*"슬롯 활성 시 파괴 주문 비용이 감소합니다\."/);
   assert.match(moduleSource, /"build\.defense\.endurance\.title":\s*"인내"/);
   assert.match(moduleSource, /"build\.defense\.endurance\.description":\s*"슬롯 활성 시 최대 체력이 15 증가합니다\."/);
-  assert.match(moduleSource, /"build\.defense\.bulwark\.title":\s*"방벽"/);
-  assert.match(moduleSource, /"build\.defense\.bulwark\.description":\s*"슬롯 활성 시 방어력이 8 증가합니다\."/);
+  assert.match(moduleSource, /"build\.defense\.bulwark\.title":\s*"강건"/);
+  assert.match(moduleSource, /"build\.defense\.bulwark\.description":\s*"슬롯 활성 시 최대 체력이 8 증가합니다\."/);
   assert.match(moduleSource, /"build\.defense\.recovery\.title":\s*"회복력"/);
   assert.match(moduleSource, /"build\.defense\.guard\.title":\s*"철갑"/);
   assert.match(moduleSource, /"build\.defense\.bastion\.title":\s*"철벽"/);
@@ -174,6 +174,7 @@ test("translator normalizes language and formats variables", () => {
   assert.equal(translator.t("build.attack.destruction.title"), "파괴숙련");
   assert.equal(translator.t("build.defense.guard.title"), "철갑");
   assert.equal(translator.t("build.defense.bastion.title"), "철벽");
+  assert.equal(translator.t("build.defense.bulwark.title"), "강건");
   assert.equal(translator.t("build.utility.wayfinder.description"), "슬롯 활성 시 이동 속도가 1.5% 증가합니다.");
   assert.equal(translator.tFmt("rewards.more", "+{n}개 더", { n: 5 }), "+5개 더");
   assert.equal(mod.normalizeLanguage("jp"), "en");

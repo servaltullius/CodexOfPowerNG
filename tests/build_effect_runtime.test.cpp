@@ -38,11 +38,10 @@ namespace
 
 		const auto anchorTotals = ComputeDerivedBuildActorValueTotals(anchorSnapshot);
 		if (!LookupTotal(anchorTotals, RE::ActorValue::kAttackDamageMult).has_value() ||
-		    !NearlyEqual(*LookupTotal(anchorTotals, RE::ActorValue::kAttackDamageMult), 0.11f) ||
+		    !NearlyEqual(*LookupTotal(anchorTotals, RE::ActorValue::kAttackDamageMult), 0.14f) ||
 		    !LookupTotal(anchorTotals, RE::ActorValue::kWeaponSpeedMult).has_value() ||
 		    !NearlyEqual(*LookupTotal(anchorTotals, RE::ActorValue::kWeaponSpeedMult), 0.03f) ||
-		    !LookupTotal(anchorTotals, RE::ActorValue::kCriticalChance).has_value() ||
-		    !NearlyEqual(*LookupTotal(anchorTotals, RE::ActorValue::kCriticalChance), 3.0f)) {
+		    LookupTotal(anchorTotals, RE::ActorValue::kCriticalChance).has_value()) {
 			return false;
 		}
 
@@ -53,10 +52,12 @@ namespace
 		expansionSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.attack.vitals";
 
 		const auto expansionTotals = ComputeDerivedBuildActorValueTotals(expansionSnapshot);
-		if (!LookupTotal(expansionTotals, RE::ActorValue::kWeaponSpeedMult).has_value() ||
+		if (!LookupTotal(expansionTotals, RE::ActorValue::kAttackDamageMult).has_value() ||
+		    !NearlyEqual(*LookupTotal(expansionTotals, RE::ActorValue::kAttackDamageMult), 0.09f) ||
+		    !LookupTotal(expansionTotals, RE::ActorValue::kWeaponSpeedMult).has_value() ||
 		    !NearlyEqual(*LookupTotal(expansionTotals, RE::ActorValue::kWeaponSpeedMult), 0.03f) ||
 		    !LookupTotal(expansionTotals, RE::ActorValue::kCriticalChance).has_value() ||
-		    !NearlyEqual(*LookupTotal(expansionTotals, RE::ActorValue::kCriticalChance), 5.0f)) {
+		    !NearlyEqual(*LookupTotal(expansionTotals, RE::ActorValue::kCriticalChance), 2.0f)) {
 			return false;
 		}
 
@@ -104,7 +105,9 @@ namespace
 		bulwarkSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.defense.bulwark";
 		const auto bulwarkTotals = ComputeDerivedBuildActorValueTotals(bulwarkSnapshot);
 		if (!LookupTotal(bulwarkTotals, RE::ActorValue::kDamageResist).has_value() ||
-		    !NearlyEqual(*LookupTotal(bulwarkTotals, RE::ActorValue::kDamageResist), 33.0f)) {
+		    !NearlyEqual(*LookupTotal(bulwarkTotals, RE::ActorValue::kDamageResist), 25.0f) ||
+		    !LookupTotal(bulwarkTotals, RE::ActorValue::kHealth).has_value() ||
+		    !NearlyEqual(*LookupTotal(bulwarkTotals, RE::ActorValue::kHealth), 8.0f)) {
 			return false;
 		}
 

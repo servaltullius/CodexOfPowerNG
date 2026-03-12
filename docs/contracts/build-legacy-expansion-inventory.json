@@ -27,13 +27,13 @@
       "notes": "Current shipped weapon-speed row. No direct legacy reward equivalent exists, so this remains a catalog seed rather than a migrated legacy reward."
     },
     {
-      "optionId": "build.attack.vitals",
+      "optionId": "build.attack.pinpoint",
       "discipline": "attack",
       "theme": "precision",
-      "hierarchy": "special",
+      "hierarchy": "standard",
       "runtimeKey": "critical_chance",
       "runtimeStatus": "supported",
-      "notes": "Maps cleanly onto the legacy critical-chance family."
+      "notes": "Current shipped critical-chance row. Precision keeps one direct crit option after the role-separation pass."
     },
     {
       "optionId": "build.defense.guard",
@@ -150,7 +150,7 @@
       "runtimeKey": "critical_chance",
       "magnitude": 1.0,
       "runtimeStatus": "supported",
-      "migrationFrom": ["build.attack.vitals"],
+      "migrationFrom": ["build.attack.pinpoint"],
       "notes": "Primary legacy precision payoff. Also appears in misc rewards."
     },
     {
@@ -234,7 +234,7 @@
       "runtimeKey": "health",
       "magnitude": 2.0,
       "runtimeStatus": "supported",
-      "migrationFrom": ["build.defense.endurance"],
+      "migrationFrom": ["build.defense.bulwark", "build.defense.endurance"],
       "notes": "Baseline survivability pool; also appears in consumables and ingredients."
     },
     {

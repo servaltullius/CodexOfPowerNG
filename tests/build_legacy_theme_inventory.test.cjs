@@ -55,7 +55,7 @@ const EXPECTED_SUPPORTED_RUNTIME_KEYS = new Set([
 const EXPECTED_MIGRATION_ANCHORS = [
   "build.attack.ferocity",
   "build.attack.precision",
-  "build.attack.vitals",
+  "build.attack.pinpoint",
   "build.defense.guard",
   "build.defense.bastion",
   "build.defense.endurance",

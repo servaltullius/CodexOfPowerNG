@@ -167,7 +167,7 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
   assert.match(renderedHtml, /공격|방어|유틸/);
   assert.match(renderedHtml, /파괴|정밀|격노/);
   assert.match(renderedHtml, /급소/);
-  assert.match(renderedHtml, /슬롯 활성 시 치명타 확률이 3% 증가합니다\./);
+  assert.match(renderedHtml, /슬롯 활성 시 공격 피해가 3% 증가합니다\./);
   assert.doesNotMatch(renderedHtml, /인내/);
   assert.doesNotMatch(renderedHtml, /기동/);
   assert.doesNotMatch(renderedHtml, /핵심 표지|일반|특수/);
@@ -266,6 +266,7 @@ test("build panel renders supported-first option descriptions from grouped catal
   );
   assert.match(attackHtml, /Pinpoint/);
   assert.match(attackHtml, /\+2% critical chance while this option is slotted\./);
+  assert.match(attackHtml, /\+3% attack damage while this option is slotted\./);
 
   const devastationHtml = renderSelection(
     "attack",
@@ -360,8 +361,8 @@ test("build panel renders supported-first option descriptions from grouped catal
     ],
     "build.defense.bulwark",
   );
-  assert.match(defenseHtml, /Bulwark/);
-  assert.match(defenseHtml, /\+8 armor rating while this option is slotted\./);
+  assert.match(defenseHtml, /Stalwart/);
+  assert.match(defenseHtml, /\+8 max health while this option is slotted\./);
 
   const guardSustainHtml = renderSelection(
     "defense",

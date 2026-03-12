@@ -142,7 +142,7 @@ namespace
 	bool CuratedUtilityEffectsResolveToConcreteActorValues()
 	{
 		BuildRuntimeSnapshot livelihoodSnapshot{};
-		livelihoodSnapshot.utilityScore = 30u;
+		livelihoodSnapshot.utilityScore = 35u;
 		livelihoodSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility1)] = "build.utility.cache";
 		livelihoodSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility2)] = "build.utility.barter";
 		livelihoodSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.utility.hauler";
@@ -155,14 +155,56 @@ namespace
 			return false;
 		}
 
+		BuildRuntimeSnapshot craftingSnapshot{};
+		craftingSnapshot.utilityScore = 35u;
+		craftingSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility1)] = "build.utility.smithing";
+		craftingSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility2)] = "build.utility.alchemy";
+		craftingSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.utility.enchanting";
+		const auto craftingTotals = ComputeDerivedBuildActorValueTotals(craftingSnapshot);
+		if (!LookupTotal(craftingTotals, RE::ActorValue::kSmithingModifier).has_value() ||
+		    !NearlyEqual(*LookupTotal(craftingTotals, RE::ActorValue::kSmithingModifier), 0.5f) ||
+		    !LookupTotal(craftingTotals, RE::ActorValue::kAlchemyModifier).has_value() ||
+		    !NearlyEqual(*LookupTotal(craftingTotals, RE::ActorValue::kAlchemyModifier), 0.5f) ||
+		    !LookupTotal(craftingTotals, RE::ActorValue::kEnchantingModifier).has_value() ||
+		    !NearlyEqual(*LookupTotal(craftingTotals, RE::ActorValue::kEnchantingModifier), 0.5f)) {
+			return false;
+		}
+
 		BuildRuntimeSnapshot explorationSnapshot{};
 		explorationSnapshot.utilityScore = 30u;
 		explorationSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility1)] = "build.utility.wayfinder";
 		explorationSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.utility.mobility";
 
 		const auto explorationTotals = ComputeDerivedBuildActorValueTotals(explorationSnapshot);
-		return LookupTotal(explorationTotals, RE::ActorValue::kSpeedMult).has_value() &&
-		       NearlyEqual(*LookupTotal(explorationTotals, RE::ActorValue::kSpeedMult), 0.045f);
+		if (!LookupTotal(explorationTotals, RE::ActorValue::kSpeedMult).has_value() ||
+		    !NearlyEqual(*LookupTotal(explorationTotals, RE::ActorValue::kSpeedMult), 0.045f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot trickerySnapshot{};
+		trickerySnapshot.utilityScore = 30u;
+		trickerySnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility1)] = "build.utility.sneak";
+		trickerySnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility2)] = "build.utility.lockpicking";
+		trickerySnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.utility.conjuration";
+		const auto trickeryTotals = ComputeDerivedBuildActorValueTotals(trickerySnapshot);
+		if (!LookupTotal(trickeryTotals, RE::ActorValue::kSneakingModifier).has_value() ||
+		    !NearlyEqual(*LookupTotal(trickeryTotals, RE::ActorValue::kSneakingModifier), 0.5f) ||
+		    !LookupTotal(trickeryTotals, RE::ActorValue::kLockpickingModifier).has_value() ||
+		    !NearlyEqual(*LookupTotal(trickeryTotals, RE::ActorValue::kLockpickingModifier), 0.5f) ||
+		    !LookupTotal(trickeryTotals, RE::ActorValue::kConjurationModifier).has_value() ||
+		    !NearlyEqual(*LookupTotal(trickeryTotals, RE::ActorValue::kConjurationModifier), 0.5f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot trickerySpecialSnapshot{};
+		trickerySpecialSnapshot.utilityScore = 30u;
+		trickerySpecialSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility1)] = "build.utility.pickpocket";
+		trickerySpecialSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.utility.illusion";
+		const auto trickerySpecialTotals = ComputeDerivedBuildActorValueTotals(trickerySpecialSnapshot);
+		return LookupTotal(trickerySpecialTotals, RE::ActorValue::kPickpocketModifier).has_value() &&
+		       NearlyEqual(*LookupTotal(trickerySpecialTotals, RE::ActorValue::kPickpocketModifier), 0.5f) &&
+		       LookupTotal(trickerySpecialTotals, RE::ActorValue::kIllusionModifier).has_value() &&
+		       NearlyEqual(*LookupTotal(trickerySpecialTotals, RE::ActorValue::kIllusionModifier), 0.5f);
 	}
 
 	bool OnceOnlyEffectsDoNotDoubleStackAcrossSlots()

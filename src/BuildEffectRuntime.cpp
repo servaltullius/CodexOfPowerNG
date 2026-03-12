@@ -152,6 +152,30 @@ namespace CodexOfPowerNG::Builds
 				if (effectKey == "absorb_chance") {
 					return std::pair{ RE::ActorValue::kAbsorbChance, *amount };
 				}
+				if (effectKey == "smithing_modifier") {
+					return std::pair{ RE::ActorValue::kSmithingModifier, *amount };
+				}
+				if (effectKey == "alchemy_modifier") {
+					return std::pair{ RE::ActorValue::kAlchemyModifier, *amount };
+				}
+				if (effectKey == "enchanting_modifier") {
+					return std::pair{ RE::ActorValue::kEnchantingModifier, *amount };
+				}
+				if (effectKey == "lockpicking_modifier") {
+					return std::pair{ RE::ActorValue::kLockpickingModifier, *amount };
+				}
+				if (effectKey == "pickpocket_modifier") {
+					return std::pair{ RE::ActorValue::kPickpocketModifier, *amount };
+				}
+				if (effectKey == "sneaking_modifier") {
+					return std::pair{ RE::ActorValue::kSneakingModifier, *amount };
+				}
+				if (effectKey == "conjuration_modifier") {
+					return std::pair{ RE::ActorValue::kConjurationModifier, *amount };
+				}
+				if (effectKey == "illusion_modifier") {
+					return std::pair{ RE::ActorValue::kIllusionModifier, *amount };
+				}
 				if (effectKey == "speed_mult") {
 					return std::pair{ RE::ActorValue::kSpeedMult, *amount / 100.0f };
 				}

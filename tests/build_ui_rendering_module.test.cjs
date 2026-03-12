@@ -205,6 +205,7 @@ test("build panel renders supported-first option descriptions from grouped catal
           utility: [
             { id: "livelihood", titleKey: "build.theme.utility.livelihood", optionCount: 2 },
             { id: "exploration", titleKey: "build.theme.utility.exploration", optionCount: 2 },
+            { id: "trickery", titleKey: "build.theme.utility.trickery", optionCount: 2 },
           ],
         },
         groupedCatalog: {
@@ -333,6 +334,17 @@ test("build panel renders supported-first option descriptions from grouped catal
     "livelihood",
     [
       {
+        id: "build.utility.smithing",
+        discipline: "utility",
+        themeId: "livelihood",
+        hierarchy: "standard",
+        unlockScore: 20,
+        unlocked: true,
+        titleKey: "build.utility.smithing.title",
+        descriptionKey: "build.utility.smithing.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
         id: "build.utility.hauler",
         discipline: "utility",
         themeId: "livelihood",
@@ -355,10 +367,10 @@ test("build panel renders supported-first option descriptions from grouped catal
         slotCompatibility: "same_or_wildcard",
       },
     ],
-    "build.utility.hauler",
+    "build.utility.smithing",
   );
-  assert.match(livelihoodHtml, /Hauler/);
-  assert.match(livelihoodHtml, /\+15 carry weight while this option is slotted\./);
+  assert.match(livelihoodHtml, /Smithing/);
+  assert.match(livelihoodHtml, /\+0\.5 smithing effectiveness while this option is slotted\./);
 
   const explorationHtml = renderSelection(
     "utility",
@@ -391,6 +403,38 @@ test("build panel renders supported-first option descriptions from grouped catal
   );
   assert.match(explorationHtml, /Wayfinder/);
   assert.match(explorationHtml, /\+1\.5% movement speed while this option is slotted\./);
+
+  const trickeryHtml = renderSelection(
+    "utility",
+    "trickery",
+    [
+      {
+        id: "build.utility.sneak",
+        discipline: "utility",
+        themeId: "trickery",
+        hierarchy: "signpost",
+        unlockScore: 10,
+        unlocked: true,
+        titleKey: "build.utility.sneak.title",
+        descriptionKey: "build.utility.sneak.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.utility.illusion",
+        discipline: "utility",
+        themeId: "trickery",
+        hierarchy: "special",
+        unlockScore: 30,
+        unlocked: true,
+        titleKey: "build.utility.illusion.title",
+        descriptionKey: "build.utility.illusion.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.utility.sneak",
+  );
+  assert.match(trickeryHtml, /Sneak/);
+  assert.match(trickeryHtml, /\+0\.5 sneak effectiveness while this option is slotted\./);
 });
 
 test("build panel prefers grouped theme rows and selected detail payloads over refiltering the flat catalog", () => {

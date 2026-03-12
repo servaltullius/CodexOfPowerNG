@@ -32,6 +32,14 @@ const EXPECTED_SUPPORTED_RUNTIME_KEYS = new Set([
   "speed_mult",
   "carry_weight",
   "speechcraft_modifier",
+  "smithing_modifier",
+  "alchemy_modifier",
+  "enchanting_modifier",
+  "lockpicking_modifier",
+  "pickpocket_modifier",
+  "sneaking_modifier",
+  "conjuration_modifier",
+  "illusion_modifier",
 ]);
 const EXPECTED_MIGRATION_ANCHORS = [
   "build.attack.ferocity",

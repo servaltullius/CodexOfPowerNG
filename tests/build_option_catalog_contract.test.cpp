@@ -195,9 +195,17 @@ namespace
 			ExpectedOption{ "build.defense.absorption", BuildDiscipline::Defense, "resistance", "build.theme.defense.resistance", "special", 35u, BuildEffectType::ActorValue, "absorb_chance" },
 			ExpectedOption{ "build.utility.cache", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "signpost", 5u, BuildEffectType::CarryWeight, "carry_weight" },
 			ExpectedOption{ "build.utility.barter", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 15u, BuildEffectType::Economy, "speechcraft_modifier" },
+			ExpectedOption{ "build.utility.smithing", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 20u, BuildEffectType::ActorValue, "smithing_modifier" },
+			ExpectedOption{ "build.utility.alchemy", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 25u, BuildEffectType::ActorValue, "alchemy_modifier" },
+			ExpectedOption{ "build.utility.enchanting", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "special", 35u, BuildEffectType::ActorValue, "enchanting_modifier" },
 			ExpectedOption{ "build.utility.hauler", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 20u, BuildEffectType::CarryWeight, "carry_weight" },
 			ExpectedOption{ "build.utility.mobility", BuildDiscipline::Utility, "exploration", "build.theme.utility.exploration", "signpost", 30u, BuildEffectType::ActorValue, "speed_mult" },
 			ExpectedOption{ "build.utility.wayfinder", BuildDiscipline::Utility, "exploration", "build.theme.utility.exploration", "standard", 20u, BuildEffectType::ActorValue, "speed_mult" },
+			ExpectedOption{ "build.utility.sneak", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "signpost", 10u, BuildEffectType::ActorValue, "sneaking_modifier" },
+			ExpectedOption{ "build.utility.lockpicking", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "standard", 15u, BuildEffectType::ActorValue, "lockpicking_modifier" },
+			ExpectedOption{ "build.utility.pickpocket", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "standard", 20u, BuildEffectType::ActorValue, "pickpocket_modifier" },
+			ExpectedOption{ "build.utility.conjuration", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "special", 25u, BuildEffectType::ActorValue, "conjuration_modifier" },
+			ExpectedOption{ "build.utility.illusion", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "special", 30u, BuildEffectType::ActorValue, "illusion_modifier" },
 		};
 
 		const auto actual = GetBuildOptionCatalog();

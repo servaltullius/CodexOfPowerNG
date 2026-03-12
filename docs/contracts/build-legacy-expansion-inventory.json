@@ -429,7 +429,7 @@
       "effectType": "actorValue",
       "runtimeKey": "smithing_modifier",
       "magnitude": 0.5,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Crafting support bucket; also appears in armor rewards."
     },
@@ -443,7 +443,7 @@
       "effectType": "actorValue",
       "runtimeKey": "alchemy_modifier",
       "magnitude": 0.5,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Crafting support bucket."
     },
@@ -457,7 +457,7 @@
       "effectType": "actorValue",
       "runtimeKey": "enchanting_modifier",
       "magnitude": 0.5,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "High-value crafting specialization."
     },
@@ -527,7 +527,7 @@
       "effectType": "actorValue",
       "runtimeKey": "lockpicking_modifier",
       "magnitude": 0.5,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Infiltration utility."
     },
@@ -541,7 +541,7 @@
       "effectType": "actorValue",
       "runtimeKey": "pickpocket_modifier",
       "magnitude": 0.5,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Infiltration utility."
     },
@@ -555,7 +555,7 @@
       "effectType": "actorValue",
       "runtimeKey": "sneaking_modifier",
       "magnitude": 0.5,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Primary stealth theme marker."
     },
@@ -569,7 +569,7 @@
       "effectType": "actorValue",
       "runtimeKey": "conjuration_modifier",
       "magnitude": 0.5,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Summoning/control utility fits finesse better than creating a separate arcane utility branch."
     },
@@ -583,7 +583,7 @@
       "effectType": "actorValue",
       "runtimeKey": "illusion_modifier",
       "magnitude": 0.5,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Stealth/control magic aligns with finesse."
     }

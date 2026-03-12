@@ -252,8 +252,8 @@ namespace
 			ExpectedMilestone{ BuildDiscipline::Attack, 25u, BuildEffectType::ActorValue, "attack_damage_mult" },
 			ExpectedMilestone{ BuildDiscipline::Defense, 10u, BuildEffectType::ActorValue, "damage_resist" },
 			ExpectedMilestone{ BuildDiscipline::Defense, 25u, BuildEffectType::ActorValue, "damage_resist" },
-			ExpectedMilestone{ BuildDiscipline::Utility, 10u, BuildEffectType::Economy, "speechcraft_modifier" },
-			ExpectedMilestone{ BuildDiscipline::Utility, 25u, BuildEffectType::CarryWeight, "carry_weight" },
+			ExpectedMilestone{ BuildDiscipline::Utility, 15u, BuildEffectType::Economy, "speechcraft_modifier" },
+			ExpectedMilestone{ BuildDiscipline::Utility, 35u, BuildEffectType::CarryWeight, "carry_weight" },
 		};
 
 		const auto actualMilestones = GetBuildBaselineMilestones();

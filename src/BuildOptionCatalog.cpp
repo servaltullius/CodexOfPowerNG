@@ -677,8 +677,8 @@ namespace CodexOfPowerNG::Builds
 			BuildBaselineMilestoneDef{ BuildDiscipline::Attack, 25u, BuildEffectType::ActorValue, "attack_damage_mult", 4.0f },
 			BuildBaselineMilestoneDef{ BuildDiscipline::Defense, 10u, BuildEffectType::ActorValue, "damage_resist", 5.0f },
 			BuildBaselineMilestoneDef{ BuildDiscipline::Defense, 25u, BuildEffectType::ActorValue, "damage_resist", 10.0f },
-			BuildBaselineMilestoneDef{ BuildDiscipline::Utility, 10u, BuildEffectType::Economy, "speechcraft_modifier", 5 },
-			BuildBaselineMilestoneDef{ BuildDiscipline::Utility, 25u, BuildEffectType::CarryWeight, "carry_weight", 15.0f },
+			BuildBaselineMilestoneDef{ BuildDiscipline::Utility, 15u, BuildEffectType::Economy, "speechcraft_modifier", 5 },
+			BuildBaselineMilestoneDef{ BuildDiscipline::Utility, 35u, BuildEffectType::CarryWeight, "carry_weight", 15.0f },
 		};
 
 		constexpr std::array kInitialSlotLayout{

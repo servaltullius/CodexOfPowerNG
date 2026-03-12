@@ -34,8 +34,75 @@ test("ui_interactions module owns quick/undo/settings handlers", () => {
   assert.match(moduleSource, /function onUndoBodyClick\(/);
   assert.match(moduleSource, /function onBatchRegisterClick\(/);
   assert.match(moduleSource, /function toggleQuickBatchSelection\(/);
+  assert.match(moduleSource, /build-select-discipline/);
+  assert.match(moduleSource, /build-select-theme/);
+  assert.match(moduleSource, /build-select-option/);
   assert.match(moduleSource, /function saveSettingsFromUi\(/);
   assert.match(moduleSource, /safeCall\("copng_saveSettings", payload\);/);
+});
+
+test("build interactions update build selection for discipline, theme, and option rows", () => {
+  const calls = [];
+  const renders = [];
+  let selection = { discipline: "attack", theme: "devastation", optionId: "" };
+  const buildPanelEl = { nodeType: 1 };
+
+  function makeNode(attrs, parentNode) {
+    return {
+      nodeType: 1,
+      parentNode,
+      getAttribute(name) {
+        return Object.prototype.hasOwnProperty.call(attrs, name) ? attrs[name] : "";
+      },
+    };
+  }
+
+  const api = mod.createUIInteractions({
+    buildPanelEl,
+    renderBuild: () => renders.push({ ...selection }),
+    stateApi: {
+      getInventoryPage: () => ({ pageSize: 200 }),
+      coalesce: (value, fallback) => (value == null ? fallback : value),
+      getQuickSelectedId: () => 0,
+      setQuickSelectedId: () => {},
+      getQuickVirtual: () => ({ tbodyTopPx: 0, rowHeightPx: 0 }),
+      getCurrentUiScale: () => 1,
+      toHex32: (value) => String(value >>> 0),
+      getToggleKeyDik: () => 0,
+      setToggleKeyInputFromDik: () => {},
+      showToast: () => {},
+      clamp: (value, lo, hi) => Math.max(lo, Math.min(hi, value)),
+      getInputScale: () => 1,
+      setUiScaleMode: () => {},
+      setUiScaleManual: () => {},
+      getUiScaleManual: () => 1,
+      applyManualUiScale: () => {},
+      saveUiScalePrefs: () => {},
+      syncUiScaleControls: () => {},
+      setInputScale: () => {},
+      setPerfMode: () => {},
+      savePerfModePref: () => {},
+      applyPerfModeFromPrefs: () => {},
+      applyUiScaleFromPrefs: () => {},
+      getUiScaleMode: () => "auto",
+      setBuildSelection: (patch) => {
+        selection = Object.assign({}, selection, patch);
+      },
+    },
+    safeCall: (name, payload) => calls.push({ name, payload }),
+  });
+
+  api.onBuildPanelClick({ target: makeNode({ "data-action": "build-select-discipline", "data-discipline": "utility" }, buildPanelEl) });
+  api.onBuildPanelClick({ target: makeNode({ "data-action": "build-select-theme", "data-theme-id": "exploration" }, buildPanelEl) });
+  api.onBuildPanelClick({ target: makeNode({ "data-action": "build-select-option", "data-option-id": "build.utility.mobility" }, buildPanelEl) });
+
+  assert.deepEqual(selection, {
+    discipline: "utility",
+    theme: "exploration",
+    optionId: "build.utility.mobility",
+  });
+  assert.equal(renders.length, 3);
+  assert.deepEqual(calls, []);
 });
 
 test("ui interactions supports select-then-confirm batch registration", () => {

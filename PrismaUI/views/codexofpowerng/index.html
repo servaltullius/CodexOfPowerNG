@@ -723,98 +723,163 @@
         flex: 1 1 auto;
         min-height: 0;
       }
-      .buildShrineGrid {
-        min-height: 0;
-        grid-template-columns:
-          minmax(calc(300px * var(--uiScale)), 1.05fr)
-          minmax(calc(340px * var(--uiScale)), 1fr)
-          minmax(calc(280px * var(--uiScale)), 0.88fr);
-        align-items: stretch;
-      }
-      .buildOptionRail,
-      .buildAltarPanel,
-      .buildFocusPanel {
-        min-height: 0;
-        height: 100%;
-        overflow: hidden;
-      }
       .buildStaticPanel {
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
-      .buildOptionRail {
+      .buildCatalogShell {
+        min-height: 0;
+        height: 100%;
+      }
+      .buildCatalogLayout {
+        display: grid;
+        grid-template-columns:
+          minmax(calc(160px * var(--uiScale)), 0.52fr)
+          minmax(calc(420px * var(--uiScale)), 1.45fr)
+          minmax(calc(300px * var(--uiScale)), 0.92fr);
+        gap: calc(12px * var(--uiScale));
+        min-height: 0;
+        height: 100%;
+      }
+      .buildDisciplineRail,
+      .buildCatalogPanel,
+      .buildDetailRail {
+        min-height: 0;
+        height: 100%;
+      }
+      .buildDisciplineRail {
         display: grid;
         grid-template-rows: auto minmax(0, 1fr);
+        gap: calc(10px * var(--uiScale));
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(8, 10, 18, 0.92);
       }
-      .buildOptionRailHeader {
+      .buildDisciplineRailBody {
+        display: grid;
+        gap: calc(8px * var(--uiScale));
+        align-content: start;
+      }
+      .buildDisciplineButton {
+        width: 100%;
+        justify-content: space-between;
+        border-radius: calc(12px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background:
+          linear-gradient(90deg, var(--discipline-soft, rgba(255, 255, 255, 0.05)), rgba(12, 14, 20, 0) 55%),
+          rgba(12, 14, 20, 0.88);
+        padding: calc(12px * var(--uiScale));
+        min-height: calc(52px * var(--uiScale));
+      }
+      .buildDisciplineButton.isActive {
+        border-color: var(--discipline-line, rgba(255, 255, 255, 0.28));
+        box-shadow: inset 0 0 0 1px var(--discipline-line, rgba(255, 255, 255, 0.18));
+      }
+      .buildDisciplineButtonLabel {
+        font-size: calc(14px * var(--uiScale));
+        font-weight: 800;
+      }
+      .buildCatalogPanel {
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: calc(10px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(8, 10, 18, 0.92);
+      }
+      .buildCatalogHeader {
         display: grid;
         gap: calc(4px * var(--uiScale));
-        padding-bottom: calc(8px * var(--uiScale));
-        border-bottom: 1px solid rgba(255, 255, 255, 0.06);
       }
-      .buildOptionRailLead {
+      .buildCatalogLead {
         line-height: 1.45;
-        max-width: min(calc(320px * var(--uiScale)), 100%);
+        max-width: min(calc(440px * var(--uiScale)), 100%);
       }
-      .buildOptionRailBody {
+      .buildThemeTabs {
+        display: flex;
+        gap: calc(8px * var(--uiScale));
+        flex-wrap: wrap;
+      }
+      .buildThemeTab {
+        min-height: calc(40px * var(--uiScale));
+        padding: calc(8px * var(--uiScale)) calc(12px * var(--uiScale));
+        border-radius: calc(999px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(15, 17, 24, 0.9);
+        justify-content: space-between;
+        gap: calc(8px * var(--uiScale));
+      }
+      .buildThemeTab.isActive {
+        border-color: var(--accent);
+        background: rgba(124, 92, 255, 0.14);
+      }
+      .buildCatalogScroller {
         min-height: 0;
         overflow: auto;
         overscroll-behavior: contain;
         padding-right: calc(4px * var(--uiScale));
         margin-right: calc(-4px * var(--uiScale));
       }
-      .buildOptionRail .buildCardsGrid {
-        display: flex;
-        flex-direction: column;
+      .buildCatalogRows {
+        display: grid;
         gap: calc(12px * var(--uiScale));
       }
-      .buildOptionRail .buildDisciplineSection {
+      .buildCatalogRow {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: calc(10px * var(--uiScale));
         padding: calc(12px * var(--uiScale));
         border-radius: calc(12px * var(--uiScale));
         border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.1));
         background: linear-gradient(180deg, var(--discipline-soft, rgba(255, 255, 255, 0.04)), rgba(10, 12, 18, 0.88));
       }
-      .buildAltarPanel {
-        position: relative;
-        border: 1px solid rgba(255, 255, 255, 0.09);
-        background: linear-gradient(180deg, rgba(11, 13, 19, 0.96), rgba(7, 9, 16, 0.98));
+      .buildCatalogRow.isFocused {
+        box-shadow: inset 0 0 0 1px var(--discipline-line, rgba(255, 255, 255, 0.18));
       }
-      .buildSlotStage {
-        position: relative;
-        isolation: isolate;
-        min-height: 0;
-        padding-top: calc(4px * var(--uiScale));
-      }
-      .buildSlotCluster {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: calc(10px * var(--uiScale));
-        position: relative;
-        padding: calc(4px * var(--uiScale)) 0 0 0;
-        z-index: 2;
-      }
-      .buildSlotCluster::before {
-        content: "";
-        position: absolute;
-        inset: calc(18px * var(--uiScale)) calc(26px * var(--uiScale));
-        border-radius: calc(18px * var(--uiScale));
-        border: 1px dashed rgba(255, 255, 255, 0.08);
-        pointer-events: none;
-      }
-      .buildSlotCard {
-        position: relative;
-        border-color: var(--discipline-line, rgba(255, 255, 255, 0.12));
+      .buildCatalogRow.isSignpost {
+        border-width: calc(2px * var(--uiScale));
         background:
-          linear-gradient(135deg, var(--discipline-soft, rgba(255, 255, 255, 0.04)), rgba(12, 14, 20, 0) 62%),
-          rgba(12, 14, 20, 0.9);
+          linear-gradient(90deg, var(--discipline-soft, rgba(255, 255, 255, 0.1)), rgba(10, 12, 18, 0.9) 38%),
+          rgba(10, 12, 18, 0.94);
       }
-      .buildSlotCard.isOccupied {
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+      .buildCatalogRow.isSpecial {
+        border-style: dashed;
       }
-      .buildSlotName {
-        display: block;
-        font-size: calc(16px * var(--uiScale));
+      .buildCatalogRowMain {
+        padding: 0;
+        min-height: auto;
+        background: transparent;
+        border: 0;
+        justify-content: stretch;
+        text-align: left;
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: calc(12px * var(--uiScale));
+        align-items: start;
+      }
+      .buildCatalogLead,
+      .buildCatalogMeta {
+        display: grid;
+        gap: calc(6px * var(--uiScale));
+      }
+      .buildCatalogTitleRow {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: calc(8px * var(--uiScale));
+      }
+      .buildCatalogState {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: calc(26px * var(--uiScale));
+        padding: calc(4px * var(--uiScale)) calc(8px * var(--uiScale));
+        border-radius: calc(999px * var(--uiScale));
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(15, 17, 24, 0.9);
+        font-size: calc(12px * var(--uiScale));
+        font-weight: 700;
+      }
+      .buildCatalogState.isActive {
+        border-color: var(--discipline-line, rgba(255, 255, 255, 0.18));
+        background: var(--discipline-soft, rgba(255, 255, 255, 0.12));
       }
       .buildActionButton {
         min-height: calc(38px * var(--uiScale));
@@ -833,25 +898,19 @@
       .buildHint {
         color: rgba(238, 242, 250, 0.68);
       }
-      .buildOptionCard {
-        border-color: var(--discipline-line, rgba(255, 255, 255, 0.12));
-        background:
-          linear-gradient(135deg, var(--discipline-soft, rgba(255, 255, 255, 0.03)), rgba(12, 14, 20, 0) 64%),
-          rgba(12, 14, 20, 0.9);
+      .buildCatalogActions {
+        display: flex;
+        align-items: center;
       }
-      .buildOptionCard.isFocus {
-        box-shadow: inset 0 0 0 1px var(--discipline-line, rgba(255, 255, 255, 0.16));
+      .buildDetailRail {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto;
+        gap: calc(12px * var(--uiScale));
       }
-      .buildOptionCard.isActive {
-        background:
-          linear-gradient(135deg, var(--discipline-soft, rgba(255, 255, 255, 0.05)), rgba(255, 255, 255, 0.015) 58%),
-          rgba(12, 14, 20, 0.94);
-      }
-      .buildOptionCompat {
-        margin-top: calc(6px * var(--uiScale));
-        color: rgba(238, 242, 250, 0.76);
-      }
-      .buildFocusPanel {
+      .buildSelectedOptionPanel,
+      .buildSlotSummaryPanel {
+        min-height: 0;
+        overflow: hidden;
         border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.12));
         background: rgba(10, 12, 18, 0.94);
       }
@@ -881,6 +940,38 @@
         line-height: 1.4;
       }
       .buildFocusActions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: calc(8px * var(--uiScale));
+      }
+      .buildSlotMatrix {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: calc(10px * var(--uiScale));
+      }
+      .buildSlotMatrixCard {
+        display: grid;
+        gap: calc(8px * var(--uiScale));
+        padding: calc(12px * var(--uiScale));
+        border-radius: calc(12px * var(--uiScale));
+        border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.12));
+        background:
+          linear-gradient(135deg, var(--discipline-soft, rgba(255, 255, 255, 0.04)), rgba(12, 14, 20, 0) 62%),
+          rgba(12, 14, 20, 0.9);
+      }
+      .buildSlotMatrixCard.isOccupied {
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+      }
+      .buildSlotMatrixHeader {
+        display: flex;
+        justify-content: flex-start;
+      }
+      .buildSlotMatrixName {
+        display: block;
+        font-size: calc(14px * var(--uiScale));
+        line-height: 1.35;
+      }
+      .buildSlotMatrixActions {
         display: flex;
         flex-wrap: wrap;
         gap: calc(8px * var(--uiScale));
@@ -1903,6 +1994,7 @@
         getRegistered: uiState.getRegistered,
         getUndoItems: uiState.getUndoItems,
         getBuild: uiState.getBuild,
+        getBuildSelection: uiState.getBuildSelection,
         getRewards: uiState.getRewards,
         getSettings: uiState.getSettings,
         getInputScale: uiState.getInputScale,
@@ -2003,6 +2095,7 @@
         KC,
         renderQuick,
         renderRegistered,
+        renderBuild,
         registerBatchPanelApi,
         clamp,
         getOffsetTopInRoot,

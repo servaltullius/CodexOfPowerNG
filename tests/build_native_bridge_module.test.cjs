@@ -42,10 +42,24 @@ test("interop bridge normalizes build payloads and grouped quick-list sections",
     disciplines: {
       attack: { score: 12 },
     },
+    groupedCatalog: {
+      attack: {
+        themes: [{ id: "devastation", titleKey: "build.theme.attack.devastation", optionCount: 1 }],
+      },
+    },
+    selectedThemeRows: [{ id: "build.attack.ferocity", discipline: "attack", themeId: "devastation" }],
+    selectedOptionDetail: { id: "build.attack.ferocity", discipline: "attack", themeId: "devastation" },
+    options: [{ id: "build.attack.ferocity", discipline: "attack", themeId: "devastation" }],
     activeSlots: [{ slotId: "attack_1", optionId: "build.attack.ferocity" }],
   });
   assert.equal(normalizedBuild.disciplines.attack.score, 12);
   assert.equal(normalizedBuild.activeSlots.length, 6);
+  assert.equal(normalizedBuild.themeMap.attack.length, 3);
+  assert.equal(normalizedBuild.groupedCatalog.attack.themes.length, 1);
+  assert.equal(normalizedBuild.selectedThemeRows.length, 1);
+  assert.equal(normalizedBuild.selectedOptionDetail.id, "build.attack.ferocity");
+  assert.equal(normalizedBuild.options[0].themeId, "devastation");
+  assert.equal(normalizedBuild.options[0].hierarchy, "standard");
 
   const normalizedQuickList = interopBridge.normalizeInventoryPayload({
     sections: [
@@ -83,11 +97,23 @@ test("native state bridge forwards build payloads to build renderer", () => {
     disciplines: {
       attack: { score: 12 },
     },
+    groupedCatalog: {
+      attack: {
+        themes: [{ id: "devastation", titleKey: "build.theme.attack.devastation", optionCount: 1 }],
+      },
+    },
+    selectedThemeRows: [{ id: "build.attack.ferocity", discipline: "attack", themeId: "devastation" }],
+    selectedOptionDetail: { id: "build.attack.ferocity", discipline: "attack", themeId: "devastation" },
+    options: [{ id: "build.attack.ferocity", discipline: "attack", themeId: "devastation" }],
     activeSlots: [{ slotId: "attack_1", optionId: "build.attack.ferocity" }],
   });
 
   assert.equal(recorded.build.disciplines.attack.score, 12);
   assert.equal(recorded.build.activeSlots.length, 6);
+  assert.equal(recorded.build.themeMap.attack.length, 3);
+  assert.equal(recorded.build.groupedCatalog.attack.themes.length, 1);
+  assert.equal(recorded.build.selectedThemeRows.length, 1);
+  assert.equal(recorded.build.selectedOptionDetail.id, "build.attack.ferocity");
   assert.deepEqual(recorded.renders, ["build"]);
 });
 

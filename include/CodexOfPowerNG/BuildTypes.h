@@ -84,6 +84,9 @@ namespace CodexOfPowerNG::Builds
 	{
 		std::string_view id;
 		BuildDiscipline discipline;
+		std::string_view themeId;
+		std::string_view themeTitleKey;
+		std::string_view hierarchy;
 		BuildLayer layer;
 		std::uint32_t unlockScore;
 		BuildSlotCompatibility slotCompatibility;

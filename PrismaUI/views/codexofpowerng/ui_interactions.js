@@ -28,6 +28,7 @@
     const KC = options.KC || null;
     const renderQuick = asFn(options.renderQuick, noop);
     const renderRegistered = asFn(options.renderRegistered, noop);
+    const renderBuild = asFn(options.renderBuild, noop);
     const registerBatchPanelApi = options.registerBatchPanelApi || null;
     const clamp = asFn(options.clamp, (value, lo, hi) => Math.max(lo, Math.min(hi, value)));
     const getOffsetTopInRoot = asFn(options.getOffsetTopInRoot, () => 0);
@@ -36,6 +37,7 @@
     const setQuickBatchSelectedIds = asFn(stateApi && stateApi.setQuickBatchSelectedIds, noop);
     const getQuickActionableOnly = asFn(stateApi && stateApi.getQuickActionableOnly, () => false);
     const setQuickActionableOnly = asFn(stateApi && stateApi.setQuickActionableOnly, noop);
+    const setBuildSelection = asFn(stateApi && stateApi.setBuildSelection, noop);
 
     let quickRenderTimer = null;
     let regRenderTimer = null;
@@ -212,10 +214,35 @@
         if (node.nodeType === 1) {
           const el = node;
           const action = el.getAttribute("data-action");
+          if (action === "build-select-discipline") {
+            const discipline = String(el.getAttribute("data-discipline") || "");
+            if (discipline) {
+              setBuildSelection({ discipline, theme: "", optionId: "" });
+              renderBuild();
+            }
+            return;
+          }
+          if (action === "build-select-theme") {
+            const theme = String(el.getAttribute("data-theme-id") || "");
+            if (theme) {
+              setBuildSelection({ theme, optionId: "" });
+              renderBuild();
+            }
+            return;
+          }
+          if (action === "build-select-option") {
+            const optionId = String(el.getAttribute("data-option-id") || "");
+            if (optionId) {
+              setBuildSelection({ optionId });
+              renderBuild();
+            }
+            return;
+          }
           if (action === "build-activate") {
             const optionId = String(el.getAttribute("data-option-id") || "");
             const slotId = String(el.getAttribute("data-slot-id") || "");
             if (optionId && slotId) {
+              setBuildSelection({ optionId });
               safeCall("copng_activateBuildOption", { optionId, slotId });
             }
             return;
@@ -232,6 +259,7 @@
             const fromSlotId = String(el.getAttribute("data-from-slot-id") || "");
             const toSlotId = String(el.getAttribute("data-to-slot-id") || "");
             if (optionId && fromSlotId && toSlotId) {
+              setBuildSelection({ optionId });
               safeCall("copng_swapBuildOption", { optionId, fromSlotId, toSlotId });
             }
             return;

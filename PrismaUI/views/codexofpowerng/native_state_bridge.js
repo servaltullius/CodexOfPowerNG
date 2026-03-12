@@ -21,13 +21,115 @@
     Object.freeze({ slotId: "wildcard_1", slotKind: "wildcard", optionId: null, occupied: false }),
   ]);
 
+  const DEFAULT_BUILD_THEME_MAP = Object.freeze({
+    attack: Object.freeze([
+      Object.freeze({ id: "devastation", titleKey: "build.theme.attack.devastation", optionCount: 0 }),
+      Object.freeze({ id: "precision", titleKey: "build.theme.attack.precision", optionCount: 0 }),
+      Object.freeze({ id: "fury", titleKey: "build.theme.attack.fury", optionCount: 0 }),
+    ]),
+    defense: Object.freeze([
+      Object.freeze({ id: "guard", titleKey: "build.theme.defense.guard", optionCount: 0 }),
+      Object.freeze({ id: "bastion", titleKey: "build.theme.defense.bastion", optionCount: 0 }),
+      Object.freeze({ id: "resistance", titleKey: "build.theme.defense.resistance", optionCount: 0 }),
+    ]),
+    utility: Object.freeze([
+      Object.freeze({ id: "livelihood", titleKey: "build.theme.utility.livelihood", optionCount: 0 }),
+      Object.freeze({ id: "exploration", titleKey: "build.theme.utility.exploration", optionCount: 0 }),
+      Object.freeze({ id: "trickery", titleKey: "build.theme.utility.trickery", optionCount: 0 }),
+    ]),
+  });
+
   function normalizeRewardsPayload(nextRewards) {
     return nextRewards && typeof nextRewards === "object" ? nextRewards : { totals: [] };
+  }
+
+  function normalizeBuildOption(option) {
+    const source = option && typeof option === "object" ? option : null;
+    if (!source) return null;
+    return Object.assign({}, source, {
+      id: typeof source.id === "string" ? source.id : "",
+      discipline: typeof source.discipline === "string" ? source.discipline : "",
+      themeId: typeof source.themeId === "string" ? source.themeId : "",
+      themeTitleKey: typeof source.themeTitleKey === "string" ? source.themeTitleKey : "",
+      hierarchy: typeof source.hierarchy === "string" ? source.hierarchy : "standard",
+      layer: typeof source.layer === "string" ? source.layer : "",
+      unlockScore: Number(source.unlockScore || 0) >>> 0,
+      unlocked: !!source.unlocked,
+      state: typeof source.state === "string" ? source.state : "",
+      slotCompatibility: typeof source.slotCompatibility === "string" ? source.slotCompatibility : "",
+      compatibleSlots: Array.isArray(source.compatibleSlots)
+        ? source.compatibleSlots.map((slotId) => String(slotId || "")).filter(Boolean)
+        : [],
+      activeSlotId:
+        typeof source.activeSlotId === "string"
+          ? source.activeSlotId
+          : source.activeSlotId == null
+            ? null
+            : "",
+      effectType: typeof source.effectType === "string" ? source.effectType : "",
+      effectKey: typeof source.effectKey === "string" ? source.effectKey : "",
+      magnitude: source.magnitude && typeof source.magnitude === "object" ? Object.assign({}, source.magnitude) : source.magnitude,
+      exclusivityGroup: typeof source.exclusivityGroup === "string" ? source.exclusivityGroup : "",
+      titleKey: typeof source.titleKey === "string" ? source.titleKey : "",
+      descriptionKey: typeof source.descriptionKey === "string" ? source.descriptionKey : "",
+    });
+  }
+
+  function normalizeBuildTheme(theme) {
+    const source = theme && typeof theme === "object" ? theme : {};
+    return {
+      id: typeof source.id === "string" ? source.id : "",
+      titleKey: typeof source.titleKey === "string" ? source.titleKey : "",
+      optionCount: Number(source.optionCount || 0) >>> 0,
+      rows: Array.isArray(source.rows) ? source.rows.map(normalizeBuildOption).filter(Boolean) : [],
+    };
+  }
+
+  function deriveGroupedCatalog(themeMap, options) {
+    const result = {};
+    for (const discipline of ["attack", "defense", "utility"]) {
+      const themes = Array.isArray(themeMap[discipline]) ? themeMap[discipline] : [];
+      result[discipline] = {
+        discipline,
+        themes: themes.map((theme) => {
+          const themeId = String((theme && theme.id) || "");
+          const rows = options.filter(
+            (option) =>
+              String((option && option.discipline) || "").toLowerCase() === discipline &&
+              String((option && option.themeId) || "").toLowerCase() === themeId.toLowerCase(),
+          );
+          return {
+            id: themeId,
+            titleKey: String((theme && theme.titleKey) || ""),
+            optionCount: Number((theme && theme.optionCount) || rows.length || 0) >>> 0,
+            rows,
+          };
+        }),
+      };
+    }
+    return result;
+  }
+
+  function normalizeBuildGroupedCatalog(groupedCatalog, themeMap, options) {
+    const source = groupedCatalog && typeof groupedCatalog === "object" ? groupedCatalog : null;
+    if (!source) return deriveGroupedCatalog(themeMap, options);
+
+    const result = {};
+    for (const discipline of ["attack", "defense", "utility"]) {
+      const disciplineSource = source[discipline] && typeof source[discipline] === "object" ? source[discipline] : {};
+      const themes = Array.isArray(disciplineSource.themes) ? disciplineSource.themes.map(normalizeBuildTheme) : null;
+      result[discipline] = {
+        discipline,
+        themes: themes || deriveGroupedCatalog(themeMap, options)[discipline].themes,
+      };
+    }
+    return result;
   }
 
   function normalizeBuildPayload(nextBuild) {
     const source = nextBuild && typeof nextBuild === "object" ? nextBuild : {};
     const disciplines = source.disciplines && typeof source.disciplines === "object" ? source.disciplines : {};
+    const themeMap = source.themeMap && typeof source.themeMap === "object" ? source.themeMap : {};
     const bySlotId = new Map();
     if (Array.isArray(source.activeSlots)) {
       for (const slot of source.activeSlots) {
@@ -35,6 +137,31 @@
         bySlotId.set(slot.slotId, slot);
       }
     }
+
+    const normalizedThemeMap = {
+      attack: Array.isArray(themeMap.attack) ? themeMap.attack : DEFAULT_BUILD_THEME_MAP.attack.slice(),
+      defense: Array.isArray(themeMap.defense) ? themeMap.defense : DEFAULT_BUILD_THEME_MAP.defense.slice(),
+      utility: Array.isArray(themeMap.utility) ? themeMap.utility : DEFAULT_BUILD_THEME_MAP.utility.slice(),
+    };
+
+    const normalizedOptions = Array.isArray(source.options)
+      ? source.options.map(normalizeBuildOption).filter(Boolean)
+      : [];
+    const normalizedGroupedCatalog = normalizeBuildGroupedCatalog(
+      source.groupedCatalog,
+      normalizedThemeMap,
+      normalizedOptions,
+    );
+    const payloadSelectedDiscipline =
+      typeof source.selectedDiscipline === "string" ? source.selectedDiscipline : "";
+    const payloadSelectedTheme = typeof source.selectedTheme === "string" ? source.selectedTheme : "";
+    const derivedSelectedRows =
+      normalizedGroupedCatalog[String(payloadSelectedDiscipline || "").toLowerCase()] &&
+      Array.isArray(normalizedGroupedCatalog[String(payloadSelectedDiscipline || "").toLowerCase()].themes)
+        ? normalizedGroupedCatalog[String(payloadSelectedDiscipline || "").toLowerCase()].themes.find(
+            (theme) => String((theme && theme.id) || "").toLowerCase() === String(payloadSelectedTheme || "").toLowerCase(),
+          )
+        : null;
 
     return {
       disciplines: {
@@ -57,7 +184,18 @@
           ) >>> 0,
         },
       },
-      options: Array.isArray(source.options) ? source.options : [],
+      themeMap: normalizedThemeMap,
+      groupedCatalog: normalizedGroupedCatalog,
+      selectedDiscipline: payloadSelectedDiscipline,
+      selectedTheme: payloadSelectedTheme,
+      selectedOptionId: typeof source.selectedOptionId === "string" ? source.selectedOptionId : "",
+      selectedThemeRows: Array.isArray(source.selectedThemeRows)
+        ? source.selectedThemeRows.map(normalizeBuildOption).filter(Boolean)
+        : derivedSelectedRows && Array.isArray(derivedSelectedRows.rows)
+          ? derivedSelectedRows.rows.slice()
+          : [],
+      selectedOptionDetail: normalizeBuildOption(source.selectedOptionDetail),
+      options: normalizedOptions,
       activeSlots: DEFAULT_BUILD_SLOT_LAYOUT.map((slot) => Object.assign({}, slot, bySlotId.get(slot.slotId) || {})),
       migrationNotice:
         source.migrationNotice && typeof source.migrationNotice === "object"

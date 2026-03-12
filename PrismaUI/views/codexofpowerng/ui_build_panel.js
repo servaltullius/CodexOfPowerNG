@@ -39,7 +39,22 @@
         defense: { score: 0, unlockedBaselineCount: 0 },
         utility: { score: 0, unlockedBaselineCount: 0 },
       },
+      selectedDiscipline: "attack",
+      selectedTheme: "",
+      selectedOptionId: "",
+      themeMap: {
+        attack: [],
+        defense: [],
+        utility: [],
+      },
+      groupedCatalog: {
+        attack: { discipline: "attack", themes: [] },
+        defense: { discipline: "defense", themes: [] },
+        utility: { discipline: "utility", themes: [] },
+      },
       options: [],
+      selectedThemeRows: [],
+      selectedOptionDetail: null,
       activeSlots: [],
       migrationNotice: {
         needsNotice: false,
@@ -67,6 +82,12 @@
       .replace(/\b\w/g, (ch) => ch.toUpperCase());
   }
 
+  function humanizeThemeId(id) {
+    return String(id || "")
+      .replace(/[_-]+/g, " ")
+      .replace(/\b\w/g, (ch) => ch.toUpperCase());
+  }
+
   function slotSupportsOption(slot, option) {
     const slotKind = String((slot && slot.slotKind) || "").toLowerCase();
     const discipline = String((option && option.discipline) || "").toLowerCase();
@@ -86,10 +107,30 @@
     return "disc-unknown";
   }
 
+  function hierarchyClassName(id) {
+    const value = String(id || "").toLowerCase();
+    if (value === "signpost") return "isSignpost";
+    if (value === "special") return "isSpecial";
+    return "isStandard";
+  }
+
   function slotTitle(slot, t) {
     const slotId = String((slot && slot.slotId) || "");
     const slotKind = String((slot && slot.slotKind) || "");
     return t("build.slot." + slotId, humanizeDiscipline(slotKind));
+  }
+
+  function disciplineLabel(id, t) {
+    return t("build." + String(id || "").toLowerCase(), humanizeDiscipline(id));
+  }
+
+  function themeTitleKey(discipline, theme) {
+    return "build.theme." + String(discipline || "").toLowerCase() + "." + String(theme || "").toLowerCase();
+  }
+
+  function themeLabel(discipline, theme, providedTitleKey, t) {
+    const titleKey = providedTitleKey || themeTitleKey(discipline, theme);
+    return t(titleKey, humanizeThemeId(theme));
   }
 
   function summarizeDiscipline(discipline, disciplines, options, activeSlots) {
@@ -107,6 +148,125 @@
     };
   }
 
+  function normalizeThemeMap(sourceBuild, options, t) {
+    const result = { attack: [], defense: [], utility: [] };
+    const sourceThemeMap = sourceBuild && sourceBuild.themeMap && typeof sourceBuild.themeMap === "object" ? sourceBuild.themeMap : {};
+    const disciplines = ["attack", "defense", "utility"];
+
+    for (const discipline of disciplines) {
+      const sourceList = Array.isArray(sourceThemeMap[discipline]) ? sourceThemeMap[discipline] : [];
+      if (sourceList.length > 0) {
+        result[discipline] = sourceList.map((theme) => ({
+          id: String((theme && theme.id) || ""),
+          titleKey: String((theme && theme.titleKey) || themeTitleKey(discipline, theme && theme.id)),
+          label: themeLabel(discipline, theme && theme.id, theme && theme.titleKey, t),
+          optionCount: Number((theme && theme.optionCount) || 0) >>> 0,
+        }));
+        continue;
+      }
+
+      const seen = new Set();
+      const derived = [];
+      for (const option of options) {
+        const optionDiscipline = String((option && option.discipline) || "").toLowerCase();
+        if (optionDiscipline !== discipline) continue;
+        const themeId = String((option && option.themeId) || "").toLowerCase();
+        if (!themeId || seen.has(themeId)) continue;
+        seen.add(themeId);
+        derived.push({
+          id: themeId,
+          titleKey: String((option && option.themeTitleKey) || themeTitleKey(discipline, themeId)),
+          label: themeLabel(discipline, themeId, option && option.themeTitleKey, t),
+          optionCount: options.filter((row) => String((row && row.discipline) || "").toLowerCase() === discipline && String((row && row.themeId) || "").toLowerCase() === themeId).length,
+        });
+      }
+      result[discipline] = derived;
+    }
+
+    return result;
+  }
+
+  function normalizeGroupedCatalog(sourceBuild, themeMap, options) {
+    const sourceCatalog =
+      sourceBuild && sourceBuild.groupedCatalog && typeof sourceBuild.groupedCatalog === "object"
+        ? sourceBuild.groupedCatalog
+        : null;
+    const result = {
+      attack: { discipline: "attack", themes: [] },
+      defense: { discipline: "defense", themes: [] },
+      utility: { discipline: "utility", themes: [] },
+    };
+
+    for (const discipline of ["attack", "defense", "utility"]) {
+      const explicitThemes =
+        sourceCatalog &&
+        sourceCatalog[discipline] &&
+        Array.isArray(sourceCatalog[discipline].themes)
+          ? sourceCatalog[discipline].themes
+          : null;
+      if (explicitThemes) {
+        result[discipline].themes = explicitThemes.map((theme) => ({
+          id: String((theme && theme.id) || "").toLowerCase(),
+          titleKey: String((theme && theme.titleKey) || ""),
+          optionCount: Number((theme && theme.optionCount) || 0) >>> 0,
+          rows: Array.isArray(theme && theme.rows) ? theme.rows.slice() : [],
+        }));
+        continue;
+      }
+
+      const fallbackThemes = Array.isArray(themeMap[discipline]) ? themeMap[discipline] : [];
+      result[discipline].themes = fallbackThemes.map((theme) => {
+        const themeId = String((theme && theme.id) || "").toLowerCase();
+        const rows = options.filter((option) => {
+          if (String((option && option.discipline) || "").toLowerCase() !== discipline) return false;
+          return !themeId || String((option && option.themeId) || "").toLowerCase() === themeId;
+        });
+        return {
+          id: themeId,
+          titleKey: String((theme && theme.titleKey) || ""),
+          optionCount: Number((theme && theme.optionCount) || rows.length || 0) >>> 0,
+          rows,
+        };
+      });
+    }
+
+    return result;
+  }
+
+  function resolveSelectedDiscipline(sourceBuild, themeMap) {
+    const requested = String((sourceBuild && sourceBuild.selectedDiscipline) || "").toLowerCase();
+    if (requested && Object.prototype.hasOwnProperty.call(themeMap, requested)) return requested;
+    if (themeMap.attack.length) return "attack";
+    if (themeMap.defense.length) return "defense";
+    if (themeMap.utility.length) return "utility";
+    return "attack";
+  }
+
+  function resolveSelectedTheme(sourceBuild, selectedDiscipline, themeMap) {
+    const requested = String((sourceBuild && sourceBuild.selectedTheme) || "").toLowerCase();
+    const themes = Array.isArray(themeMap[selectedDiscipline]) ? themeMap[selectedDiscipline] : [];
+    if (requested && themes.some((theme) => theme.id === requested)) return requested;
+    return themes.length ? String(themes[0].id || "") : "";
+  }
+
+  function resolveRequestedSelection(sourceBuild, themeMap) {
+    const selection =
+      sourceBuild && sourceBuild.buildSelection && typeof sourceBuild.buildSelection === "object"
+        ? sourceBuild.buildSelection
+        : sourceBuild || {};
+    const selectedDiscipline = resolveSelectedDiscipline({ selectedDiscipline: selection.discipline || selection.selectedDiscipline }, themeMap);
+    const selectedTheme = resolveSelectedTheme(
+      { selectedTheme: selection.theme || selection.selectedTheme },
+      selectedDiscipline,
+      themeMap,
+    );
+    return {
+      discipline: selectedDiscipline,
+      theme: selectedTheme,
+      optionId: String(selection.optionId || selection.selectedOptionId || ""),
+    };
+  }
+
   function buildOptionView(option, activeSlots, t, tFmt) {
     const optionId = String((option && option.id) || "");
     const unlockScore = Number((option && option.unlockScore) || 0) >>> 0;
@@ -115,6 +275,8 @@
     const emptySlot = compatibleSlots.find((slot) => slot && !slot.optionId) || null;
     const unlocked = !!(option && option.unlocked);
     const discipline = String((option && option.discipline) || "").toLowerCase();
+    const themeId = String((option && option.themeId) || "").toLowerCase();
+    const hierarchy = String((option && option.hierarchy) || "standard").toLowerCase();
     const title = t(option.titleKey, humanizeOptionId(optionId));
     const description = t(option.descriptionKey, "");
     const stateKey = activeSlot ? "build.active" : unlocked ? "build.unlocked" : "build.locked";
@@ -148,9 +310,13 @@
       optionId,
       discipline,
       disciplineClass: disciplineClassName(discipline),
+      themeId,
+      hierarchy,
+      hierarchyClass: hierarchyClassName(hierarchy),
       title,
       description,
       unlockText,
+      unlockScore,
       stateText,
       stateClass,
       unlocked,
@@ -170,131 +336,68 @@
     const disciplines = source.disciplines && typeof source.disciplines === "object" ? source.disciplines : {};
     const activeSlots = Array.isArray(source.activeSlots) ? source.activeSlots : [];
     const options = Array.isArray(source.options) ? source.options : [];
-    const optionById = new Map();
-
-    for (const option of options) {
-      if (option && typeof option.id === "string") optionById.set(option.id, option);
-    }
+    const themeMap = normalizeThemeMap(source, options, t);
+    const groupedCatalog = normalizeGroupedCatalog(source, themeMap, options);
+    const currentSelection = resolveRequestedSelection(source, themeMap);
+    const selectedDiscipline = currentSelection.discipline;
+    const selectedTheme = currentSelection.theme;
+    const activeOptionId = currentSelection.optionId;
+    const payloadSelection = {
+      discipline: resolveSelectedDiscipline(source, themeMap),
+      theme: resolveSelectedTheme(source, resolveSelectedDiscipline(source, themeMap), themeMap),
+      optionId: String((source && source.selectedOptionId) || ""),
+    };
+    const optionViews = options.map((option) => buildOptionView(option, activeSlots, t, tFmt));
+    const groupedThemes =
+      groupedCatalog &&
+      groupedCatalog[selectedDiscipline] &&
+      Array.isArray(groupedCatalog[selectedDiscipline].themes)
+        ? groupedCatalog[selectedDiscipline].themes
+        : [];
+    const groupedTheme = groupedThemes.find((theme) => String((theme && theme.id) || "").toLowerCase() === selectedTheme) || null;
+    const selectedThemeRows =
+      selectedDiscipline === payloadSelection.discipline &&
+      selectedTheme === payloadSelection.theme &&
+      Array.isArray(source.selectedThemeRows) &&
+      source.selectedThemeRows.length
+        ? source.selectedThemeRows.slice()
+        : groupedTheme && Array.isArray(groupedTheme.rows) && groupedTheme.rows.length
+          ? groupedTheme.rows.slice()
+          : options.filter(
+              (option) =>
+                String((option && option.discipline) || "").toLowerCase() === selectedDiscipline &&
+                (!selectedTheme || String((option && option.themeId) || "").toLowerCase() === selectedTheme),
+            );
+    const themedViews = selectedThemeRows.map((option) => buildOptionView(option, activeSlots, t, tFmt));
+    const selectedOptionDetail =
+      source.selectedOptionDetail &&
+      typeof source.selectedOptionDetail === "object" &&
+      selectedDiscipline === payloadSelection.discipline &&
+      selectedTheme === payloadSelection.theme
+        ? source.selectedOptionDetail
+        : null;
+    const focusedSourceOption =
+      (selectedOptionDetail &&
+        String((selectedOptionDetail && selectedOptionDetail.id) || "") === activeOptionId &&
+        selectedOptionDetail) ||
+      selectedThemeRows.find((row) => String((row && row.id) || "") === activeOptionId) ||
+      (selectedOptionDetail && !activeOptionId ? selectedOptionDetail : null) ||
+      selectedThemeRows.find((row) =>
+        activeSlots.some((slot) => String((slot && slot.optionId) || "") === String((row && row.id) || "")),
+      ) ||
+      selectedThemeRows.find((row) => !!(row && row.unlocked)) ||
+      selectedThemeRows[0] ||
+      options.find((option) => activeSlots.some((slot) => String((slot && slot.optionId) || "") === String((option && option.id) || ""))) ||
+      options.find((option) => !!(option && option.unlocked)) ||
+      options[0] ||
+      null;
+    const focusedView = focusedSourceOption ? buildOptionView(focusedSourceOption, activeSlots, t, tFmt) : null;
 
     const disciplineOrder = ["attack", "defense", "utility"];
-    const optionViews = options.map((option) => buildOptionView(option, activeSlots, t, tFmt));
-    const focusOptionView =
-      optionViews.find((view) => !!view.activeSlot) ||
-      optionViews.find((view) => view.unlocked) ||
-      optionViews[0] ||
-      null;
-    const slotHtml = activeSlots
-      .map((slot) => {
-        const slotId = String((slot && slot.slotId) || "");
-        const slotKind = String((slot && slot.slotKind) || "");
-        const option = optionById.get(slot && slot.optionId) || null;
-        const slotLabel = slotTitle(slot, t);
-        const stateLabel = option ? t("build.active", "Active") : t("build.emptySlot", "Empty slot");
-        const optionTitle = option
-          ? t(option.titleKey, humanizeOptionId(option.id))
-          : t("build.emptySlot", "Empty slot");
-        const actionButton = option
-          ? `<button type="button" class="buildActionButton" data-action="build-deactivate" data-slot-id="${escapeHtml(
-              slotId,
-            )}">${escapeHtml(
-              t("build.deactivate", "Deactivate"),
-            )}</button>`
-          : `<span class="small buildHint">${escapeHtml(t("build.slotWaiting", "Awaiting option"))}</span>`;
-        const slotClass = disciplineClassName(slotKind);
-        return `
-          <article class="buildSlotCard ${slotClass} ${option ? "isOccupied" : "isEmpty"}" data-slot-id="${escapeHtml(
-            slotId,
-          )}" data-slot-kind="${escapeHtml(slotKind)}">
-            <div class="buildSlotCardHeader">
-              <span class="disciplineMark ${slotClass}">${escapeHtml(slotLabel)}</span>
-              <span class="small">${escapeHtml(stateLabel)}</span>
-            </div>
-            <strong class="buildSlotName">${escapeHtml(optionTitle)}</strong>
-            <div class="small mono">${escapeHtml(slotId)}</div>
-            <div class="buildSlotCardActions">${actionButton}</div>
-          </article>`;
-      })
-      .join("");
-
-    const migrationParts = [];
-    const migration = source.migrationNotice && typeof source.migrationNotice === "object" ? source.migrationNotice : {};
-    if (migration.needsNotice && migration.legacyRewardsMigrated) {
-      migrationParts.push(
-        `<div class="buildMigrationLine">${escapeHtml(
-          t("build.migrationLegacy", "Legacy rewards migrated into the new build progression."),
-        )}</div>`,
-      );
-    }
-    if (migration.needsNotice && Number(migration.unresolvedHistoricalRegistrations || 0) > 0) {
-      migrationParts.push(
-        `<div class="buildMigrationLine">${escapeHtml(
-          tFmt(
-            "build.migrationSkipped",
-            "{count} historical registrations could not be converted.",
-            { count: Number(migration.unresolvedHistoricalRegistrations || 0) >>> 0 },
-          ),
-        )}</div>`,
-      );
-    }
-
-    const cardsHtml = disciplineOrder
-      .map((discipline) => {
-        const info = summarizeDiscipline(discipline, disciplines, options, activeSlots);
-        const label = t("build." + discipline, humanizeDiscipline(discipline));
-        const sectionClass = disciplineClassName(discipline);
-        const rows = optionViews
-          .filter((view) => view.discipline === discipline)
-          .map((view) => {
-            const isFocus = focusOptionView && focusOptionView.optionId === view.optionId;
-            return `
-              <article class="buildOptionCard ${view.stateClass} ${view.disciplineClass} ${isFocus ? "isFocus" : ""}" data-option-id="${escapeHtml(
-                view.optionId,
-              )}">
-                <div class="buildOptionHeader">
-                  <strong>${escapeHtml(view.title)}</strong>
-                  <span class="pill">${escapeHtml(view.stateText)}</span>
-                </div>
-                <div class="small">${escapeHtml(view.description)}</div>
-                <div class="small mono">${escapeHtml(view.unlockText)}</div>
-                <div class="small buildOptionCompat">${escapeHtml(
-                  tFmt("build.compatibleSlots", "Compatible Slots: {slots}", { slots: view.compatibleText }),
-                )}</div>
-                <div class="buildOptionActions">${view.actionHtml}</div>
-              </article>`;
-          })
-          .join("");
-
-        return `
-          <section class="buildDisciplineSection ${sectionClass}" data-discipline="${escapeHtml(discipline)}">
-            <div class="buildDisciplineHeader">
-              <div>
-                <div class="small buildPanelEyebrow">${escapeHtml(t("build.disciplineLedger", "Discipline"))}</div>
-                <h3>${escapeHtml(label)}</h3>
-              </div>
-              <div class="buildDisciplineStats">
-                <span class="pill">${escapeHtml(tFmt("build.scorePill", "Score {score}", { score: info.score }))}</span>
-                <span class="small">${escapeHtml(
-                  tFmt("build.baselinePill", "Baseline {count}", {
-                    count: info.unlockedBaselineCount,
-                  }),
-                )}</span>
-                <span class="small">${escapeHtml(
-                  tFmt("build.unlockedCount", "Unlocked {count}", { count: info.unlockedCount }),
-                )}</span>
-                <span class="small">${escapeHtml(
-                  tFmt("build.activeCount", "Active {count}", { count: info.activeCount }),
-                )}</span>
-              </div>
-            </div>
-            <div class="buildOptionList">${rows || `<div class="small">${escapeHtml(t("build.none", "No options"))}</div>`}</div>
-          </section>`;
-      })
-      .join("");
-
     const summaryHtml = disciplineOrder
       .map((discipline) => {
         const info = summarizeDiscipline(discipline, disciplines, options, activeSlots);
-        const label = t("build." + discipline, humanizeDiscipline(discipline));
+        const label = disciplineLabel(discipline, t);
         const sectionClass = disciplineClassName(discipline);
         return `
           <article class="buildSummaryCard ${sectionClass}">
@@ -312,40 +415,168 @@
       })
       .join("");
 
-    let focusHtml = `
-      <section id="buildDetailPanel" class="card buildPanelSection buildFocusPanel buildStaticPanel">
+    const migration = source.migrationNotice && typeof source.migrationNotice === "object" ? source.migrationNotice : {};
+    const migrationParts = [];
+    if (migration.needsNotice && migration.legacyRewardsMigrated) {
+      migrationParts.push(
+        `<div class="buildMigrationLine">${escapeHtml(
+          t("build.migrationLegacy", "Legacy rewards migrated into the new build progression."),
+        )}</div>`,
+      );
+    }
+    if (migration.needsNotice && Number(migration.unresolvedHistoricalRegistrations || 0) > 0) {
+      migrationParts.push(
+        `<div class="buildMigrationLine">${escapeHtml(
+          tFmt("build.migrationSkipped", "{count} historical registrations could not be converted.", {
+            count: Number(migration.unresolvedHistoricalRegistrations || 0) >>> 0,
+          }),
+        )}</div>`,
+      );
+    }
+
+    const disciplineRailHtml = disciplineOrder
+      .map((discipline) => {
+        const info = summarizeDiscipline(discipline, disciplines, options, activeSlots);
+        const sectionClass = disciplineClassName(discipline);
+        const activeClass = discipline === selectedDiscipline ? " isActive" : "";
+        return `
+          <button
+            type="button"
+            class="buildDisciplineButton ${sectionClass}${activeClass}"
+            data-action="build-select-discipline"
+            data-discipline="${escapeHtml(discipline)}"
+          >
+            <span class="buildDisciplineButtonLabel">${escapeHtml(disciplineLabel(discipline, t))}</span>
+            <span class="small">${escapeHtml(tFmt("build.scorePill", "Score {score}", { score: info.score }))}</span>
+          </button>`;
+      })
+      .join("");
+
+    const activeThemes = groupedThemes.length
+      ? groupedThemes.map((theme) => ({
+          id: String((theme && theme.id) || "").toLowerCase(),
+          titleKey: String((theme && theme.titleKey) || ""),
+          optionCount: Number((theme && theme.optionCount) || (Array.isArray(theme && theme.rows) ? theme.rows.length : 0) || 0) >>> 0,
+        }))
+      : Array.isArray(themeMap[selectedDiscipline])
+        ? themeMap[selectedDiscipline]
+        : [];
+    const themeTabsHtml = activeThemes
+      .map((theme) => {
+        const activeClass = theme.id === selectedTheme ? " isActive" : "";
+        return `
+          <button
+            type="button"
+            class="buildThemeTab${activeClass}"
+            data-action="build-select-theme"
+            data-discipline="${escapeHtml(selectedDiscipline)}"
+            data-theme-id="${escapeHtml(theme.id)}"
+          >
+            <span>${escapeHtml(theme.label)}</span>
+            <span class="small">${escapeHtml(String(Number(theme.optionCount || 0) >>> 0))}</span>
+          </button>`;
+      })
+      .join("");
+
+    const catalogRowsHtml = themedViews.length
+      ? themedViews
+          .map((view) => {
+            const focusClass = focusedView && focusedView.optionId === view.optionId ? " isFocused" : "";
+            return `
+              <article
+                class="buildCatalogRow ${view.disciplineClass} ${view.stateClass} ${view.hierarchyClass}${focusClass}"
+                data-option-id="${escapeHtml(view.optionId)}"
+              >
+                <button
+                  type="button"
+                  class="buildCatalogRowMain"
+                  data-action="build-select-option"
+                  data-option-id="${escapeHtml(view.optionId)}"
+                >
+                  <div class="buildCatalogLead">
+                    <div class="buildCatalogTitleRow">
+                      <strong>${escapeHtml(view.title)}</strong>
+                      <span class="buildCatalogState ${view.stateClass}">${escapeHtml(view.stateText)}</span>
+                    </div>
+                    <div class="small">${escapeHtml(view.description)}</div>
+                  </div>
+                  <div class="buildCatalogMeta">
+                    <span class="small mono">${escapeHtml(view.unlockText)}</span>
+                    <span class="small">${escapeHtml(
+                      tFmt("build.compatibleSlots", "Compatible Slots: {slots}", { slots: view.compatibleText }),
+                    )}</span>
+                  </div>
+                </button>
+              </article>`;
+          })
+          .join("")
+      : `<div class="small">${escapeHtml(t("build.none", "No options"))}</div>`;
+
+    const slotMatrixHtml = activeSlots
+      .map((slot) => {
+        const slotId = String((slot && slot.slotId) || "");
+        const slotKind = String((slot && slot.slotKind) || "");
+        const slotClass = disciplineClassName(slotKind);
+        const option = optionViews.find((view) => view.optionId === String(slot && slot.optionId)) || null;
+        const optionTitle = option ? option.title : t("build.emptySlot", "Empty slot");
+        const actionHtml = option
+          ? `<button type="button" class="buildActionButton" data-action="build-deactivate" data-slot-id="${escapeHtml(
+              slotId,
+            )}">${escapeHtml(t("build.deactivate", "Deactivate"))}</button>`
+          : `<span class="small buildHint">${escapeHtml(t("build.slotWaiting", "Awaiting option"))}</span>`;
+        return `
+          <article class="buildSlotMatrixCard ${slotClass} ${option ? "isOccupied" : "isEmpty"}" data-slot-id="${escapeHtml(
+            slotId,
+          )}">
+            <div class="buildSlotMatrixHeader">
+              <span class="disciplineMark ${slotClass}">${escapeHtml(slotTitle(slot, t))}</span>
+            </div>
+            <strong class="buildSlotMatrixName">${escapeHtml(optionTitle)}</strong>
+            <div class="buildSlotMatrixActions">${actionHtml}</div>
+          </article>`;
+      })
+      .join("");
+
+    let detailHtml = `
+      <section class="card buildSelectedOptionPanel buildStaticPanel">
         <div class="small buildPanelEyebrow">${escapeHtml(t("build.focusTitle", "Focused Option"))}</div>
         <h2>${escapeHtml(t("build.availableOptions", "Available Options"))}</h2>
         <div class="small">${escapeHtml(t("build.focusEmpty", "Unlock or activate an option to inspect it here."))}</div>
       </section>`;
 
-    if (focusOptionView) {
-      const focusDisciplineLabel = t("build." + focusOptionView.discipline, humanizeDiscipline(focusOptionView.discipline));
-      const focusSlotLabel = focusOptionView.activeSlot ? slotTitle(focusOptionView.activeSlot, t) : t("build.none", "No options");
-      focusHtml = `
-        <section id="buildDetailPanel" class="card buildPanelSection buildFocusPanel buildStaticPanel ${focusOptionView.disciplineClass}">
+    if (focusedView) {
+      const slotLabel = focusedView.activeSlot ? slotTitle(focusedView.activeSlot, t) : t("build.none", "No options");
+      const themeName = themeLabel(selectedDiscipline, focusedView.themeId, null, t);
+      detailHtml = `
+        <section class="card buildSelectedOptionPanel buildStaticPanel ${focusedView.disciplineClass}">
           <div class="small buildPanelEyebrow">${escapeHtml(t("build.focusTitle", "Focused Option"))}</div>
-          <h2>${escapeHtml(focusOptionView.title)}</h2>
+          <h2>${escapeHtml(focusedView.title)}</h2>
           <div class="buildFocusStateRow">
-            <span class="disciplineMark ${focusOptionView.disciplineClass}">${escapeHtml(focusDisciplineLabel)}</span>
-            <span class="pill">${escapeHtml(focusOptionView.stateText)}</span>
+            <span class="disciplineMark ${focusedView.disciplineClass}">${escapeHtml(
+              disciplineLabel(focusedView.discipline, t),
+            )}</span>
+            <span class="buildCatalogState ${focusedView.stateClass}">${escapeHtml(focusedView.stateText)}</span>
           </div>
-          <div class="small buildFocusDescription">${escapeHtml(focusOptionView.description)}</div>
+          <div class="small buildFocusDescription">${escapeHtml(focusedView.description)}</div>
           <div class="buildFocusMeta">
             <div class="buildFocusMetaItem">
+              <span class="small">${escapeHtml(t("build.themeLabel", "Theme"))}</span>
+              <strong>${escapeHtml(themeName)}</strong>
+            </div>
+            <div class="buildFocusMetaItem">
               <span class="small">${escapeHtml(t("build.requiresScoreLabel", "Unlock"))}</span>
-              <strong>${escapeHtml(focusOptionView.unlockText)}</strong>
+              <strong>${escapeHtml(focusedView.unlockText)}</strong>
             </div>
             <div class="buildFocusMetaItem">
               <span class="small">${escapeHtml(t("build.compatibleSlotsLabel", "Compatible Slots"))}</span>
-              <strong>${escapeHtml(focusOptionView.compatibleText)}</strong>
+              <strong>${escapeHtml(focusedView.compatibleText)}</strong>
             </div>
             <div class="buildFocusMetaItem">
               <span class="small">${escapeHtml(t("build.activeSlotLabel", "Current Slot"))}</span>
-              <strong>${escapeHtml(focusSlotLabel)}</strong>
+              <strong>${escapeHtml(slotLabel)}</strong>
             </div>
           </div>
-          <div class="buildFocusActions">${focusOptionView.actionHtml}</div>
+          <div class="buildFocusActions">${focusedView.actionHtml}</div>
         </section>`;
     }
 
@@ -357,32 +588,39 @@
         <div id="buildMigrationNotice" class="buildMigrationNotice${migrationParts.length ? "" : " isEmpty"}">
           ${migrationParts.join("")}
         </div>
-        <div class="buildPanels buildShrineGrid buildFixedSurface">
-          <section id="buildCardsPanel" class="card buildPanelSection buildOptionRail">
-            <div class="buildOptionRailHeader">
+        <div class="buildCatalogShell buildFixedSurface">
+          <div class="buildCatalogLayout">
+            <aside class="card buildDisciplineRail buildStaticPanel">
               <div class="small buildPanelEyebrow">${escapeHtml(t("build.disciplineLedger", "Discipline"))}</div>
-              <h2>${escapeHtml(t("build.availableOptions", "Available Options"))}</h2>
-              <div class="small buildOptionRailLead">${escapeHtml(
-                t("build.help", "Build score opens options permanently, but only your active slots apply to the current build."),
-              )}</div>
-            </div>
-            <div id="buildCardsScroller" class="buildOptionRailBody" data-wheel-surface="build-options">
-              <div class="buildCardsGrid">
-                ${cardsHtml}
+              <div class="buildDisciplineRailBody">
+                ${disciplineRailHtml}
               </div>
-            </div>
-          </section>
-          <section id="buildSlotsPanel" class="card buildPanelSection buildAltarPanel buildStaticPanel">
-            <div class="small buildPanelEyebrow">${escapeHtml(t("build.altarTitle", "Build Shrine"))}</div>
-            <h2>${escapeHtml(t("build.activeSlots", "Active Slots"))}</h2>
-            <div class="small buildActionLegend">${escapeHtml(
-              `${t("build.activate", "Activate")} / ${t("build.deactivate", "Deactivate")} / ${t("build.swap", "Swap")}`,
-            )}</div>
-            <div class="buildSlotStage">
-              <div class="buildSlotCluster">${slotHtml || ""}</div>
-            </div>
-          </section>
-          ${focusHtml}
+            </aside>
+            <section class="card buildCatalogPanel buildStaticPanel">
+              <div class="buildCatalogHeader">
+                <div class="small buildPanelEyebrow">${escapeHtml(t("build.availableOptions", "Available Options"))}</div>
+                <h2>${escapeHtml(themeLabel(selectedDiscipline, selectedTheme, null, t))}</h2>
+                <div class="small buildCatalogLead">${escapeHtml(
+                  t("build.help", "Build score opens options permanently, but only your active slots apply to the current build."),
+                )}</div>
+              </div>
+              <div class="buildThemeTabs">
+                ${themeTabsHtml}
+              </div>
+              <div id="buildCatalogScroller" class="buildCatalogScroller" data-wheel-surface="build-options">
+                <div class="buildCatalogRows">${catalogRowsHtml}</div>
+              </div>
+            </section>
+            <aside class="buildDetailRail">
+              ${detailHtml}
+              <section class="card buildSlotSummaryPanel buildStaticPanel">
+                <div class="small buildPanelEyebrow">${escapeHtml(t("build.activeSlots", "Active Slots"))}</div>
+                <div class="buildSlotMatrix">
+                  ${slotMatrixHtml}
+                </div>
+              </section>
+            </aside>
+          </div>
         </div>
       </div>`;
   }

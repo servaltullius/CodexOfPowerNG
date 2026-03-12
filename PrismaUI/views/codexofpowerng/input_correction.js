@@ -81,7 +81,7 @@
       if (fromOption) return fromOption;
     }
     if (!doc || typeof doc.getElementById !== "function") return rootEl;
-    return doc.getElementById("buildCardsScroller") || rootEl;
+    return doc.getElementById("buildCatalogScroller") || doc.getElementById("buildCardsScroller") || rootEl;
   }
 
   function resolveQuickWheelContainer(doc, rootEl, options) {

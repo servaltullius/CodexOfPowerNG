@@ -10,6 +10,9 @@ namespace CodexOfPowerNG::Builds
 			BuildOptionDef{
 				"build.attack.ferocity",
 				BuildDiscipline::Attack,
+				"devastation",
+				"build.theme.attack.devastation",
+				"signpost",
 				BuildLayer::Slotted,
 				5u,
 				BuildSlotCompatibility::SameOrWildcard,
@@ -24,6 +27,9 @@ namespace CodexOfPowerNG::Builds
 			BuildOptionDef{
 				"build.attack.precision",
 				BuildDiscipline::Attack,
+				"precision",
+				"build.theme.attack.precision",
+				"standard",
 				BuildLayer::Slotted,
 				15u,
 				BuildSlotCompatibility::SameOrWildcard,
@@ -38,6 +44,9 @@ namespace CodexOfPowerNG::Builds
 			BuildOptionDef{
 				"build.attack.vitals",
 				BuildDiscipline::Attack,
+				"precision",
+				"build.theme.attack.precision",
+				"special",
 				BuildLayer::Slotted,
 				30u,
 				BuildSlotCompatibility::SameOrWildcard,
@@ -52,6 +61,9 @@ namespace CodexOfPowerNG::Builds
 			BuildOptionDef{
 				"build.defense.guard",
 				BuildDiscipline::Defense,
+				"guard",
+				"build.theme.defense.guard",
+				"signpost",
 				BuildLayer::Slotted,
 				5u,
 				BuildSlotCompatibility::SameOrWildcard,
@@ -66,6 +78,9 @@ namespace CodexOfPowerNG::Builds
 			BuildOptionDef{
 				"build.defense.bastion",
 				BuildDiscipline::Defense,
+				"bastion",
+				"build.theme.defense.bastion",
+				"standard",
 				BuildLayer::Slotted,
 				15u,
 				BuildSlotCompatibility::SameOrWildcard,
@@ -80,6 +95,9 @@ namespace CodexOfPowerNG::Builds
 			BuildOptionDef{
 				"build.defense.endurance",
 				BuildDiscipline::Defense,
+				"guard",
+				"build.theme.defense.guard",
+				"special",
 				BuildLayer::Slotted,
 				30u,
 				BuildSlotCompatibility::SameOrWildcard,
@@ -94,6 +112,9 @@ namespace CodexOfPowerNG::Builds
 			BuildOptionDef{
 				"build.utility.cache",
 				BuildDiscipline::Utility,
+				"livelihood",
+				"build.theme.utility.livelihood",
+				"signpost",
 				BuildLayer::Slotted,
 				5u,
 				BuildSlotCompatibility::SameOrWildcard,
@@ -108,6 +129,9 @@ namespace CodexOfPowerNG::Builds
 			BuildOptionDef{
 				"build.utility.barter",
 				BuildDiscipline::Utility,
+				"livelihood",
+				"build.theme.utility.livelihood",
+				"standard",
 				BuildLayer::Slotted,
 				15u,
 				BuildSlotCompatibility::SameOrWildcard,
@@ -122,6 +146,9 @@ namespace CodexOfPowerNG::Builds
 			BuildOptionDef{
 				"build.utility.mobility",
 				BuildDiscipline::Utility,
+				"exploration",
+				"build.theme.utility.exploration",
+				"signpost",
 				BuildLayer::Slotted,
 				30u,
 				BuildSlotCompatibility::SameOrWildcard,

@@ -41,7 +41,31 @@ test("build panel module renders slot actions and grouped discipline sections", 
         defense: { score: 4, unlockedBaselineCount: 0 },
         utility: { score: 7, unlockedBaselineCount: 0 },
       },
-      options: [],
+      selectedDiscipline: "attack",
+      selectedTheme: "devastation",
+      selectedOptionId: "build.attack.ferocity",
+      themeMap: {
+        attack: [
+          { id: "devastation", titleKey: "build.theme.attack.devastation", optionCount: 1 },
+          { id: "precision", titleKey: "build.theme.attack.precision", optionCount: 0 },
+        ],
+        defense: [{ id: "guard", titleKey: "build.theme.defense.guard", optionCount: 0 }],
+        utility: [{ id: "livelihood", titleKey: "build.theme.utility.livelihood", optionCount: 0 }],
+      },
+      options: [
+        {
+          id: "build.attack.ferocity",
+          discipline: "attack",
+          themeId: "devastation",
+          themeTitleKey: "build.theme.attack.devastation",
+          hierarchy: "signpost",
+          titleKey: "build.attack.ferocity.title",
+          descriptionKey: "build.attack.ferocity.description",
+          unlockScore: 5,
+          unlocked: true,
+          slotCompatibility: "same_or_wildcard",
+        },
+      ],
       activeSlots: [
         { slotId: "attack_1", slotKind: "attack", optionId: "build.attack.ferocity", occupied: true },
         { slotId: "attack_2", slotKind: "attack", optionId: null, occupied: false },
@@ -63,9 +87,13 @@ test("build panel module renders slot actions and grouped discipline sections", 
       escapeHtml: (value) => String(value == null ? "" : value),
     },
   );
+  assert.match(htmlOut, /buildDisciplineButton/);
+  assert.match(htmlOut, /buildThemeTab/);
+  assert.match(htmlOut, /buildCatalogScroller/);
+  assert.match(htmlOut, /buildSelectedOptionPanel/);
   assert.match(htmlOut, /Active Slots/);
   assert.match(htmlOut, /Attack/);
-  assert.match(htmlOut, /Deactivate|Swap/);
+  assert.match(htmlOut, /Deactivate/);
 });
 
 test("build panel rerenders on resize", () => {
@@ -90,5 +118,5 @@ test("build panel strings exist in both locales", () => {
     /"build\.help": "빌드 점수로 해금한 옵션은 영구 보유되지만, 현재 빌드에는 활성 슬롯에 넣은 효과만 적용됩니다\."/,
   );
   assert.doesNotMatch(html, /class="small buildHelp"/);
-  assert.match(buildPanelModuleSource, /buildOptionRailLead/);
+  assert.match(buildPanelModuleSource, /buildCatalogLead/);
 });

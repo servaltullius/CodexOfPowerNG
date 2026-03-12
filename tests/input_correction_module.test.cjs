@@ -258,13 +258,13 @@ test("installDirectWheelScroll uses a smaller immediate step on Build", () => {
   assert.equal(rootEl.listenerCount("wheel"), 0);
 });
 
-test("installDirectWheelScroll routes Build wheel input to the option rail scroller when available", () => {
+test("installDirectWheelScroll routes Build wheel input to the catalog scroller when available", () => {
   const rootEl = makeEventTarget({
     scrollTop: 0,
     scrollHeight: 1600,
     clientHeight: 400,
   });
-  const buildCardsScroller = {
+  const buildCatalogScroller = {
     scrollTop: 0,
     scrollHeight: 2000,
     clientHeight: 360,
@@ -277,7 +277,7 @@ test("installDirectWheelScroll routes Build wheel input to the option rail scrol
         return rootEl;
       },
       getElementById(id) {
-        if (id === "buildCardsScroller") return buildCardsScroller;
+        if (id === "buildCatalogScroller") return buildCatalogScroller;
         return null;
       },
     },
@@ -296,8 +296,8 @@ test("installDirectWheelScroll routes Build wheel input to the option rail scrol
     stopPropagation: () => {},
   });
 
-  assert.equal(rootEl.scrollTop, 0, "Build root should stay fixed when the option rail scroller is available");
-  assert.equal(buildCardsScroller.scrollTop, 24, "Build wheel should advance the option rail scroller");
+  assert.equal(rootEl.scrollTop, 0, "Build root should stay fixed when the catalog scroller is available");
+  assert.equal(buildCatalogScroller.scrollTop, 24, "Build wheel should advance the catalog scroller");
 
   detach();
   assert.equal(rootEl.listenerCount("wheel"), 0);

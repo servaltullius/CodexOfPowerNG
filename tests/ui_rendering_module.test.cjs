@@ -35,6 +35,7 @@ test("index delegates render layer to ui_rendering module", () => {
   assert.match(html, /<div class="heroTop">[\s\S]*<div class="heroMain">[\s\S]*<div class="heroBottom">[\s\S]*id="status"[\s\S]*data-tab="tabBuild"[\s\S]*<div class="heroAside">[\s\S]*id="btnRefreshState"[\s\S]*id="btnClose"/);
   assert.match(html, /rewardCharacterImgEl/);
   assert.match(html, /rewardImageFallbackEl/);
+  assert.match(html, /getBuildSelection:\s*uiState\.getBuildSelection/);
   assert.match(html, /const \{\s*applyI18n,[\s\S]*renderSettings,[\s\S]*\} = uiRendering;/);
   assert.doesNotMatch(html, /function renderStatus\(/);
   assert.doesNotMatch(html, /function renderQuick\(/);
@@ -87,6 +88,7 @@ test("ui_rendering module owns i18n, tab, and list/build/settings renderers", ()
   assert.match(moduleSource, /function renderRegistered\(/);
   assert.match(moduleSource, /function renderUndo\(/);
   assert.match(moduleSource, /function renderBuild\(/);
+  assert.match(moduleSource, /const buildSelection = getBuildSelection\(\) \|\| \{\};/);
   assert.match(moduleSource, /function renderSettings\(/);
 });
 

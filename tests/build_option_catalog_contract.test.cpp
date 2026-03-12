@@ -87,7 +87,51 @@ namespace
 	bool AllOptionsDeclareRequiredPresentationFields()
 	{
 		for (const auto& option : GetBuildOptionCatalog()) {
-			if (option.titleKey.empty() || option.descriptionKey.empty() || option.effectKey.empty()) {
+			if (option.titleKey.empty() ||
+				option.descriptionKey.empty() ||
+				option.effectKey.empty() ||
+				option.themeId.empty() ||
+				option.themeTitleKey.empty() ||
+				option.hierarchy.empty()) {
+				return false;
+			}
+		}
+		return true;
+	}
+
+	bool AllOptionsUseStableThemeAndHierarchyIds()
+	{
+		for (const auto& option : GetBuildOptionCatalog()) {
+			const auto hierarchy = option.hierarchy;
+			if (hierarchy != "signpost" &&
+				hierarchy != "standard" &&
+				hierarchy != "special") {
+				return false;
+			}
+
+			switch (option.discipline) {
+			case BuildDiscipline::Attack:
+				if (option.themeId != "devastation" &&
+					option.themeId != "precision" &&
+					option.themeId != "fury") {
+					return false;
+				}
+				break;
+			case BuildDiscipline::Defense:
+				if (option.themeId != "guard" &&
+					option.themeId != "bastion" &&
+					option.themeId != "resistance") {
+					return false;
+				}
+				break;
+			case BuildDiscipline::Utility:
+				if (option.themeId != "livelihood" &&
+					option.themeId != "exploration" &&
+					option.themeId != "trickery") {
+					return false;
+				}
+				break;
+			default:
 				return false;
 			}
 		}
@@ -125,21 +169,24 @@ namespace
 		{
 			std::string_view id;
 			BuildDiscipline discipline;
+			std::string_view themeId;
+			std::string_view themeTitleKey;
+			std::string_view hierarchy;
 			std::uint32_t unlockScore;
 			BuildEffectType effectType;
 			std::string_view effectKey;
 		};
 
 		constexpr std::array expectedOptions{
-			ExpectedOption{ "build.attack.ferocity", BuildDiscipline::Attack, 5u, BuildEffectType::ActorValue, "attack_damage_mult" },
-			ExpectedOption{ "build.attack.precision", BuildDiscipline::Attack, 15u, BuildEffectType::ActorValue, "weapon_speed_mult" },
-			ExpectedOption{ "build.attack.vitals", BuildDiscipline::Attack, 30u, BuildEffectType::ActorValue, "critical_chance" },
-			ExpectedOption{ "build.defense.guard", BuildDiscipline::Defense, 5u, BuildEffectType::ActorValue, "damage_resist" },
-			ExpectedOption{ "build.defense.bastion", BuildDiscipline::Defense, 15u, BuildEffectType::ActorValue, "block_power_modifier" },
-			ExpectedOption{ "build.defense.endurance", BuildDiscipline::Defense, 30u, BuildEffectType::ActorValue, "health" },
-			ExpectedOption{ "build.utility.cache", BuildDiscipline::Utility, 5u, BuildEffectType::CarryWeight, "carry_weight" },
-			ExpectedOption{ "build.utility.barter", BuildDiscipline::Utility, 15u, BuildEffectType::Economy, "speechcraft_modifier" },
-			ExpectedOption{ "build.utility.mobility", BuildDiscipline::Utility, 30u, BuildEffectType::ActorValue, "speed_mult" },
+			ExpectedOption{ "build.attack.ferocity", BuildDiscipline::Attack, "devastation", "build.theme.attack.devastation", "signpost", 5u, BuildEffectType::ActorValue, "attack_damage_mult" },
+			ExpectedOption{ "build.attack.precision", BuildDiscipline::Attack, "precision", "build.theme.attack.precision", "standard", 15u, BuildEffectType::ActorValue, "weapon_speed_mult" },
+			ExpectedOption{ "build.attack.vitals", BuildDiscipline::Attack, "precision", "build.theme.attack.precision", "special", 30u, BuildEffectType::ActorValue, "critical_chance" },
+			ExpectedOption{ "build.defense.guard", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "signpost", 5u, BuildEffectType::ActorValue, "damage_resist" },
+			ExpectedOption{ "build.defense.bastion", BuildDiscipline::Defense, "bastion", "build.theme.defense.bastion", "standard", 15u, BuildEffectType::ActorValue, "block_power_modifier" },
+			ExpectedOption{ "build.defense.endurance", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "special", 30u, BuildEffectType::ActorValue, "health" },
+			ExpectedOption{ "build.utility.cache", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "signpost", 5u, BuildEffectType::CarryWeight, "carry_weight" },
+			ExpectedOption{ "build.utility.barter", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 15u, BuildEffectType::Economy, "speechcraft_modifier" },
+			ExpectedOption{ "build.utility.mobility", BuildDiscipline::Utility, "exploration", "build.theme.utility.exploration", "signpost", 30u, BuildEffectType::ActorValue, "speed_mult" },
 		};
 
 		const auto actual = GetBuildOptionCatalog();
@@ -152,6 +199,9 @@ namespace
 			const auto& option = actual[i];
 			if (option.id != expected.id ||
 				option.discipline != expected.discipline ||
+				option.themeId != expected.themeId ||
+				option.themeTitleKey != expected.themeTitleKey ||
+				option.hierarchy != expected.hierarchy ||
 				option.unlockScore != expected.unlockScore ||
 				option.effectType != expected.effectType ||
 				option.effectKey != expected.effectKey) {
@@ -225,6 +275,9 @@ int main()
 		return 1;
 	}
 	if (!expect(AllOptionsDeclareRequiredPresentationFields(), "options must declare presentation fields")) {
+		return 1;
+	}
+	if (!expect(AllOptionsUseStableThemeAndHierarchyIds(), "options must use stable theme ids and hierarchy values")) {
 		return 1;
 	}
 	if (!expect(AllOptionsDeclareEffectPayloads(), "options must declare effect payloads")) {

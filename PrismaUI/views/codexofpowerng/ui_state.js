@@ -37,6 +37,21 @@
         defense: { score: 0, unlockedBaselineCount: 0 },
         utility: { score: 0, unlockedBaselineCount: 0 },
       },
+      themeMap: {
+        attack: [],
+        defense: [],
+        utility: [],
+      },
+      groupedCatalog: {
+        attack: { discipline: "attack", themes: [] },
+        defense: { discipline: "defense", themes: [] },
+        utility: { discipline: "utility", themes: [] },
+      },
+      selectedDiscipline: "",
+      selectedTheme: "",
+      selectedOptionId: "",
+      selectedThemeRows: [],
+      selectedOptionDetail: null,
       options: [],
       activeSlots: [],
       migrationNotice: {
@@ -45,6 +60,35 @@
         unresolvedHistoricalRegistrations: 0,
       },
     };
+  }
+
+  function normalizeBuildDisciplineId(value) {
+    const normalized = String(value || "").toLowerCase();
+    if (normalized === "attack" || normalized === "defense" || normalized === "utility") return normalized;
+    return "";
+  }
+
+  function inferBuildThemeId(option) {
+    const explicit = String((option && option.themeId) || "").toLowerCase();
+    if (explicit) return explicit;
+
+    const id = String((option && option.id) || "").toLowerCase();
+    if (id.indexOf(".attack.") !== -1) {
+      if (id.indexOf("precision") !== -1 || id.indexOf("vitals") !== -1) return "precision";
+      if (id.indexOf("ferocity") !== -1) return "devastation";
+      return "fury";
+    }
+    if (id.indexOf(".defense.") !== -1) {
+      if (id.indexOf("guard") !== -1 || id.indexOf("endurance") !== -1) return "guard";
+      if (id.indexOf("bastion") !== -1) return "bastion";
+      return "resistance";
+    }
+    if (id.indexOf(".utility.") !== -1) {
+      if (id.indexOf("cache") !== -1 || id.indexOf("barter") !== -1) return "livelihood";
+      if (id.indexOf("mobility") !== -1) return "exploration";
+      return "trickery";
+    }
+    return "";
   }
 
   function createUIState(opts) {
@@ -80,6 +124,7 @@
     const regVirtual = { rows: [], lastStart: -1, lastEnd: -1, tbodyTopPx: NaN, rowHeightPx: 0 };
     let rewards = { totals: [] };
     let build = createDefaultBuildState();
+    let buildSelection = { discipline: "attack", theme: "", optionId: "" };
     let settings = null;
     let keyNavRaf = 0;
 
@@ -388,6 +433,190 @@
       updateToggleKeyResolved();
     }
 
+    function getBuildThemeMap(nextBuild) {
+      const source = nextBuild && typeof nextBuild === "object" ? nextBuild : build;
+      const explicitMap = source && source.themeMap && typeof source.themeMap === "object" ? source.themeMap : null;
+      if (explicitMap) return explicitMap;
+
+      const derived = {
+        attack: [],
+        defense: [],
+        utility: [],
+      };
+      const options = Array.isArray(source && source.options) ? source.options : [];
+      for (const option of options) {
+        const discipline = normalizeBuildDisciplineId(option && option.discipline);
+        const themeId = inferBuildThemeId(option);
+        if (!discipline || !themeId) continue;
+        const existing = derived[discipline].find((theme) => theme && theme.id === themeId);
+        if (existing) {
+          existing.optionCount = Number(existing.optionCount || 0) + 1;
+          continue;
+        }
+        derived[discipline].push({
+          id: themeId,
+          titleKey: String((option && option.themeTitleKey) || ""),
+          optionCount: 1,
+        });
+      }
+      return derived;
+    }
+
+    function getBuildGroupedCatalog(nextBuild) {
+      const source = nextBuild && typeof nextBuild === "object" ? nextBuild : build;
+      const explicitCatalog =
+        source && source.groupedCatalog && typeof source.groupedCatalog === "object" ? source.groupedCatalog : null;
+      if (explicitCatalog) return explicitCatalog;
+
+      const themeMap = getBuildThemeMap(source);
+      const options = Array.isArray(source && source.options) ? source.options : [];
+      const derived = {
+        attack: { discipline: "attack", themes: [] },
+        defense: { discipline: "defense", themes: [] },
+        utility: { discipline: "utility", themes: [] },
+      };
+
+      for (const discipline of ["attack", "defense", "utility"]) {
+        const themes = Array.isArray(themeMap[discipline]) ? themeMap[discipline] : [];
+        derived[discipline].themes = themes.map((theme) => {
+          const themeId = String((theme && theme.id) || "").toLowerCase();
+          const rows = options.filter((option) => {
+            if (normalizeBuildDisciplineId(option && option.discipline) !== discipline) return false;
+            return !themeId || inferBuildThemeId(option) === themeId;
+          });
+          return {
+            id: themeId,
+            titleKey: String((theme && theme.titleKey) || ""),
+            optionCount: Number((theme && theme.optionCount) || rows.length || 0) >>> 0,
+            rows,
+          };
+        });
+      }
+
+      return derived;
+    }
+
+    function getBuildThemesForDiscipline(nextDiscipline, nextBuild) {
+      const discipline = normalizeBuildDisciplineId(nextDiscipline);
+      if (!discipline) return [];
+      const groupedCatalog = getBuildGroupedCatalog(nextBuild);
+      const groupedRows =
+        groupedCatalog &&
+        groupedCatalog[discipline] &&
+        Array.isArray(groupedCatalog[discipline].themes)
+          ? groupedCatalog[discipline].themes
+          : null;
+      const rows = groupedRows || (Array.isArray(getBuildThemeMap(nextBuild)[discipline]) ? getBuildThemeMap(nextBuild)[discipline] : []);
+      return rows
+        .map((row) => ({
+          id: String((row && row.id) || "").toLowerCase(),
+          titleKey: String((row && row.titleKey) || ""),
+          optionCount:
+            Number((row && row.optionCount) || (Array.isArray(row && row.rows) ? row.rows.length : 0) || 0) >>> 0,
+        }))
+        .filter((row) => row.id);
+    }
+
+    function getBuildRowsForSelection(selection, nextBuild) {
+      const source = nextBuild && typeof nextBuild === "object" ? nextBuild : build;
+      const selected = selection && typeof selection === "object" ? selection : buildSelection;
+      const discipline = normalizeBuildDisciplineId(selected && selected.discipline);
+      const themeId = String((selected && selected.theme) || "").toLowerCase();
+      const payloadDiscipline = normalizeBuildDisciplineId(source && source.selectedDiscipline);
+      const payloadThemeId = String((source && source.selectedTheme) || "").toLowerCase();
+      if (
+        discipline &&
+        discipline === payloadDiscipline &&
+        themeId &&
+        themeId === payloadThemeId &&
+        Array.isArray(source && source.selectedThemeRows) &&
+        source.selectedThemeRows.length
+      ) {
+        return source.selectedThemeRows.slice();
+      }
+
+      const groupedCatalog = getBuildGroupedCatalog(source);
+      const groupedThemes =
+        groupedCatalog &&
+        groupedCatalog[discipline] &&
+        Array.isArray(groupedCatalog[discipline].themes)
+          ? groupedCatalog[discipline].themes
+          : [];
+      if (groupedThemes.length) {
+        if (!themeId) {
+          return groupedThemes.flatMap((theme) => (Array.isArray(theme && theme.rows) ? theme.rows : []));
+        }
+        const selectedTheme = groupedThemes.find((theme) => String((theme && theme.id) || "").toLowerCase() === themeId);
+        if (selectedTheme && Array.isArray(selectedTheme.rows)) {
+          return selectedTheme.rows.slice();
+        }
+      }
+
+      const rows = Array.isArray(source && source.options) ? source.options : [];
+      return rows.filter((option) => {
+        const optionDiscipline = normalizeBuildDisciplineId(option && option.discipline);
+        if (!discipline || optionDiscipline !== discipline) return false;
+        if (!themeId) return true;
+        return inferBuildThemeId(option) === themeId;
+      });
+    }
+
+    function ensureBuildSelection() {
+      const disciplines = ["attack", "defense", "utility"];
+      const themeMap = getBuildThemeMap(build);
+      const options = Array.isArray(build && build.options) ? build.options : [];
+      let discipline = normalizeBuildDisciplineId(buildSelection.discipline || build.selectedDiscipline);
+      if (!discipline) {
+        discipline =
+          disciplines.find((candidate) => getBuildThemesForDiscipline(candidate, build).length > 0) ||
+          disciplines.find((candidate) =>
+            options.some((option) => normalizeBuildDisciplineId(option && option.discipline) === candidate),
+          ) ||
+          "attack";
+      }
+
+      const themes = getBuildThemesForDiscipline(discipline, build);
+      let theme = String(buildSelection.theme || build.selectedTheme || "").toLowerCase();
+      if (!themes.some((entry) => entry.id === theme)) {
+        const nonEmptyTheme = themes.find((entry) => Number(entry.optionCount || 0) > 0);
+        theme = String((nonEmptyTheme || themes[0] || {}).id || "");
+      }
+
+      const filteredRows = getBuildRowsForSelection({ discipline, theme }, build);
+      let optionId = String(buildSelection.optionId || build.selectedOptionId || "");
+      if (!filteredRows.some((row) => String((row && row.id) || "") === optionId)) {
+        const activeRow = filteredRows.find((row) =>
+          Array.isArray(build.activeSlots) &&
+          build.activeSlots.some((slot) => String((slot && slot.optionId) || "") === String((row && row.id) || "")),
+        );
+        const unlockedRow = filteredRows.find((row) => !!(row && row.unlocked));
+        optionId = String(((activeRow || unlockedRow || filteredRows[0] || {}).id) || "");
+      }
+
+      buildSelection = { discipline, theme, optionId };
+      return buildSelection;
+    }
+
+    function setBuildSelection(next) {
+      const patch = next && typeof next === "object" ? next : {};
+      buildSelection = {
+        discipline:
+          patch.discipline === ""
+            ? ""
+            : normalizeBuildDisciplineId(Object.prototype.hasOwnProperty.call(patch, "discipline") ? patch.discipline : buildSelection.discipline) ||
+              buildSelection.discipline,
+        theme:
+          patch.theme === undefined
+            ? buildSelection.theme
+            : String(patch.theme || "").toLowerCase(),
+        optionId:
+          patch.optionId === undefined
+            ? buildSelection.optionId
+            : String(patch.optionId || ""),
+      };
+      return ensureBuildSelection();
+    }
+
     loadInputScalePref();
     loadPerfModePref();
 
@@ -440,7 +669,17 @@
       getBuild: () => build,
       setBuild: (next) => {
         build = next || createDefaultBuildState();
+        ensureBuildSelection();
       },
+      getBuildSelection: () => ensureBuildSelection(),
+      setBuildSelection,
+      getBuildSelectedDiscipline: () => ensureBuildSelection().discipline,
+      getBuildSelectedTheme: () => ensureBuildSelection().theme,
+      getBuildSelectedOptionId: () => ensureBuildSelection().optionId,
+      getBuildThemeMap: () => getBuildThemeMap(build),
+      getBuildGroupedCatalog: () => getBuildGroupedCatalog(build),
+      getBuildThemesForDiscipline: (discipline) => getBuildThemesForDiscipline(discipline, build),
+      getBuildRowsForSelection: (selection) => getBuildRowsForSelection(selection, build),
       getSettings: () => settings,
       setSettings: (next) => {
         settings = next;

@@ -123,6 +123,11 @@
         unresolvedHistoricalRegistrations: 0,
       },
     }));
+    const getBuildSelection = asFn(options.getBuildSelection, () => ({
+      discipline: "attack",
+      theme: "",
+      optionId: "",
+    }));
     const getRewards = asFn(options.getRewards, () => ({ totals: [] }));
     const getSettings = asFn(options.getSettings, () => null);
     const getInputScale = asFn(options.getInputScale, () => 1);
@@ -606,6 +611,7 @@
 
     function renderBuild() {
       const build = getBuild() || {};
+      const buildSelection = getBuildSelection() || {};
       const disciplines = build.disciplines || {};
       if (refs.buildMetaEl) {
         refs.buildMetaEl.textContent = tFmt("build.scoreSummary", "Attack {attack} / Defense {defense} / Utility {utility}", {
@@ -616,11 +622,14 @@
       }
       if (!refs.buildPanelEl) return;
       if (buildPanelApi && typeof buildPanelApi.renderBuildPanelHtml === "function") {
-        refs.buildPanelEl.innerHTML = buildPanelApi.renderBuildPanelHtml(build, {
+        refs.buildPanelEl.innerHTML = buildPanelApi.renderBuildPanelHtml(
+          Object.assign({}, build, { buildSelection }),
+          {
           t,
           tFmt,
           escapeHtml,
-        });
+          },
+        );
         syncBuildViewportHeight();
         syncRewardCharacterImageState();
         return;

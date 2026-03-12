@@ -1,0 +1,338 @@
+{
+  "version": 1,
+  "disciplineThemes": {
+    "attack": ["devastation", "precision", "fury"],
+    "defense": ["guard", "bastion", "resistance"],
+    "utility": ["livelihood", "exploration", "trickery"]
+  },
+  "entries": [
+    {
+      "id": "skill.oneHanded",
+      "discipline": "attack",
+      "theme": "devastation",
+      "hierarchy": "standard",
+      "sources": ["weapon"],
+      "notes": "Legacy skill reward; maps to direct martial damage."
+    },
+    {
+      "id": "skill.twoHanded",
+      "discipline": "attack",
+      "theme": "devastation",
+      "hierarchy": "standard",
+      "sources": ["weapon"],
+      "notes": "Legacy skill reward; maps to direct martial damage."
+    },
+    {
+      "id": "skill.marksman",
+      "discipline": "attack",
+      "theme": "precision",
+      "hierarchy": "standard",
+      "sources": ["weapon"],
+      "notes": "Legacy archery skill reward; grouped under accuracy/weak-point play."
+    },
+    {
+      "id": "av.critChance",
+      "discipline": "attack",
+      "theme": "precision",
+      "hierarchy": "special",
+      "sources": ["weapon", "misc"],
+      "notes": "High-impact finisher stat."
+    },
+    {
+      "id": "av.unarmedDamage",
+      "discipline": "attack",
+      "theme": "devastation",
+      "hierarchy": "special",
+      "sources": ["weapon"],
+      "notes": "Direct damage outlier; still fits brute-force attack power."
+    },
+    {
+      "id": "av.stamina",
+      "discipline": "attack",
+      "theme": "fury",
+      "hierarchy": "signpost",
+      "sources": ["weapon", "consumable", "ingredient"],
+      "notes": "Combat resource pool for sustained offense."
+    },
+    {
+      "id": "av.staminaRate",
+      "discipline": "attack",
+      "theme": "fury",
+      "hierarchy": "standard",
+      "sources": ["weapon", "consumable", "ingredient", "misc"],
+      "notes": "Combat tempo sustain."
+    },
+    {
+      "id": "av.damageResist",
+      "discipline": "defense",
+      "theme": "guard",
+      "hierarchy": "signpost",
+      "sources": ["armor"],
+      "notes": "Primary broad survivability stat."
+    },
+    {
+      "id": "av.health",
+      "discipline": "defense",
+      "theme": "guard",
+      "hierarchy": "standard",
+      "sources": ["armor", "consumable", "ingredient", "misc"],
+      "notes": "Baseline survivability pool."
+    },
+    {
+      "id": "av.healRate",
+      "discipline": "defense",
+      "theme": "guard",
+      "hierarchy": "standard",
+      "sources": ["armor", "consumable", "ingredient", "misc"],
+      "notes": "Passive sustain; still core guard identity."
+    },
+    {
+      "id": "skill.heavyArmor",
+      "discipline": "defense",
+      "theme": "bastion",
+      "hierarchy": "standard",
+      "sources": ["armor"],
+      "notes": "Armor handling skill; grouped with controlled mitigation."
+    },
+    {
+      "id": "skill.lightArmor",
+      "discipline": "defense",
+      "theme": "bastion",
+      "hierarchy": "standard",
+      "sources": ["armor"],
+      "notes": "Armor handling skill; grouped with controlled mitigation."
+    },
+    {
+      "id": "skill.block",
+      "discipline": "defense",
+      "theme": "bastion",
+      "hierarchy": "signpost",
+      "sources": ["armor"],
+      "notes": "Block-focused mitigation identity."
+    },
+    {
+      "id": "av.reflectDamage",
+      "discipline": "defense",
+      "theme": "bastion",
+      "hierarchy": "special",
+      "sources": ["armor"],
+      "notes": "Reactive defense payoff."
+    },
+    {
+      "id": "av.magicResist",
+      "discipline": "defense",
+      "theme": "resistance",
+      "hierarchy": "signpost",
+      "sources": ["armor", "consumable"],
+      "notes": "Primary general-purpose resistance theme marker."
+    },
+    {
+      "id": "av.fireResist",
+      "discipline": "defense",
+      "theme": "resistance",
+      "hierarchy": "standard",
+      "sources": ["armor", "consumable"],
+      "notes": "Elemental resistance bucket."
+    },
+    {
+      "id": "av.frostResist",
+      "discipline": "defense",
+      "theme": "resistance",
+      "hierarchy": "standard",
+      "sources": ["armor", "consumable"],
+      "notes": "Elemental resistance bucket."
+    },
+    {
+      "id": "av.electricResist",
+      "discipline": "defense",
+      "theme": "resistance",
+      "hierarchy": "standard",
+      "sources": ["armor", "consumable"],
+      "notes": "Elemental resistance bucket."
+    },
+    {
+      "id": "av.poisonResist",
+      "discipline": "defense",
+      "theme": "resistance",
+      "hierarchy": "standard",
+      "sources": ["ingredient"],
+      "notes": "Status resistance stays in the same elemental/magical defense family."
+    },
+    {
+      "id": "av.diseaseResist",
+      "discipline": "defense",
+      "theme": "resistance",
+      "hierarchy": "standard",
+      "sources": ["ingredient"],
+      "notes": "Status resistance stays in the same elemental/magical defense family."
+    },
+    {
+      "id": "av.absorbChance",
+      "discipline": "defense",
+      "theme": "resistance",
+      "hierarchy": "special",
+      "sources": ["book"],
+      "notes": "High-impact magical mitigation capstone candidate."
+    },
+    {
+      "id": "av.carryWeight",
+      "discipline": "utility",
+      "theme": "livelihood",
+      "hierarchy": "signpost",
+      "sources": ["weapon", "armor", "misc"],
+      "notes": "Core economy/inventory utility."
+    },
+    {
+      "id": "av.speechcraftMod",
+      "discipline": "utility",
+      "theme": "livelihood",
+      "hierarchy": "signpost",
+      "sources": ["misc"],
+      "notes": "Economy anchor effect."
+    },
+    {
+      "id": "av.smithingMod",
+      "discipline": "utility",
+      "theme": "livelihood",
+      "hierarchy": "standard",
+      "sources": ["armor", "misc"],
+      "notes": "Crafting support theme."
+    },
+    {
+      "id": "av.alchemyMod",
+      "discipline": "utility",
+      "theme": "livelihood",
+      "hierarchy": "standard",
+      "sources": ["ingredient"],
+      "notes": "Crafting support theme."
+    },
+    {
+      "id": "skill.alchemy",
+      "discipline": "utility",
+      "theme": "livelihood",
+      "hierarchy": "standard",
+      "sources": ["ingredient"],
+      "notes": "Crafting skill reward; stays in livelihood."
+    },
+    {
+      "id": "av.enchantingMod",
+      "discipline": "utility",
+      "theme": "livelihood",
+      "hierarchy": "special",
+      "sources": ["book"],
+      "notes": "High-value crafting specialization."
+    },
+    {
+      "id": "av.magicka",
+      "discipline": "utility",
+      "theme": "livelihood",
+      "hierarchy": "special",
+      "sources": ["consumable", "ingredient"],
+      "notes": "Arcane sustain does not justify a new theme yet; parked under livelihood until utility gains a dedicated arcane branch."
+    },
+    {
+      "id": "av.magickaRate",
+      "discipline": "utility",
+      "theme": "livelihood",
+      "hierarchy": "standard",
+      "sources": ["consumable", "ingredient", "book"],
+      "notes": "Arcane sustain bucket; same note as magicka."
+    },
+    {
+      "id": "av.speedMult",
+      "discipline": "utility",
+      "theme": "exploration",
+      "hierarchy": "signpost",
+      "sources": ["weapon", "armor", "consumable", "misc"],
+      "notes": "Core movement/exploration identity."
+    },
+    {
+      "id": "av.shoutRecoveryMult",
+      "discipline": "utility",
+      "theme": "exploration",
+      "hierarchy": "special",
+      "sources": ["book"],
+      "notes": "Traversal/tempo-adjacent utility with exploration-style pacing impact."
+    },
+    {
+      "id": "av.lockpickingMod",
+      "discipline": "utility",
+      "theme": "trickery",
+      "hierarchy": "standard",
+      "sources": ["misc"],
+      "notes": "Stealth/infiltration utility."
+    },
+    {
+      "id": "av.pickpocketMod",
+      "discipline": "utility",
+      "theme": "trickery",
+      "hierarchy": "standard",
+      "sources": ["misc"],
+      "notes": "Stealth/infiltration utility."
+    },
+    {
+      "id": "av.sneakMod",
+      "discipline": "utility",
+      "theme": "trickery",
+      "hierarchy": "signpost",
+      "sources": ["misc"],
+      "notes": "Primary stealth theme marker."
+    },
+    {
+      "id": "skill.lockpicking",
+      "discipline": "utility",
+      "theme": "trickery",
+      "hierarchy": "standard",
+      "sources": ["misc"],
+      "notes": "Skill reward fallback for infiltration utility."
+    },
+    {
+      "id": "skill.pickpocket",
+      "discipline": "utility",
+      "theme": "trickery",
+      "hierarchy": "standard",
+      "sources": ["misc"],
+      "notes": "Skill reward fallback for infiltration utility."
+    },
+    {
+      "id": "av.destructionMod",
+      "discipline": "attack",
+      "theme": "devastation",
+      "hierarchy": "special",
+      "sources": ["book"],
+      "notes": "Offensive spell efficiency belongs with raw output."
+    },
+    {
+      "id": "av.restorationMod",
+      "discipline": "defense",
+      "theme": "guard",
+      "hierarchy": "special",
+      "sources": ["book"],
+      "notes": "Sustain-focused spell efficiency mapped to guard."
+    },
+    {
+      "id": "av.alterationMod",
+      "discipline": "defense",
+      "theme": "bastion",
+      "hierarchy": "special",
+      "sources": ["book"],
+      "notes": "Protective magic bucket; ambiguous but closest to controlled mitigation."
+    },
+    {
+      "id": "av.conjurationMod",
+      "discipline": "utility",
+      "theme": "trickery",
+      "hierarchy": "special",
+      "sources": ["book"],
+      "notes": "Summoning/control utility; parked under trickery instead of adding an arcane utility theme."
+    },
+    {
+      "id": "av.illusionMod",
+      "discipline": "utility",
+      "theme": "trickery",
+      "hierarchy": "signpost",
+      "sources": ["book"],
+      "notes": "Stealth/control magic aligns with trickery."
+    }
+  ]
+}

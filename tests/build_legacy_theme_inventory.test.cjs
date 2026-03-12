@@ -9,7 +9,7 @@ const inventory = JSON.parse(fs.readFileSync(inventoryPath, "utf8"));
 const EXPECTED_THEME_MAP = Object.freeze({
   attack: ["devastation", "fury", "precision"],
   defense: ["bastion", "guard", "resistance"],
-  utility: ["exploration", "finesse", "livelihood"],
+  utility: ["exploration", "livelihood", "trickery"],
 });
 
 const EXPECTED_HIERARCHY = ["signpost", "special", "standard"];
@@ -40,6 +40,17 @@ const EXPECTED_SUPPORTED_RUNTIME_KEYS = new Set([
   "sneaking_modifier",
   "conjuration_modifier",
   "illusion_modifier",
+  "unarmed_damage",
+  "stamina",
+  "stamina_rate",
+  "destruction_modifier",
+  "heal_rate",
+  "restoration_modifier",
+  "reflect_damage",
+  "alteration_modifier",
+  "magicka",
+  "magicka_rate",
+  "shout_recovery_mult",
 ]);
 const EXPECTED_MIGRATION_ANCHORS = [
   "build.attack.ferocity",

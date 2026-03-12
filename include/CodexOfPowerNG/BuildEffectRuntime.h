@@ -22,6 +22,10 @@ namespace CodexOfPowerNG::Builds
 
 	[[nodiscard]] std::vector<std::pair<RE::ActorValue, float>> ComputeDerivedBuildActorValueTotals(
 		const BuildRuntimeSnapshot& snapshot) noexcept;
+	[[nodiscard]] float ClampBuildSyncDeltaForActorValue(
+		RE::ActorValue av,
+		float          currentActorValue,
+		float          desiredDelta) noexcept;
 
 	void SyncCurrentBuildEffectsToPlayer() noexcept;
 	void ResetForLoad() noexcept;

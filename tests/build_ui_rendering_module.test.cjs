@@ -37,9 +37,13 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
         ],
         defense: [
           { id: "guard", titleKey: "build.theme.defense.guard", optionCount: 1 },
+          { id: "bastion", titleKey: "build.theme.defense.bastion", optionCount: 1 },
+          { id: "resistance", titleKey: "build.theme.defense.resistance", optionCount: 1 },
         ],
         utility: [
           { id: "exploration", titleKey: "build.theme.utility.exploration", optionCount: 1 },
+          { id: "livelihood", titleKey: "build.theme.utility.livelihood", optionCount: 1 },
+          { id: "trickery", titleKey: "build.theme.utility.trickery", optionCount: 1 },
         ],
       },
       groupedCatalog: {
@@ -263,6 +267,70 @@ test("build panel renders supported-first option descriptions from grouped catal
   assert.match(attackHtml, /Pinpoint/);
   assert.match(attackHtml, /\+2% critical chance while this option is slotted\./);
 
+  const devastationHtml = renderSelection(
+    "attack",
+    "devastation",
+    [
+      {
+        id: "build.attack.brawler",
+        discipline: "attack",
+        themeId: "devastation",
+        hierarchy: "special",
+        unlockScore: 25,
+        unlocked: true,
+        titleKey: "build.attack.brawler.title",
+        descriptionKey: "build.attack.brawler.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.attack.destruction",
+        discipline: "attack",
+        themeId: "devastation",
+        hierarchy: "special",
+        unlockScore: 30,
+        unlocked: true,
+        titleKey: "build.attack.destruction.title",
+        descriptionKey: "build.attack.destruction.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.attack.brawler",
+  );
+  assert.match(devastationHtml, /Brawler/);
+  assert.match(devastationHtml, /\+0\.2 unarmed damage while this option is slotted\./);
+
+  const furyHtml = renderSelection(
+    "attack",
+    "fury",
+    [
+      {
+        id: "build.attack.reserve",
+        discipline: "attack",
+        themeId: "fury",
+        hierarchy: "signpost",
+        unlockScore: 10,
+        unlocked: true,
+        titleKey: "build.attack.reserve.title",
+        descriptionKey: "build.attack.reserve.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.attack.secondwind",
+        discipline: "attack",
+        themeId: "fury",
+        hierarchy: "standard",
+        unlockScore: 15,
+        unlocked: true,
+        titleKey: "build.attack.secondwind.title",
+        descriptionKey: "build.attack.secondwind.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.attack.reserve",
+  );
+  assert.match(furyHtml, /Reserve/);
+  assert.match(furyHtml, /\+2 max stamina while this option is slotted\./);
+
   const defenseHtml = renderSelection(
     "defense",
     "guard",
@@ -294,6 +362,70 @@ test("build panel renders supported-first option descriptions from grouped catal
   );
   assert.match(defenseHtml, /Bulwark/);
   assert.match(defenseHtml, /\+8 armor rating while this option is slotted\./);
+
+  const guardSustainHtml = renderSelection(
+    "defense",
+    "guard",
+    [
+      {
+        id: "build.defense.recovery",
+        discipline: "defense",
+        themeId: "guard",
+        hierarchy: "standard",
+        unlockScore: 25,
+        unlocked: true,
+        titleKey: "build.defense.recovery.title",
+        descriptionKey: "build.defense.recovery.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.defense.restoration",
+        discipline: "defense",
+        themeId: "guard",
+        hierarchy: "special",
+        unlockScore: 35,
+        unlocked: true,
+        titleKey: "build.defense.restoration.title",
+        descriptionKey: "build.defense.restoration.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.defense.recovery",
+  );
+  assert.match(guardSustainHtml, /Recovery/);
+  assert.match(guardSustainHtml, /\+0\.02 health regeneration while this option is slotted\./);
+
+  const bastionSpecialHtml = renderSelection(
+    "defense",
+    "bastion",
+    [
+      {
+        id: "build.defense.reprisal",
+        discipline: "defense",
+        themeId: "bastion",
+        hierarchy: "special",
+        unlockScore: 25,
+        unlocked: true,
+        titleKey: "build.defense.reprisal.title",
+        descriptionKey: "build.defense.reprisal.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.defense.alteration",
+        discipline: "defense",
+        themeId: "bastion",
+        hierarchy: "special",
+        unlockScore: 30,
+        unlocked: true,
+        titleKey: "build.defense.alteration.title",
+        descriptionKey: "build.defense.alteration.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.defense.reprisal",
+  );
+  assert.match(bastionSpecialHtml, /Reprisal/);
+  assert.match(bastionSpecialHtml, /\+0\.3 reflected damage while this option is slotted\./);
 
   const resistanceHtml = renderSelection(
     "defense",
@@ -372,6 +504,38 @@ test("build panel renders supported-first option descriptions from grouped catal
   assert.match(livelihoodHtml, /Smithing/);
   assert.match(livelihoodHtml, /\+0\.5 smithing effectiveness while this option is slotted\./);
 
+  const livelihoodResourceHtml = renderSelection(
+    "utility",
+    "livelihood",
+    [
+      {
+        id: "build.utility.magicka",
+        discipline: "utility",
+        themeId: "livelihood",
+        hierarchy: "special",
+        unlockScore: 30,
+        unlocked: true,
+        titleKey: "build.utility.magicka.title",
+        descriptionKey: "build.utility.magicka.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.utility.meditation",
+        discipline: "utility",
+        themeId: "livelihood",
+        hierarchy: "standard",
+        unlockScore: 30,
+        unlocked: true,
+        titleKey: "build.utility.meditation.title",
+        descriptionKey: "build.utility.meditation.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.utility.magicka",
+  );
+  assert.match(livelihoodResourceHtml, /Magicka Well/);
+  assert.match(livelihoodResourceHtml, /\+2 max magicka while this option is slotted\./);
+
   const explorationHtml = renderSelection(
     "utility",
     "exploration",
@@ -403,6 +567,38 @@ test("build panel renders supported-first option descriptions from grouped catal
   );
   assert.match(explorationHtml, /Wayfinder/);
   assert.match(explorationHtml, /\+1\.5% movement speed while this option is slotted\./);
+
+  const explorationSpecialHtml = renderSelection(
+    "utility",
+    "exploration",
+    [
+      {
+        id: "build.utility.echo",
+        discipline: "utility",
+        themeId: "exploration",
+        hierarchy: "special",
+        unlockScore: 35,
+        unlocked: true,
+        titleKey: "build.utility.echo.title",
+        descriptionKey: "build.utility.echo.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.utility.mobility",
+        discipline: "utility",
+        themeId: "exploration",
+        hierarchy: "signpost",
+        unlockScore: 30,
+        unlocked: true,
+        titleKey: "build.utility.mobility.title",
+        descriptionKey: "build.utility.mobility.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.utility.echo",
+  );
+  assert.match(explorationSpecialHtml, /Echo/);
+  assert.match(explorationSpecialHtml, /Shout cooldown recovers 2% faster while this option is slotted\./);
 
   const trickeryHtml = renderSelection(
     "utility",

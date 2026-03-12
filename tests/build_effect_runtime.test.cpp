@@ -53,10 +53,34 @@ namespace
 		expansionSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.attack.vitals";
 
 		const auto expansionTotals = ComputeDerivedBuildActorValueTotals(expansionSnapshot);
-		return LookupTotal(expansionTotals, RE::ActorValue::kWeaponSpeedMult).has_value() &&
-		       NearlyEqual(*LookupTotal(expansionTotals, RE::ActorValue::kWeaponSpeedMult), 0.03f) &&
-		       LookupTotal(expansionTotals, RE::ActorValue::kCriticalChance).has_value() &&
-		       NearlyEqual(*LookupTotal(expansionTotals, RE::ActorValue::kCriticalChance), 5.0f);
+		if (!LookupTotal(expansionTotals, RE::ActorValue::kWeaponSpeedMult).has_value() ||
+		    !NearlyEqual(*LookupTotal(expansionTotals, RE::ActorValue::kWeaponSpeedMult), 0.03f) ||
+		    !LookupTotal(expansionTotals, RE::ActorValue::kCriticalChance).has_value() ||
+		    !NearlyEqual(*LookupTotal(expansionTotals, RE::ActorValue::kCriticalChance), 5.0f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot furySnapshot{};
+		furySnapshot.attackScore = 30u;
+		furySnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack1)] = "build.attack.reserve";
+		furySnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack2)] = "build.attack.secondwind";
+		const auto furyTotals = ComputeDerivedBuildActorValueTotals(furySnapshot);
+		if (!LookupTotal(furyTotals, RE::ActorValue::kStamina).has_value() ||
+		    !NearlyEqual(*LookupTotal(furyTotals, RE::ActorValue::kStamina), 2.0f) ||
+		    !LookupTotal(furyTotals, RE::ActorValue::kStaminaRate).has_value() ||
+		    !NearlyEqual(*LookupTotal(furyTotals, RE::ActorValue::kStaminaRate), 0.1f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot devastationSnapshot{};
+		devastationSnapshot.attackScore = 30u;
+		devastationSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack1)] = "build.attack.brawler";
+		devastationSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.attack.destruction";
+		const auto devastationTotals = ComputeDerivedBuildActorValueTotals(devastationSnapshot);
+		return LookupTotal(devastationTotals, RE::ActorValue::kUnarmedDamage).has_value() &&
+		       NearlyEqual(*LookupTotal(devastationTotals, RE::ActorValue::kUnarmedDamage), 0.2f) &&
+		       LookupTotal(devastationTotals, RE::ActorValue::kDestructionModifier).has_value() &&
+		       NearlyEqual(*LookupTotal(devastationTotals, RE::ActorValue::kDestructionModifier), 0.5f);
 	}
 
 	bool CuratedDefenseEffectsResolveToConcreteActorValues()
@@ -88,9 +112,33 @@ namespace
 		enduranceSnapshot.defenseScore = 30u;
 		enduranceSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.endurance";
 		const auto enduranceTotals = ComputeDerivedBuildActorValueTotals(enduranceSnapshot);
-		return LookupTotal(enduranceTotals, RE::ActorValue::kHealth).has_value() &&
-		       NearlyEqual(*LookupTotal(enduranceTotals, RE::ActorValue::kHealth), 15.0f) &&
-		       !LookupTotal(enduranceTotals, RE::ActorValue::kBlockPowerModifier).has_value();
+		if (!LookupTotal(enduranceTotals, RE::ActorValue::kHealth).has_value() ||
+		    !NearlyEqual(*LookupTotal(enduranceTotals, RE::ActorValue::kHealth), 15.0f) ||
+		    LookupTotal(enduranceTotals, RE::ActorValue::kBlockPowerModifier).has_value()) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot sustainSnapshot{};
+		sustainSnapshot.defenseScore = 35u;
+		sustainSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.recovery";
+		sustainSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.defense.restoration";
+		const auto sustainTotals = ComputeDerivedBuildActorValueTotals(sustainSnapshot);
+		if (!LookupTotal(sustainTotals, RE::ActorValue::kHealRate).has_value() ||
+		    !NearlyEqual(*LookupTotal(sustainTotals, RE::ActorValue::kHealRate), 0.02f) ||
+		    !LookupTotal(sustainTotals, RE::ActorValue::kRestorationModifier).has_value() ||
+		    !NearlyEqual(*LookupTotal(sustainTotals, RE::ActorValue::kRestorationModifier), 0.5f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot bastionSpecialSnapshot{};
+		bastionSpecialSnapshot.defenseScore = 30u;
+		bastionSpecialSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Defense1)] = "build.defense.reprisal";
+		bastionSpecialSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.defense.alteration";
+		const auto bastionSpecialTotals = ComputeDerivedBuildActorValueTotals(bastionSpecialSnapshot);
+		return LookupTotal(bastionSpecialTotals, RE::ActorValue::kReflectDamage).has_value() &&
+		       NearlyEqual(*LookupTotal(bastionSpecialTotals, RE::ActorValue::kReflectDamage), 0.3f) &&
+		       LookupTotal(bastionSpecialTotals, RE::ActorValue::kAlterationModifier).has_value() &&
+		       NearlyEqual(*LookupTotal(bastionSpecialTotals, RE::ActorValue::kAlterationModifier), 0.5f);
 	}
 
 	bool CuratedResistanceEffectsResolveToConcreteActorValues()
@@ -201,10 +249,31 @@ namespace
 		trickerySpecialSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility1)] = "build.utility.pickpocket";
 		trickerySpecialSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Wildcard1)] = "build.utility.illusion";
 		const auto trickerySpecialTotals = ComputeDerivedBuildActorValueTotals(trickerySpecialSnapshot);
-		return LookupTotal(trickerySpecialTotals, RE::ActorValue::kPickpocketModifier).has_value() &&
-		       NearlyEqual(*LookupTotal(trickerySpecialTotals, RE::ActorValue::kPickpocketModifier), 0.5f) &&
-		       LookupTotal(trickerySpecialTotals, RE::ActorValue::kIllusionModifier).has_value() &&
-		       NearlyEqual(*LookupTotal(trickerySpecialTotals, RE::ActorValue::kIllusionModifier), 0.5f);
+		if (!LookupTotal(trickerySpecialTotals, RE::ActorValue::kPickpocketModifier).has_value() ||
+		    !NearlyEqual(*LookupTotal(trickerySpecialTotals, RE::ActorValue::kPickpocketModifier), 0.5f) ||
+		    !LookupTotal(trickerySpecialTotals, RE::ActorValue::kIllusionModifier).has_value() ||
+		    !NearlyEqual(*LookupTotal(trickerySpecialTotals, RE::ActorValue::kIllusionModifier), 0.5f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot livelihoodResourceSnapshot{};
+		livelihoodResourceSnapshot.utilityScore = 35u;
+		livelihoodResourceSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility1)] = "build.utility.magicka";
+		livelihoodResourceSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility2)] = "build.utility.meditation";
+		const auto livelihoodResourceTotals = ComputeDerivedBuildActorValueTotals(livelihoodResourceSnapshot);
+		if (!LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagicka).has_value() ||
+		    !NearlyEqual(*LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagicka), 2.0f) ||
+		    !LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagickaRate).has_value() ||
+		    !NearlyEqual(*LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagickaRate), 0.1f)) {
+			return false;
+		}
+
+		BuildRuntimeSnapshot explorationSpecialSnapshot{};
+		explorationSpecialSnapshot.utilityScore = 35u;
+		explorationSpecialSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility1)] = "build.utility.echo";
+		const auto explorationSpecialTotals = ComputeDerivedBuildActorValueTotals(explorationSpecialSnapshot);
+		return LookupTotal(explorationSpecialTotals, RE::ActorValue::kShoutRecoveryMult).has_value() &&
+		       NearlyEqual(*LookupTotal(explorationSpecialTotals, RE::ActorValue::kShoutRecoveryMult), -0.02f);
 	}
 
 	bool OnceOnlyEffectsDoNotDoubleStackAcrossSlots()
@@ -217,6 +286,43 @@ namespace
 		const auto totals = ComputeDerivedBuildActorValueTotals(snapshot);
 		return LookupTotal(totals, RE::ActorValue::kAttackDamageMult).has_value() &&
 		       NearlyEqual(*LookupTotal(totals, RE::ActorValue::kAttackDamageMult), 0.11f);
+	}
+
+	bool BuildSyncClampHonorsShoutRecoveryFloor()
+	{
+		const float blockedDelta =
+			CodexOfPowerNG::Builds::ClampBuildSyncDeltaForActorValue(
+				RE::ActorValue::kShoutRecoveryMult,
+				0.30f,
+				-0.02f);
+		if (!NearlyEqual(blockedDelta, 0.0f)) {
+			return false;
+		}
+
+		const float clampedDelta =
+			CodexOfPowerNG::Builds::ClampBuildSyncDeltaForActorValue(
+				RE::ActorValue::kShoutRecoveryMult,
+				0.31f,
+				-0.02f);
+		if (!NearlyEqual(clampedDelta, -0.01f)) {
+			return false;
+		}
+
+		const float passthroughDelta =
+			CodexOfPowerNG::Builds::ClampBuildSyncDeltaForActorValue(
+				RE::ActorValue::kShoutRecoveryMult,
+				0.50f,
+				-0.02f);
+		if (!NearlyEqual(passthroughDelta, -0.02f)) {
+			return false;
+		}
+
+		const float positiveDelta =
+			CodexOfPowerNG::Builds::ClampBuildSyncDeltaForActorValue(
+				RE::ActorValue::kShoutRecoveryMult,
+				0.30f,
+				0.05f);
+		return NearlyEqual(positiveDelta, 0.05f);
 	}
 }
 
@@ -243,6 +349,9 @@ int main()
 		return 1;
 	}
 	if (!expect(OnceOnlyEffectsDoNotDoubleStackAcrossSlots(), "once-only effects must not double stack across slots")) {
+		return 1;
+	}
+	if (!expect(BuildSyncClampHonorsShoutRecoveryFloor(), "build sync must honor the shout recovery floor")) {
 		return 1;
 	}
 

@@ -3,7 +3,7 @@
   "disciplineThemes": {
     "attack": ["devastation", "precision", "fury"],
     "defense": ["guard", "bastion", "resistance"],
-    "utility": ["livelihood", "exploration", "finesse"]
+    "utility": ["livelihood", "exploration", "trickery"]
   },
   "runtimeStatuses": ["supported", "needs-runtime", "deferred"],
   "effectTypes": ["actorValue", "carryWeight", "economy", "utilityFlag"],
@@ -112,6 +112,13 @@
         "themes": ["precision"],
         "legacyKeys": ["av.critChance"],
         "notes": "Precision gets its first broad legacy intake through critical-chance rows while direct-damage and weapon-speed families remain synthetic."
+      },
+      {
+        "id": "resource-sustain-supported",
+        "disciplines": ["attack", "defense", "utility"],
+        "themes": ["devastation", "fury", "guard", "bastion", "livelihood", "exploration"],
+        "legacyKeys": ["av.stamina", "av.staminaRate", "av.healRate", "av.magicka", "av.magickaRate", "av.shoutRecoveryMult", "av.reflectDamage", "av.unarmedDamage", "av.destructionMod", "av.restorationMod", "av.alterationMod"],
+        "notes": "Resource, sustain, and special AV rows now share concrete runtime mappings and can ship in the main supported catalog."
       }
     ],
     "needsRuntimeFirst": [
@@ -125,16 +132,9 @@
       {
         "id": "utility-modifier-runtime",
         "disciplines": ["utility"],
-        "themes": ["livelihood", "finesse"],
+        "themes": ["livelihood", "trickery"],
         "legacyKeys": ["av.smithingMod", "av.alchemyMod", "av.enchantingMod", "av.lockpickingMod", "av.pickpocketMod", "av.sneakMod", "av.conjurationMod", "av.illusionMod"],
         "notes": "Crafting and infiltration modifiers can share a runtime extension pass."
-      },
-      {
-        "id": "resource-sustain-runtime",
-        "disciplines": ["attack", "defense", "utility"],
-        "themes": ["fury", "guard", "livelihood", "exploration"],
-        "legacyKeys": ["av.stamina", "av.staminaRate", "av.healRate", "av.magicka", "av.magickaRate", "av.shoutRecoveryMult", "av.reflectDamage", "av.unarmedDamage", "av.destructionMod", "av.restorationMod", "av.alterationMod"],
-        "notes": "Resource/sustain/special AV mappings can be implemented together once the runtime surface expands past the current narrow set."
       }
     ]
   },
@@ -163,7 +163,7 @@
       "effectType": "actorValue",
       "runtimeKey": "unarmed_damage",
       "magnitude": 0.2,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Direct-damage outlier that still fits brute-force offense."
     },
@@ -177,7 +177,7 @@
       "effectType": "actorValue",
       "runtimeKey": "stamina",
       "magnitude": 2.0,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Core offensive resource pool; also appears in consumables and ingredients."
     },
@@ -191,7 +191,7 @@
       "effectType": "actorValue",
       "runtimeKey": "stamina_rate",
       "magnitude": 0.1,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Tempo sustain for offensive loops; also appears in consumables, ingredients, and misc."
     },
@@ -205,7 +205,7 @@
       "effectType": "actorValue",
       "runtimeKey": "destruction_modifier",
       "magnitude": 0.5,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Arcane offense remains part of direct destructive output."
     },
@@ -247,7 +247,7 @@
       "effectType": "actorValue",
       "runtimeKey": "heal_rate",
       "magnitude": 0.02,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Passive sustain stat that keeps guard readable without creating a new theme."
     },
@@ -261,7 +261,7 @@
       "effectType": "actorValue",
       "runtimeKey": "restoration_modifier",
       "magnitude": 0.5,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Defensive sustain magic aligns with guard."
     },
@@ -275,7 +275,7 @@
       "effectType": "actorValue",
       "runtimeKey": "reflect_damage",
       "magnitude": 0.3,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Reactive mitigation payoff fits controlled defense better than raw guard."
     },
@@ -289,7 +289,7 @@
       "effectType": "actorValue",
       "runtimeKey": "alteration_modifier",
       "magnitude": 0.5,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Protective/control magic is closest to the bastion theme."
     },
@@ -471,7 +471,7 @@
       "effectType": "actorValue",
       "runtimeKey": "magicka",
       "magnitude": 2.0,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Arcane sustain stays under livelihood until a dedicated arcane utility branch is justified."
     },
@@ -485,7 +485,7 @@
       "effectType": "actorValue",
       "runtimeKey": "magicka_rate",
       "magnitude": 0.1,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Arcane sustain bucket; also appears in consumables and ingredients."
     },
@@ -513,7 +513,7 @@
       "effectType": "actorValue",
       "runtimeKey": "shout_recovery_mult",
       "magnitude": -0.02,
-      "runtimeStatus": "needs-runtime",
+      "runtimeStatus": "supported",
       "migrationFrom": [],
       "notes": "Traversal/tempo-adjacent utility with exploration-style pacing impact."
     },
@@ -522,7 +522,7 @@
       "sourceGroup": "misc",
       "label": "Lockpicking effectiveness",
       "discipline": "utility",
-      "theme": "finesse",
+      "theme": "trickery",
       "hierarchy": "standard",
       "effectType": "actorValue",
       "runtimeKey": "lockpicking_modifier",
@@ -536,7 +536,7 @@
       "sourceGroup": "misc",
       "label": "Pickpocket effectiveness",
       "discipline": "utility",
-      "theme": "finesse",
+      "theme": "trickery",
       "hierarchy": "standard",
       "effectType": "actorValue",
       "runtimeKey": "pickpocket_modifier",
@@ -550,7 +550,7 @@
       "sourceGroup": "misc",
       "label": "Sneak effectiveness",
       "discipline": "utility",
-      "theme": "finesse",
+      "theme": "trickery",
       "hierarchy": "signpost",
       "effectType": "actorValue",
       "runtimeKey": "sneaking_modifier",
@@ -564,28 +564,28 @@
       "sourceGroup": "book",
       "label": "Conjuration cost reduction",
       "discipline": "utility",
-      "theme": "finesse",
+      "theme": "trickery",
       "hierarchy": "special",
       "effectType": "actorValue",
       "runtimeKey": "conjuration_modifier",
       "magnitude": 0.5,
       "runtimeStatus": "supported",
       "migrationFrom": [],
-      "notes": "Summoning/control utility fits finesse better than creating a separate arcane utility branch."
+      "notes": "Summoning/control utility fits trickery better than creating a separate arcane utility branch."
     },
     {
       "legacyKey": "av.illusionMod",
       "sourceGroup": "book",
       "label": "Illusion cost reduction",
       "discipline": "utility",
-      "theme": "finesse",
+      "theme": "trickery",
       "hierarchy": "special",
       "effectType": "actorValue",
       "runtimeKey": "illusion_modifier",
       "magnitude": 0.5,
       "runtimeStatus": "supported",
       "migrationFrom": [],
-      "notes": "Stealth/control magic aligns with finesse."
+      "notes": "Stealth/control magic aligns with trickery."
     }
   ]
 }

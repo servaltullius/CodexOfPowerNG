@@ -122,6 +122,18 @@ namespace CodexOfPowerNG::Builds
 				if (effectKey == "critical_chance") {
 					return std::pair{ RE::ActorValue::kCriticalChance, *amount };
 				}
+				if (effectKey == "unarmed_damage") {
+					return std::pair{ RE::ActorValue::kUnarmedDamage, *amount };
+				}
+				if (effectKey == "stamina") {
+					return std::pair{ RE::ActorValue::kStamina, *amount };
+				}
+				if (effectKey == "stamina_rate") {
+					return std::pair{ RE::ActorValue::kStaminaRate, *amount };
+				}
+				if (effectKey == "destruction_modifier") {
+					return std::pair{ RE::ActorValue::kDestructionModifier, *amount };
+				}
 				if (effectKey == "damage_resist") {
 					return std::pair{ RE::ActorValue::kDamageResist, *amount };
 				}
@@ -130,6 +142,18 @@ namespace CodexOfPowerNG::Builds
 				}
 				if (effectKey == "health") {
 					return std::pair{ RE::ActorValue::kHealth, *amount };
+				}
+				if (effectKey == "heal_rate") {
+					return std::pair{ RE::ActorValue::kHealRate, *amount };
+				}
+				if (effectKey == "restoration_modifier") {
+					return std::pair{ RE::ActorValue::kRestorationModifier, *amount };
+				}
+				if (effectKey == "reflect_damage") {
+					return std::pair{ RE::ActorValue::kReflectDamage, *amount };
+				}
+				if (effectKey == "alteration_modifier") {
+					return std::pair{ RE::ActorValue::kAlterationModifier, *amount };
 				}
 				if (effectKey == "magic_resist") {
 					return std::pair{ RE::ActorValue::kResistMagic, *amount };
@@ -161,6 +185,12 @@ namespace CodexOfPowerNG::Builds
 				if (effectKey == "enchanting_modifier") {
 					return std::pair{ RE::ActorValue::kEnchantingModifier, *amount };
 				}
+				if (effectKey == "magicka") {
+					return std::pair{ RE::ActorValue::kMagicka, *amount };
+				}
+				if (effectKey == "magicka_rate") {
+					return std::pair{ RE::ActorValue::kMagickaRate, *amount };
+				}
 				if (effectKey == "lockpicking_modifier") {
 					return std::pair{ RE::ActorValue::kLockpickingModifier, *amount };
 				}
@@ -178,6 +208,9 @@ namespace CodexOfPowerNG::Builds
 				}
 				if (effectKey == "speed_mult") {
 					return std::pair{ RE::ActorValue::kSpeedMult, *amount / 100.0f };
+				}
+				if (effectKey == "shout_recovery_mult") {
+					return std::pair{ RE::ActorValue::kShoutRecoveryMult, *amount };
 				}
 				return std::nullopt;
 			}
@@ -349,6 +382,29 @@ namespace CodexOfPowerNG::Builds
 		return out;
 	}
 
+	float ClampBuildSyncDeltaForActorValue(
+		RE::ActorValue av,
+		float          currentActorValue,
+		float          desiredDelta) noexcept
+	{
+		if (!std::isfinite(currentActorValue) || !std::isfinite(desiredDelta)) {
+			return 0.0f;
+		}
+
+		if (av != RE::ActorValue::kShoutRecoveryMult || desiredDelta >= 0.0f) {
+			return desiredDelta;
+		}
+
+		constexpr float kShoutRecoveryMinValue = 0.30f;
+		if (currentActorValue <= (kShoutRecoveryMinValue + Rewards::kRewardCapEpsilon)) {
+			return 0.0f;
+		}
+		if ((currentActorValue + desiredDelta) < kShoutRecoveryMinValue) {
+			return kShoutRecoveryMinValue - currentActorValue;
+		}
+		return desiredDelta;
+	}
+
 	void SyncCurrentBuildEffectsToPlayer() noexcept
 	{
 		auto* player = RE::PlayerCharacter::GetSingleton();
@@ -370,6 +426,7 @@ namespace CodexOfPowerNG::Builds
 		{
 			std::scoped_lock lock(g_runtimeMutex);
 			const auto currentAppliedTotals = SnapshotAppliedBuildEffectTotals();
+			auto nextAppliedTotals = currentAppliedTotals;
 			std::unordered_set<RE::ActorValue, ActorValueHash> actorValues;
 			for (const auto& [av, _] : currentAppliedTotals) {
 				actorValues.insert(av);
@@ -381,17 +438,30 @@ namespace CodexOfPowerNG::Builds
 			for (const auto av : actorValues) {
 				const float currentTotal = currentAppliedTotals.contains(av) ? currentAppliedTotals.at(av) : 0.0f;
 				const float desiredTotal = desiredTotals.contains(av) ? desiredTotals[av] : 0.0f;
-				const float delta = desiredTotal - currentTotal;
+				const float desiredDelta = desiredTotal - currentTotal;
+				const float currentActorValue = avOwner->GetActorValue(av);
+				const float delta = ClampBuildSyncDeltaForActorValue(av, currentActorValue, desiredDelta);
 				if (std::abs(delta) <= Rewards::kRewardCapEpsilon) {
+					if (std::abs(currentTotal) <= Rewards::kRewardCapEpsilon) {
+						nextAppliedTotals.erase(av);
+					} else {
+						nextAppliedTotals[av] = currentTotal;
+					}
 					continue;
 				}
 
 				avOwner->RestoreActorValue(RE::ACTOR_VALUE_MODIFIER::kPermanent, av, delta);
+				const float appliedTotal = currentTotal + delta;
+				if (std::abs(appliedTotal) <= Rewards::kRewardCapEpsilon) {
+					nextAppliedTotals.erase(av);
+				} else {
+					nextAppliedTotals[av] = appliedTotal;
+				}
 				if (av == RE::ActorValue::kAttackDamageMult || av == RE::ActorValue::kWeaponSpeedMult) {
 					refreshWeaponAbilities = true;
 				}
 			}
-			ReplaceAppliedBuildEffectTotals(std::move(desiredTotals));
+			ReplaceAppliedBuildEffectTotals(std::move(nextAppliedTotals));
 		}
 
 		if (refreshWeaponAbilities) {

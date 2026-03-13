@@ -72,6 +72,9 @@
       .root.isViewportLocked {
         overflow: hidden;
       }
+      .root.isBuildViewportExpanded {
+        height: 96vh;
+      }
       h1 {
         margin: 0 0 calc(6px * var(--uiScale)) 0;
         font-size: calc(22px * var(--uiScale));
@@ -700,8 +703,8 @@
       .buildSummaryCard {
         display: flex;
         flex-direction: column;
-        gap: calc(5px * var(--uiScale));
-        padding: calc(12px * var(--uiScale));
+        gap: calc(4px * var(--uiScale));
+        padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
         border-radius: calc(12px * var(--uiScale));
         border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.1));
         background:
@@ -710,11 +713,11 @@
         box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
       }
       .buildSummaryCard strong {
-        font-size: calc(16px * var(--uiScale));
+        font-size: calc(15px * var(--uiScale));
         color: rgba(250, 252, 255, 0.96);
       }
       .buildSummaryValue {
-        font-size: calc(32px * var(--uiScale));
+        font-size: calc(28px * var(--uiScale));
         font-weight: 900;
         line-height: 1;
         color: var(--discipline-accent, var(--text));
@@ -733,9 +736,9 @@
       .buildCatalogLayout {
         display: grid;
         grid-template-columns:
-          minmax(calc(160px * var(--uiScale)), 0.52fr)
-          minmax(calc(420px * var(--uiScale)), 1.45fr)
-          minmax(calc(300px * var(--uiScale)), 0.92fr);
+          minmax(calc(136px * var(--uiScale)), 0.42fr)
+          minmax(0, 1.75fr)
+          minmax(calc(260px * var(--uiScale)), 0.78fr);
         gap: calc(12px * var(--uiScale));
         min-height: 0;
         height: 100%;
@@ -766,8 +769,8 @@
         background:
           linear-gradient(90deg, var(--discipline-soft, rgba(255, 255, 255, 0.05)), rgba(12, 14, 20, 0) 55%),
           rgba(12, 14, 20, 0.88);
-        padding: calc(12px * var(--uiScale));
-        min-height: calc(52px * var(--uiScale));
+        padding: calc(10px * var(--uiScale)) calc(12px * var(--uiScale));
+        min-height: calc(44px * var(--uiScale));
       }
       .buildDisciplineButton.isActive {
         border-color: var(--discipline-line, rgba(255, 255, 255, 0.28));
@@ -779,7 +782,7 @@
       }
       .buildCatalogPanel {
         display: grid;
-        grid-template-rows: auto minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(0, 1fr);
         gap: calc(10px * var(--uiScale));
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(8, 10, 18, 0.92);
@@ -790,14 +793,19 @@
       }
       .buildCatalogLead {
         line-height: 1.45;
-        max-width: min(calc(440px * var(--uiScale)), 100%);
+        max-width: min(calc(560px * var(--uiScale)), 100%);
       }
       .buildThemeTabs {
         display: flex;
         gap: calc(8px * var(--uiScale));
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior: contain;
+        padding-bottom: calc(2px * var(--uiScale));
       }
       .buildThemeTab {
+        flex: 0 0 auto;
         min-height: calc(40px * var(--uiScale));
         padding: calc(8px * var(--uiScale)) calc(12px * var(--uiScale));
         border-radius: calc(999px * var(--uiScale));
@@ -819,11 +827,11 @@
       }
       .buildCatalogRows {
         display: grid;
-        gap: calc(12px * var(--uiScale));
+        gap: calc(8px * var(--uiScale));
       }
       .buildCatalogRow {
         display: block;
-        padding: calc(12px * var(--uiScale));
+        padding: calc(10px * var(--uiScale));
         border-radius: calc(12px * var(--uiScale));
         border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.1));
         background: linear-gradient(180deg, var(--discipline-soft, rgba(255, 255, 255, 0.04)), rgba(10, 12, 18, 0.88));
@@ -840,13 +848,17 @@
         text-align: left;
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
-        gap: calc(12px * var(--uiScale));
+        gap: calc(10px * var(--uiScale));
         align-items: start;
       }
       .buildCatalogLead,
       .buildCatalogMeta {
         display: grid;
-        gap: calc(6px * var(--uiScale));
+        gap: calc(4px * var(--uiScale));
+      }
+      .buildCatalogMeta {
+        align-content: start;
+        justify-items: end;
       }
       .buildCatalogEffect {
         white-space: nowrap;
@@ -900,14 +912,20 @@
       .buildDetailRail {
         display: grid;
         grid-template-rows: minmax(0, 1fr) auto;
-        gap: calc(12px * var(--uiScale));
+        gap: calc(10px * var(--uiScale));
       }
       .buildSelectedOptionPanel,
       .buildSlotSummaryPanel {
         min-height: 0;
-        overflow: hidden;
         border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.12));
         background: rgba(10, 12, 18, 0.94);
+      }
+      .buildSelectedOptionPanel {
+        overflow: auto;
+        overscroll-behavior: contain;
+      }
+      .buildSlotSummaryPanel {
+        overflow: hidden;
       }
       .buildFocusStateRow {
         display: flex;
@@ -938,16 +956,17 @@
         display: flex;
         flex-wrap: wrap;
         gap: calc(8px * var(--uiScale));
+        margin-bottom: calc(2px * var(--uiScale));
       }
       .buildSlotMatrix {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: calc(10px * var(--uiScale));
+        gap: calc(8px * var(--uiScale));
       }
       .buildSlotMatrixCard {
         display: grid;
-        gap: calc(8px * var(--uiScale));
-        padding: calc(12px * var(--uiScale));
+        gap: calc(6px * var(--uiScale));
+        padding: calc(10px * var(--uiScale));
         border-radius: calc(12px * var(--uiScale));
         border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.12));
         background:
@@ -963,7 +982,7 @@
       }
       .buildSlotMatrixName {
         display: block;
-        font-size: calc(14px * var(--uiScale));
+        font-size: calc(13px * var(--uiScale));
         line-height: 1.35;
       }
       .buildSlotMatrixActions {

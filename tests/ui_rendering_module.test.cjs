@@ -49,6 +49,7 @@ test("index delegates render layer to ui_rendering module", () => {
 
 test("index includes a more opaque performance-first visual contract for quick and build screens", () => {
   assert.match(html, /\.root\.isViewportLocked\s*\{[\s\S]*overflow:\s*hidden/);
+  assert.match(html, /\.root\.isBuildViewportExpanded\s*\{[\s\S]*height:\s*96vh/);
   assert.match(html, /--panel:\s*rgba\(18,\s*20,\s*28,\s*0\.84\)/);
   assert.match(html, /--text:\s*rgba\(255,\s*255,\s*255,\s*0\.97\)/);
   assert.match(html, /--muted:\s*rgba\(224,\s*228,\s*240,\s*0\.78\)/);
@@ -71,6 +72,8 @@ test("index includes a more opaque performance-first visual contract for quick a
   assert.match(html, /\.reasonText\s*\{[\s\S]*color:\s*rgba\(245,\s*247,\s*255,\s*0\.82\)/);
   assert.match(html, /\.buildScreen\.section\.active\s*\{[\s\S]*grid-template-rows:\s*auto minmax\(0,\s*1fr\)/);
   assert.match(html, /\.buildScreen\.section\.active\s+\.buildFixedBoard\s*\{[\s\S]*height:\s*100%/);
+  assert.match(html, /\.buildSelectedOptionPanel\s*\{[\s\S]*overflow:\s*auto/);
+  assert.match(html, /\.buildSlotSummaryPanel\s*\{[\s\S]*overflow:\s*hidden/);
   assert.doesNotMatch(html, /class="small buildHelp"/);
 });
 
@@ -81,6 +84,7 @@ test("ui_rendering module owns i18n, tab, and list/build/settings renderers", ()
   assert.match(moduleSource, /function syncRootViewportMode\(/);
   assert.match(moduleSource, /function setTab\(/);
   assert.match(moduleSource, /classList\.toggle\("isViewportLocked", lockViewport\)/);
+  assert.match(moduleSource, /classList\.toggle\("isBuildViewportExpanded", nextTabId === "tabBuild"\)/);
   assert.match(moduleSource, /function renderTab\(/);
   assert.match(moduleSource, /function renderActiveTab\(/);
   assert.match(moduleSource, /function renderStatus\(/);

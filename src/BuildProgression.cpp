@@ -368,28 +368,6 @@ namespace CodexOfPowerNG::BuildProgression
 		return RollbackRegistrationContributionDetailed(contribution).deactivatedSlots;
 	}
 
-	std::size_t CountUnlockedBaselineMilestones(
-		Builds::BuildDiscipline discipline,
-		std::uint32_t           score) noexcept
-	{
-		std::size_t count = 0u;
-		for (const auto& milestone : Builds::GetBuildBaselineMilestones()) {
-			if (milestone.discipline == discipline && score >= milestone.threshold) {
-				++count;
-			}
-		}
-		return count;
-	}
-
-	bool BaselineMilestonesChanged(
-		Builds::BuildDiscipline discipline,
-		std::uint32_t           previousScore,
-		std::uint32_t           nextScore) noexcept
-	{
-		return CountUnlockedBaselineMilestones(discipline, previousScore) !=
-		       CountUnlockedBaselineMilestones(discipline, nextScore);
-	}
-
 	std::optional<Builds::BuildMigrationNoticeSnapshot> ConsumeMigrationNotice(
 		SerializationStateStore::Snapshot& snapshot) noexcept
 	{

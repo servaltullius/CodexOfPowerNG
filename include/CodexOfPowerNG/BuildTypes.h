@@ -74,6 +74,7 @@ namespace CodexOfPowerNG::Builds
 
 	using BuildMagnitude = std::variant<float, std::int32_t>;
 	inline constexpr std::size_t kBuildSlotCount = static_cast<std::size_t>(BuildSlotId::Wildcard1) + 1;
+	inline constexpr std::uint32_t kBuildScalingScoreInterval = 10u;
 
 	[[nodiscard]] constexpr std::size_t ToIndex(BuildSlotId slotId) noexcept
 	{
@@ -93,6 +94,7 @@ namespace CodexOfPowerNG::Builds
 		BuildEffectType effectType;
 		std::string_view effectKey;
 		BuildMagnitude magnitude;
+		BuildMagnitude magnitudePerTier;
 		std::string_view exclusivityGroup;
 		BuildStackRule stackRule;
 		std::string_view titleKey;

@@ -72,24 +72,34 @@
       disciplines: {
         attack: {
           score: Number((disciplines.attack && disciplines.attack.score) || 0) >>> 0,
-          unlockedBaselineCount: Number(
-            (disciplines.attack && disciplines.attack.unlockedBaselineCount) || 0,
-          ) >>> 0,
+          currentTier: Number((disciplines.attack && disciplines.attack.currentTier) || 0) >>> 0,
+          nextTierScore: Number((disciplines.attack && disciplines.attack.nextTierScore) || 0) >>> 0,
+          scoreToNextTier: Number((disciplines.attack && disciplines.attack.scoreToNextTier) || 0) >>> 0,
         },
         defense: {
           score: Number((disciplines.defense && disciplines.defense.score) || 0) >>> 0,
-          unlockedBaselineCount: Number(
-            (disciplines.defense && disciplines.defense.unlockedBaselineCount) || 0,
-          ) >>> 0,
+          currentTier: Number((disciplines.defense && disciplines.defense.currentTier) || 0) >>> 0,
+          nextTierScore: Number((disciplines.defense && disciplines.defense.nextTierScore) || 0) >>> 0,
+          scoreToNextTier: Number((disciplines.defense && disciplines.defense.scoreToNextTier) || 0) >>> 0,
         },
         utility: {
           score: Number((disciplines.utility && disciplines.utility.score) || 0) >>> 0,
-          unlockedBaselineCount: Number(
-            (disciplines.utility && disciplines.utility.unlockedBaselineCount) || 0,
-          ) >>> 0,
+          currentTier: Number((disciplines.utility && disciplines.utility.currentTier) || 0) >>> 0,
+          nextTierScore: Number((disciplines.utility && disciplines.utility.nextTierScore) || 0) >>> 0,
+          scoreToNextTier: Number((disciplines.utility && disciplines.utility.scoreToNextTier) || 0) >>> 0,
         },
       },
-      options: Array.isArray(source.options) ? source.options : [],
+      options: Array.isArray(source.options)
+        ? source.options.map((option) =>
+            option && typeof option === "object"
+              ? Object.assign({}, option, {
+                  currentTier: Number(option.currentTier || 0) >>> 0,
+                  nextTierScore: Number(option.nextTierScore || 0) >>> 0,
+                  scoreToNextTier: Number(option.scoreToNextTier || 0) >>> 0,
+                })
+              : option,
+          )
+        : [],
       activeSlots: DEFAULT_BUILD_SLOT_LAYOUT.map((slot) => Object.assign({}, slot, bySlotId.get(slot.slotId) || {})),
       migrationNotice:
         source.migrationNotice && typeof source.migrationNotice === "object"

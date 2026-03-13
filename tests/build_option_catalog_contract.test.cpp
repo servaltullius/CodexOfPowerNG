@@ -55,19 +55,9 @@ namespace
 			[](const BuildOptionDef& option) { return option.stackRule == BuildStackRule::OnceOnly; });
 	}
 
-	bool AllBaselineMilestonesUseDisciplinesOnly()
+	bool HasNoBaselineMilestones()
 	{
-		for (const auto& milestone : GetBuildBaselineMilestones()) {
-			switch (milestone.discipline) {
-			case BuildDiscipline::Attack:
-			case BuildDiscipline::Defense:
-			case BuildDiscipline::Utility:
-				break;
-			default:
-				return false;
-			}
-		}
-		return true;
+		return GetBuildBaselineMilestones().empty();
 	}
 
 	bool HasExpectedInitialSlotLayout()
@@ -143,16 +133,18 @@ namespace
 		for (const auto& option : GetBuildOptionCatalog()) {
 			const bool usesFloatMagnitude = std::holds_alternative<float>(option.magnitude);
 			const bool usesIntMagnitude = std::holds_alternative<std::int32_t>(option.magnitude);
+			const bool usesFloatTierMagnitude = std::holds_alternative<float>(option.magnitudePerTier);
+			const bool usesIntTierMagnitude = std::holds_alternative<std::int32_t>(option.magnitudePerTier);
 			switch (option.effectType) {
 			case BuildEffectType::ActorValue:
 			case BuildEffectType::CarryWeight:
-				if (!usesFloatMagnitude) {
+				if (!usesFloatMagnitude || !usesFloatTierMagnitude) {
 					return false;
 				}
 				break;
 			case BuildEffectType::Economy:
 			case BuildEffectType::UtilityFlag:
-				if (!usesIntMagnitude) {
+				if (!usesIntMagnitude || !usesIntTierMagnitude) {
 					return false;
 				}
 				break;
@@ -161,6 +153,18 @@ namespace
 			}
 		}
 		return true;
+	}
+
+	bool UsesCommonScalingInterval()
+	{
+		return kBuildScalingScoreInterval == 10u &&
+		       GetBuildScalingTier(0u) == 0u &&
+		       GetBuildScalingTier(9u) == 0u &&
+		       GetBuildScalingTier(10u) == 1u &&
+		       GetBuildScalingTier(33u) == 3u &&
+		       GetNextBuildScalingScore(33u) == 40u &&
+		       GetScoreToNextBuildScalingTier(33u) == 7u &&
+		       GetScoreToNextBuildScalingTier(40u) == 10u;
 	}
 
 	bool HasExpectedCatalogContents()
@@ -236,35 +240,30 @@ namespace
 			}
 		}
 
-		struct ExpectedMilestone
+		struct ExpectedScaling
 		{
-			BuildDiscipline discipline;
-			std::uint32_t threshold;
-			BuildEffectType effectType;
-			std::string_view effectKey;
+			std::string_view id;
+			BuildMagnitude baseMagnitude;
+			BuildMagnitude perTierMagnitude;
 		};
 
-		constexpr std::array expectedMilestones{
-			ExpectedMilestone{ BuildDiscipline::Attack, 15u, BuildEffectType::ActorValue, "attack_damage_mult" },
-			ExpectedMilestone{ BuildDiscipline::Attack, 35u, BuildEffectType::ActorValue, "attack_damage_mult" },
-			ExpectedMilestone{ BuildDiscipline::Defense, 10u, BuildEffectType::ActorValue, "damage_resist" },
-			ExpectedMilestone{ BuildDiscipline::Defense, 25u, BuildEffectType::ActorValue, "damage_resist" },
-			ExpectedMilestone{ BuildDiscipline::Utility, 15u, BuildEffectType::Economy, "speechcraft_modifier" },
-			ExpectedMilestone{ BuildDiscipline::Utility, 35u, BuildEffectType::CarryWeight, "carry_weight" },
+		constexpr std::array expectedScaling{
+			ExpectedScaling{ "build.attack.ferocity", 5.0f, 1.0f },
+			ExpectedScaling{ "build.defense.guard", 10.0f, 2.0f },
+			ExpectedScaling{ "build.defense.warding", 3.0f, 1.0f },
+			ExpectedScaling{ "build.utility.cache", 25.0f, 5.0f },
+			ExpectedScaling{ "build.utility.barter", 10, 2 },
+			ExpectedScaling{ "build.utility.echo", -0.02f, -0.01f },
 		};
 
-		const auto actualMilestones = GetBuildBaselineMilestones();
-		if (actualMilestones.size() != expectedMilestones.size()) {
-			return false;
-		}
-
-		for (std::size_t i = 0; i < expectedMilestones.size(); ++i) {
-			const auto& expected = expectedMilestones[i];
-			const auto& milestone = actualMilestones[i];
-			if (milestone.discipline != expected.discipline ||
-				milestone.threshold != expected.threshold ||
-				milestone.effectType != expected.effectType ||
-				milestone.effectKey != expected.effectKey) {
+		for (const auto& expected : expectedScaling) {
+			const auto it = std::find_if(
+				actual.begin(),
+				actual.end(),
+				[&expected](const BuildOptionDef& option) { return option.id == expected.id; });
+			if (it == actual.end() ||
+			    it->magnitude != expected.baseMagnitude ||
+			    it->magnitudePerTier != expected.perTierMagnitude) {
 				return false;
 			}
 		}
@@ -295,7 +294,7 @@ int main()
 	if (!expect(AllOptionsUseOnceOnlyStackRule(), "options must use once-only stack rules")) {
 		return 1;
 	}
-	if (!expect(AllBaselineMilestonesUseDisciplinesOnly(), "baseline milestones must use valid disciplines")) {
+	if (!expect(HasNoBaselineMilestones(), "baseline milestones must be removed from the catalog")) {
 		return 1;
 	}
 	if (!expect(HasExpectedInitialSlotLayout(), "initial slot layout must match the agreed build slots")) {
@@ -308,6 +307,9 @@ int main()
 		return 1;
 	}
 	if (!expect(AllOptionsDeclareEffectPayloads(), "options must declare effect payloads")) {
+		return 1;
+	}
+	if (!expect(UsesCommonScalingInterval(), "build scaling must use the common 10-score interval")) {
 		return 1;
 	}
 	if (!expect(HasExpectedCatalogContents(), "catalog contents must match the fixed MVP contract")) {

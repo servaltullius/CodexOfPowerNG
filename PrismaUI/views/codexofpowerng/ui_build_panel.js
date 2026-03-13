@@ -35,9 +35,9 @@
   function createEmptyBuild() {
     return {
       disciplines: {
-        attack: { score: 0, unlockedBaselineCount: 0 },
-        defense: { score: 0, unlockedBaselineCount: 0 },
-        utility: { score: 0, unlockedBaselineCount: 0 },
+        attack: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
+        defense: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
+        utility: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
       },
       selectedDiscipline: "attack",
       selectedTheme: "",
@@ -133,8 +133,30 @@
     return t(titleKey, humanizeThemeId(theme));
   }
 
+  function formatMagnitude(value) {
+    const numeric = Number(value || 0);
+    if (!Number.isFinite(numeric)) return "0";
+    const rounded = Math.round(numeric);
+    if (Math.abs(numeric - rounded) < 0.001) return String(rounded);
+    if (Math.abs(numeric) < 1) return String(Number(numeric.toFixed(2)));
+    return String(Number(numeric.toFixed(1)));
+  }
+
+  function magnitudeValue(option, key) {
+    if (!option || typeof option !== "object") return 0;
+    const raw = option[key];
+    if (typeof raw === "number") return raw;
+    return Number(raw || 0);
+  }
+
+  function summarizeScaledEffect(effectKey, magnitude, tFmt, t) {
+    const numericValue = formatMagnitude(magnitude);
+    if (!effectKey) return t("build.none", "No options");
+    return tFmt("build.effectMagnitude." + effectKey, effectKey + " {value}", { value: numericValue });
+  }
+
   function summarizeDiscipline(discipline, disciplines, options, activeSlots) {
-    const info = disciplines[discipline] || { score: 0, unlockedBaselineCount: 0 };
+    const info = disciplines[discipline] || { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 };
     const optionRows = options.filter((option) => String((option && option.discipline) || "").toLowerCase() === discipline);
     const unlockedCount = optionRows.filter((option) => !!option.unlocked).length;
     const activeCount = optionRows.filter((option) =>
@@ -142,7 +164,9 @@
     ).length;
     return {
       score: Number(info.score || 0) >>> 0,
-      unlockedBaselineCount: Number(info.unlockedBaselineCount || 0) >>> 0,
+      currentTier: Number(info.currentTier || 0) >>> 0,
+      nextTierScore: Number(info.nextTierScore || 0) >>> 0,
+      scoreToNextTier: Number(info.scoreToNextTier || 0) >>> 0,
       unlockedCount,
       activeCount,
     };
@@ -286,6 +310,25 @@
     const compatibleText = compatibleSlots.length
       ? compatibleSlots.map((slot) => slotTitle(slot, t)).join(" / ")
       : t("build.noCompatibleSlots", "No compatible slots");
+    const currentTier = Number((option && option.currentTier) || 0) >>> 0;
+    const nextTierScore = Number((option && option.nextTierScore) || 0) >>> 0;
+    const scoreToNextTier = Number((option && option.scoreToNextTier) || 0) >>> 0;
+    const hasCurrentMagnitude =
+      option && Object.prototype.hasOwnProperty.call(option, "currentMagnitude")
+        ? option.currentMagnitude != null
+        : option && Object.prototype.hasOwnProperty.call(option, "magnitude");
+    const hasNextMagnitude = option && Object.prototype.hasOwnProperty.call(option, "nextMagnitude");
+    const currentEffectText = hasCurrentMagnitude
+      ? summarizeScaledEffect(
+          String((option && option.effectKey) || ""),
+          magnitudeValue(option, "currentMagnitude") || magnitudeValue(option, "magnitude"),
+          tFmt,
+          t,
+        )
+      : description;
+    const nextEffectText = hasNextMagnitude
+      ? summarizeScaledEffect(String((option && option.effectKey) || ""), magnitudeValue(option, "nextMagnitude"), tFmt, t)
+      : t("build.nextTierFallback", "Effect improves at the next tier.");
     let actionHtml = `<span class="small buildHint">${String(unlockText)}</span>`;
 
     if (unlocked) {
@@ -324,6 +367,11 @@
       emptySlot,
       compatibleSlots,
       compatibleText,
+      currentTier,
+      nextTierScore,
+      scoreToNextTier,
+      currentEffectText,
+      nextEffectText,
       actionHtml,
     };
   }
@@ -405,11 +453,10 @@
             <strong>${escapeHtml(label)}</strong>
             <div class="buildSummaryValue">${escapeHtml(String(info.score))}</div>
             <div class="small">${escapeHtml(
-              tFmt("build.summaryCounts", "Baseline {baseline} / Unlocked {unlocked} / Active {active}", {
-                baseline: info.unlockedBaselineCount,
-                unlocked: info.unlockedCount,
-                active: info.activeCount,
-              }),
+              tFmt("build.summaryTier", "Tier {tier}", { tier: info.currentTier }),
+            )}</div>
+            <div class="small">${escapeHtml(
+              tFmt("build.summaryNextTier", "{score} score to next tier", { score: info.scoreToNextTier }),
             )}</div>
           </article>`;
       })
@@ -495,20 +542,20 @@
                   data-option-id="${escapeHtml(view.optionId)}"
                 >
                   <div class="buildCatalogLead">
-                    <div class="buildCatalogTitleRow">
-                      <strong>${escapeHtml(view.title)}</strong>
-                      <span class="buildCatalogState ${view.stateClass}">${escapeHtml(view.stateText)}</span>
-                    </div>
-                    <div class="small buildCatalogEffect">${escapeHtml(view.description)}</div>
-                  </div>
-                  <div class="buildCatalogMeta">
-                    <span class="small mono">${escapeHtml(view.unlockText)}</span>
-                    <span class="small">${escapeHtml(
-                      tFmt("build.compatibleSlots", "Compatible Slots: {slots}", { slots: view.compatibleText }),
-                    )}</span>
-                  </div>
-                </button>
-              </article>`;
+                        <div class="buildCatalogTitleRow">
+                          <strong>${escapeHtml(view.title)}</strong>
+                          <span class="buildCatalogState ${view.stateClass}">${escapeHtml(view.stateText)}</span>
+                        </div>
+                        <div class="small buildCatalogEffect">${escapeHtml(view.currentEffectText)}</div>
+                      </div>
+                      <div class="buildCatalogMeta">
+                        <span class="small mono">${escapeHtml(view.unlockText)}</span>
+                        <span class="small">${escapeHtml(
+                          tFmt("build.nextTierInline", "Next tier in {score} score", { score: view.scoreToNextTier }),
+                        )}</span>
+                      </div>
+                    </button>
+                  </article>`;
           })
           .join("")
       : `<div class="small">${escapeHtml(t("build.none", "No options"))}</div>`;
@@ -549,7 +596,7 @@
       const slotLabel = focusedView.activeSlot ? slotTitle(focusedView.activeSlot, t) : t("build.none", "No options");
       const themeName = themeLabel(selectedDiscipline, focusedView.themeId, null, t);
       detailHtml = `
-        <section class="card buildSelectedOptionPanel buildStaticPanel ${focusedView.disciplineClass}">
+        <section class="card buildSelectedOptionPanel buildStaticPanel ${focusedView.disciplineClass}" data-wheel-surface="build-detail">
           <div class="small buildPanelEyebrow">${escapeHtml(t("build.focusTitle", "Focused Option"))}</div>
           <h2>${escapeHtml(focusedView.title)}</h2>
           <div class="buildFocusStateRow">
@@ -559,6 +606,21 @@
             <span class="buildCatalogState ${focusedView.stateClass}">${escapeHtml(focusedView.stateText)}</span>
           </div>
           <div class="small buildFocusDescription">${escapeHtml(focusedView.description)}</div>
+          <div class="small buildFocusStat">${escapeHtml(
+            tFmt("build.currentEffectLabel", "Current Effect", {}),
+          )}: ${escapeHtml(focusedView.currentEffectText)}</div>
+          <div class="small buildFocusStat">${escapeHtml(
+            tFmt("build.currentTierLabel", "Current Tier", {}),
+          )}: ${escapeHtml(String(focusedView.currentTier))}</div>
+          <div class="small buildFocusStat">${escapeHtml(
+            tFmt("build.nextEffectLabel", "Next Tier Effect", {}),
+          )}: ${escapeHtml(focusedView.nextEffectText)}</div>
+          <div class="small buildFocusStat">${escapeHtml(
+            tFmt("build.nextTierLabel", "Next Tier In", {}),
+          )}: ${escapeHtml(
+            tFmt("build.nextTierInline", "Next tier in {score} score", { score: focusedView.scoreToNextTier }),
+          )}</div>
+          <div class="buildFocusActions">${focusedView.actionHtml}</div>
           <div class="buildFocusMeta">
             <div class="buildFocusMetaItem">
               <span class="small">${escapeHtml(t("build.themeLabel", "Theme"))}</span>
@@ -577,7 +639,6 @@
               <strong>${escapeHtml(slotLabel)}</strong>
             </div>
           </div>
-          <div class="buildFocusActions">${focusedView.actionHtml}</div>
         </section>`;
     }
 
@@ -602,7 +663,10 @@
                 <div class="small buildPanelEyebrow">${escapeHtml(t("build.availableOptions", "Available Options"))}</div>
                 <h2>${escapeHtml(themeLabel(selectedDiscipline, selectedTheme, null, t))}</h2>
                 <div class="small buildCatalogLead">${escapeHtml(
-                  t("build.help", "Build score opens options permanently, but only your active slots apply to the current build."),
+                  t(
+                    "build.help",
+                    "Build score unlocks options permanently, and slotted options grow stronger every 10 discipline score.",
+                  ),
                 )}</div>
               </div>
               <div class="buildThemeTabs">

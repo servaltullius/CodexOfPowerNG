@@ -306,9 +306,9 @@ Example:
 ```json
 {
   "disciplines": {
-    "attack": { "score": 12, "unlockedBaselineCount": 1 },
-    "defense": { "score": 4, "unlockedBaselineCount": 0 },
-    "utility": { "score": 7, "unlockedBaselineCount": 0 }
+    "attack": { "score": 12, "currentTier": 1, "nextTierScore": 20, "scoreToNextTier": 8 },
+    "defense": { "score": 4, "currentTier": 0, "nextTierScore": 10, "scoreToNextTier": 6 },
+    "utility": { "score": 7, "currentTier": 0, "nextTierScore": 10, "scoreToNextTier": 3 }
   },
   "options": [
     {
@@ -320,7 +320,14 @@ Example:
       "slotCompatibility": "same_or_wildcard",
       "effectType": "actor_value",
       "effectKey": "attack_damage_mult",
-      "magnitude": 5.0
+      "magnitude": 6.0,
+      "baseMagnitude": 5.0,
+      "magnitudePerTier": 1.0,
+      "currentMagnitude": 6.0,
+      "nextMagnitude": 7.0,
+      "currentTier": 1,
+      "nextTierScore": 20,
+      "scoreToNextTier": 8
     }
   ],
   "activeSlots": [

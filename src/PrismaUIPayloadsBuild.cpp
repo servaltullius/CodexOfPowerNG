@@ -1,7 +1,6 @@
 #include "PrismaUIPayloads.h"
 
 #include "CodexOfPowerNG/BuildOptionCatalog.h"
-#include "CodexOfPowerNG/BuildProgression.h"
 #include "CodexOfPowerNG/BuildStateStore.h"
 
 #include <algorithm>
@@ -262,6 +261,11 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 		{
 			const bool unlocked = activeScore >= option.unlockScore;
 			const auto activeSlotId = FindActiveSlotForOption(option.id);
+			const auto currentTier = Builds::GetBuildScalingTier(activeScore);
+			const auto nextTierScore = Builds::GetNextBuildScalingScore(activeScore);
+			const auto scoreToNextTier = Builds::GetScoreToNextBuildScalingTier(activeScore);
+			const auto currentMagnitude = Builds::GetScaledBuildMagnitude(option, activeScore);
+			const auto nextMagnitude = Builds::GetNextTierBuildMagnitude(option, activeScore);
 			return {
 				{ "id", option.id },
 				{ "optionId", option.id },
@@ -279,7 +283,14 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 				{ "descriptionKey", option.descriptionKey },
 				{ "effectType", EffectTypeToJs(option.effectType) },
 				{ "effectKey", option.effectKey },
-				{ "magnitude", MagnitudeToJson(option.magnitude) },
+				{ "magnitude", MagnitudeToJson(currentMagnitude) },
+				{ "baseMagnitude", MagnitudeToJson(option.magnitude) },
+				{ "magnitudePerTier", MagnitudeToJson(option.magnitudePerTier) },
+				{ "currentMagnitude", MagnitudeToJson(currentMagnitude) },
+				{ "nextMagnitude", MagnitudeToJson(nextMagnitude) },
+				{ "currentTier", currentTier },
+				{ "nextTierScore", nextTierScore },
+				{ "scoreToNextTier", scoreToNextTier },
 				{ "exclusivityGroup", option.exclusivityGroup },
 			};
 		}
@@ -353,21 +364,21 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 		payload["disciplines"] = {
 			{ "attack", {
 				{ "score", BuildStateStore::GetAttackScore() },
-				{ "unlockedBaselineCount", BuildProgression::CountUnlockedBaselineMilestones(
-					Builds::BuildDiscipline::Attack,
-					BuildStateStore::GetAttackScore()) },
+				{ "currentTier", Builds::GetBuildScalingTier(BuildStateStore::GetAttackScore()) },
+				{ "nextTierScore", Builds::GetNextBuildScalingScore(BuildStateStore::GetAttackScore()) },
+				{ "scoreToNextTier", Builds::GetScoreToNextBuildScalingTier(BuildStateStore::GetAttackScore()) },
 			} },
 			{ "defense", {
 				{ "score", BuildStateStore::GetDefenseScore() },
-				{ "unlockedBaselineCount", BuildProgression::CountUnlockedBaselineMilestones(
-					Builds::BuildDiscipline::Defense,
-					BuildStateStore::GetDefenseScore()) },
+				{ "currentTier", Builds::GetBuildScalingTier(BuildStateStore::GetDefenseScore()) },
+				{ "nextTierScore", Builds::GetNextBuildScalingScore(BuildStateStore::GetDefenseScore()) },
+				{ "scoreToNextTier", Builds::GetScoreToNextBuildScalingTier(BuildStateStore::GetDefenseScore()) },
 			} },
 			{ "utility", {
 				{ "score", BuildStateStore::GetUtilityScore() },
-				{ "unlockedBaselineCount", BuildProgression::CountUnlockedBaselineMilestones(
-					Builds::BuildDiscipline::Utility,
-					BuildStateStore::GetUtilityScore()) },
+				{ "currentTier", Builds::GetBuildScalingTier(BuildStateStore::GetUtilityScore()) },
+				{ "nextTierScore", Builds::GetNextBuildScalingScore(BuildStateStore::GetUtilityScore()) },
+				{ "scoreToNextTier", Builds::GetScoreToNextBuildScalingTier(BuildStateStore::GetUtilityScore()) },
 			} },
 		};
 
@@ -395,7 +406,14 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 				{ "activeSlotId", activeSlotId.has_value() ? json(SlotIdToJs(activeSlotId.value())) : json(nullptr) },
 				{ "effectType", EffectTypeToJs(option.effectType) },
 				{ "effectKey", option.effectKey },
-				{ "magnitude", MagnitudeToJson(option.magnitude) },
+				{ "magnitude", MagnitudeToJson(Builds::GetScaledBuildMagnitude(option, activeScore)) },
+				{ "baseMagnitude", MagnitudeToJson(option.magnitude) },
+				{ "magnitudePerTier", MagnitudeToJson(option.magnitudePerTier) },
+				{ "currentMagnitude", MagnitudeToJson(Builds::GetScaledBuildMagnitude(option, activeScore)) },
+				{ "nextMagnitude", MagnitudeToJson(Builds::GetNextTierBuildMagnitude(option, activeScore)) },
+				{ "currentTier", Builds::GetBuildScalingTier(activeScore) },
+				{ "nextTierScore", Builds::GetNextBuildScalingScore(activeScore) },
+				{ "scoreToNextTier", Builds::GetScoreToNextBuildScalingTier(activeScore) },
 				{ "exclusivityGroup", option.exclusivityGroup },
 				{ "titleKey", option.titleKey },
 				{ "descriptionKey", option.descriptionKey },

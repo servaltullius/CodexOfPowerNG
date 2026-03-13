@@ -111,9 +111,9 @@
     const getUndoItems = asFn(options.getUndoItems, () => []);
     const getBuild = asFn(options.getBuild, () => ({
       disciplines: {
-        attack: { score: 0, unlockedBaselineCount: 0 },
-        defense: { score: 0, unlockedBaselineCount: 0 },
-        utility: { score: 0, unlockedBaselineCount: 0 },
+        attack: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
+        defense: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
+        utility: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
       },
       options: [],
       activeSlots: [],
@@ -343,6 +343,7 @@
       if (!rootEl || !rootEl.classList || typeof rootEl.classList.toggle !== "function") return;
       const lockViewport = nextTabId === "tabQuick" || nextTabId === "tabBuild";
       rootEl.classList.toggle("isViewportLocked", lockViewport);
+      rootEl.classList.toggle("isBuildViewportExpanded", nextTabId === "tabBuild");
       if (lockViewport) {
         if (typeof rootEl.scrollTo === "function") {
           rootEl.scrollTo(0, 0);

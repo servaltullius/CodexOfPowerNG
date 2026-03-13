@@ -19,6 +19,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"attack_damage_mult",
 				5.0f,
+				1.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.attack.ferocity.title",
@@ -36,6 +37,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"unarmed_damage",
 				0.2f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.attack.brawler.title",
@@ -53,6 +55,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"destruction_modifier",
 				0.5f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.attack.destruction.title",
@@ -70,6 +73,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"weapon_speed_mult",
 				3.0f,
+				0.5f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.attack.precision.title",
@@ -87,6 +91,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"critical_chance",
 				2.0f,
+				0.5f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.attack.pinpoint.title",
@@ -104,6 +109,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"attack_damage_mult",
 				3.0f,
+				1.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.attack.vitals.title",
@@ -121,6 +127,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"stamina",
 				2.0f,
+				1.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.attack.reserve.title",
@@ -138,6 +145,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"stamina_rate",
 				0.1f,
+				0.05f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.attack.secondwind.title",
@@ -155,6 +163,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"damage_resist",
 				10.0f,
+				2.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.defense.guard.title",
@@ -172,6 +181,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"health",
 				8.0f,
+				4.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.defense.bulwark.title",
@@ -189,6 +199,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"heal_rate",
 				0.02f,
+				0.01f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.defense.recovery.title",
@@ -206,6 +217,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"restoration_modifier",
 				0.5f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.defense.restoration.title",
@@ -223,6 +235,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"block_power_modifier",
 				15.0f,
+				3.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.defense.bastion.title",
@@ -240,6 +253,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"reflect_damage",
 				0.3f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.defense.reprisal.title",
@@ -257,6 +271,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"alteration_modifier",
 				0.5f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.defense.alteration.title",
@@ -274,6 +289,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"health",
 				15.0f,
+				5.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.defense.endurance.title",
@@ -290,7 +306,8 @@ namespace CodexOfPowerNG::Builds
 				BuildSlotCompatibility::SameOrWildcard,
 				BuildEffectType::ActorValue,
 				"magic_resist_bundle",
-				0.75f,
+				3.0f,
+				1.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.defense.warding.title",
@@ -307,6 +324,7 @@ namespace CodexOfPowerNG::Builds
 				BuildSlotCompatibility::SameOrWildcard,
 				BuildEffectType::ActorValue,
 				"elemental_resist_bundle",
+				4.0f,
 				1.0f,
 				"",
 				BuildStackRule::OnceOnly,
@@ -324,6 +342,7 @@ namespace CodexOfPowerNG::Builds
 				BuildSlotCompatibility::SameOrWildcard,
 				BuildEffectType::ActorValue,
 				"status_resist_bundle",
+				4.0f,
 				1.0f,
 				"",
 				BuildStackRule::OnceOnly,
@@ -341,7 +360,8 @@ namespace CodexOfPowerNG::Builds
 				BuildSlotCompatibility::SameOrWildcard,
 				BuildEffectType::ActorValue,
 				"absorb_chance",
-				0.4f,
+				1.0f,
+				0.5f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.defense.absorption.title",
@@ -359,6 +379,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::CarryWeight,
 				"carry_weight",
 				25.0f,
+				5.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.cache.title",
@@ -376,6 +397,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::Economy,
 				"speechcraft_modifier",
 				10,
+				2,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.barter.title",
@@ -393,6 +415,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"smithing_modifier",
 				0.5f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.smithing.title",
@@ -410,6 +433,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"alchemy_modifier",
 				0.5f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.alchemy.title",
@@ -427,6 +451,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"magicka_rate",
 				0.1f,
+				0.05f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.meditation.title",
@@ -444,6 +469,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"enchanting_modifier",
 				0.5f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.enchanting.title",
@@ -461,6 +487,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"magicka",
 				2.0f,
+				1.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.magicka.title",
@@ -478,6 +505,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::CarryWeight,
 				"carry_weight",
 				15.0f,
+				5.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.hauler.title",
@@ -494,7 +522,8 @@ namespace CodexOfPowerNG::Builds
 				BuildSlotCompatibility::SameOrWildcard,
 				BuildEffectType::ActorValue,
 				"speed_mult",
-				3.0f,
+				2.0f,
+				1.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.mobility.title",
@@ -511,7 +540,8 @@ namespace CodexOfPowerNG::Builds
 				BuildSlotCompatibility::SameOrWildcard,
 				BuildEffectType::ActorValue,
 				"speed_mult",
-				1.5f,
+				1.0f,
+				0.5f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.wayfinder.title",
@@ -529,6 +559,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"shout_recovery_mult",
 				-0.02f,
+				-0.01f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.echo.title",
@@ -546,6 +577,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"sneaking_modifier",
 				0.5f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.sneak.title",
@@ -563,6 +595,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"lockpicking_modifier",
 				0.5f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.lockpicking.title",
@@ -580,6 +613,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"pickpocket_modifier",
 				0.5f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.pickpocket.title",
@@ -597,6 +631,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"conjuration_modifier",
 				0.5f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.conjuration.title",
@@ -614,6 +649,7 @@ namespace CodexOfPowerNG::Builds
 				BuildEffectType::ActorValue,
 				"illusion_modifier",
 				0.5f,
+				0.1f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.illusion.title",
@@ -621,14 +657,7 @@ namespace CodexOfPowerNG::Builds
 			},
 		};
 
-		constexpr std::array kBaselineMilestones{
-			BuildBaselineMilestoneDef{ BuildDiscipline::Attack, 15u, BuildEffectType::ActorValue, "attack_damage_mult", 2.0f },
-			BuildBaselineMilestoneDef{ BuildDiscipline::Attack, 35u, BuildEffectType::ActorValue, "attack_damage_mult", 4.0f },
-			BuildBaselineMilestoneDef{ BuildDiscipline::Defense, 10u, BuildEffectType::ActorValue, "damage_resist", 5.0f },
-			BuildBaselineMilestoneDef{ BuildDiscipline::Defense, 25u, BuildEffectType::ActorValue, "damage_resist", 10.0f },
-			BuildBaselineMilestoneDef{ BuildDiscipline::Utility, 15u, BuildEffectType::Economy, "speechcraft_modifier", 5 },
-			BuildBaselineMilestoneDef{ BuildDiscipline::Utility, 35u, BuildEffectType::CarryWeight, "carry_weight", 15.0f },
-		};
+		constexpr std::array<BuildBaselineMilestoneDef, 0> kBaselineMilestones{};
 
 		constexpr std::array kInitialSlotLayout{
 			BuildSlotId::Attack1,
@@ -653,5 +682,41 @@ namespace CodexOfPowerNG::Builds
 	std::span<const BuildSlotId> GetInitialBuildSlotLayout() noexcept
 	{
 		return kInitialSlotLayout;
+	}
+
+	std::uint32_t GetBuildScalingTier(std::uint32_t score) noexcept
+	{
+		return score / kBuildScalingScoreInterval;
+	}
+
+	std::uint32_t GetNextBuildScalingScore(std::uint32_t score) noexcept
+	{
+		return (GetBuildScalingTier(score) + 1u) * kBuildScalingScoreInterval;
+	}
+
+	std::uint32_t GetScoreToNextBuildScalingTier(std::uint32_t score) noexcept
+	{
+		return GetNextBuildScalingScore(score) - score;
+	}
+
+	BuildMagnitude GetScaledBuildMagnitude(const BuildOptionDef& option, std::uint32_t score) noexcept
+	{
+		const auto tier = GetBuildScalingTier(score);
+		if (std::holds_alternative<float>(option.magnitude) &&
+		    std::holds_alternative<float>(option.magnitudePerTier)) {
+			return std::get<float>(option.magnitude) +
+			       (std::get<float>(option.magnitudePerTier) * static_cast<float>(tier));
+		}
+		if (std::holds_alternative<std::int32_t>(option.magnitude) &&
+		    std::holds_alternative<std::int32_t>(option.magnitudePerTier)) {
+			return std::get<std::int32_t>(option.magnitude) +
+			       (std::get<std::int32_t>(option.magnitudePerTier) * static_cast<std::int32_t>(tier));
+		}
+		return option.magnitude;
+	}
+
+	BuildMagnitude GetNextTierBuildMagnitude(const BuildOptionDef& option, std::uint32_t score) noexcept
+	{
+		return GetScaledBuildMagnitude(option, GetNextBuildScalingScore(score));
 	}
 }

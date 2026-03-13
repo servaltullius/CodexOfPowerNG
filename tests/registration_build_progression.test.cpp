@@ -9,8 +9,6 @@
 namespace
 {
 	using CodexOfPowerNG::BuildProgression::ApplyRegistrationContribution;
-	using CodexOfPowerNG::BuildProgression::BaselineMilestonesChanged;
-	using CodexOfPowerNG::BuildProgression::CountUnlockedBaselineMilestones;
 	using CodexOfPowerNG::BuildProgression::MakeRegistrationContribution;
 	using CodexOfPowerNG::BuildProgression::RollbackContributionResult;
 	using CodexOfPowerNG::BuildProgression::RollbackRegistrationContributionDetailed;
@@ -137,14 +135,6 @@ namespace
 		       restored.front().buildContribution->discipline == BuildDiscipline::Defense &&
 		       restored.front().buildContribution->scoreDelta == 1u;
 	}
-
-	bool BaselineMilestonesTrackThresholdCrossing()
-	{
-		return CountUnlockedBaselineMilestones(BuildDiscipline::Attack, 9u) == 0u &&
-		       CountUnlockedBaselineMilestones(BuildDiscipline::Attack, 10u) == 1u &&
-		       BaselineMilestonesChanged(BuildDiscipline::Attack, 9u, 10u) &&
-		       !BaselineMilestonesChanged(BuildDiscipline::Attack, 10u, 11u);
-	}
 }
 
 int main()
@@ -177,9 +167,6 @@ int main()
 		return 1;
 	}
 	if (!expect(UndoRecordRoundTripsBuildContributionMetadata(), "undo record must round-trip build contribution metadata")) {
-		return 1;
-	}
-	if (!expect(BaselineMilestonesTrackThresholdCrossing(), "baseline milestones must track threshold crossing")) {
 		return 1;
 	}
 

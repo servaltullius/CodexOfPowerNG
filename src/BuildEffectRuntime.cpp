@@ -334,13 +334,6 @@ namespace CodexOfPowerNG::Builds
 	{
 		std::unordered_map<RE::ActorValue, float, ActorValueHash> totals;
 
-		for (const auto& milestone : GetBuildBaselineMilestones()) {
-			if (ScoreForDiscipline(snapshot, milestone.discipline) < milestone.threshold) {
-				continue;
-			}
-			AccumulateEffect(totals, milestone.effectType, milestone.effectKey, milestone.magnitude);
-		}
-
 		std::unordered_set<std::string_view> appliedOptionIds;
 		for (const auto slotId : GetInitialBuildSlotLayout()) {
 			const auto& optionId = snapshot.activeBuildSlots[ToIndex(slotId)];
@@ -362,7 +355,11 @@ namespace CodexOfPowerNG::Builds
 				continue;
 			}
 
-			AccumulateEffect(totals, option->effectType, option->effectKey, option->magnitude);
+			AccumulateEffect(
+				totals,
+				option->effectType,
+				option->effectKey,
+				GetScaledBuildMagnitude(*option, ScoreForDiscipline(snapshot, option->discipline)));
 		}
 
 		std::vector<std::pair<RE::ActorValue, float>> out;

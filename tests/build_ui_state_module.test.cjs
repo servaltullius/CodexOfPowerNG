@@ -16,18 +16,30 @@ test("ui state stores build payloads independently from rewards", () => {
 
   state.setBuild({
     disciplines: {
-      attack: { score: 12, unlockedBaselineCount: 1 },
-      defense: { score: 4, unlockedBaselineCount: 0 },
-      utility: { score: 7, unlockedBaselineCount: 0 },
+      attack: { score: 12, currentTier: 1, nextTierScore: 20, scoreToNextTier: 8 },
+      defense: { score: 4, currentTier: 0, nextTierScore: 10, scoreToNextTier: 6 },
+      utility: { score: 7, currentTier: 0, nextTierScore: 10, scoreToNextTier: 3 },
     },
+    options: [
+      {
+        id: "build.attack.ferocity",
+        discipline: "attack",
+        themeId: "devastation",
+        currentMagnitude: 6,
+        nextMagnitude: 7,
+        currentTier: 1,
+      },
+    ],
     activeSlots: [{ slotId: "attack_1", optionId: "build.attack.ferocity" }],
   });
 
   const build = state.getBuild();
   assert.equal(build.disciplines.attack.score, 12);
+  assert.equal(build.disciplines.attack.currentTier, 1);
   assert.equal(build.disciplines.defense.score, 4);
   assert.equal(Array.isArray(build.activeSlots), true);
   assert.equal(build.activeSlots[0].slotId, "attack_1");
+  assert.equal(build.options[0].currentMagnitude, 6);
 
   state.setRewards({ totals: [{ label: "Legacy", total: 1 }] });
   assert.equal(state.getBuild().disciplines.attack.score, 12);
@@ -45,9 +57,9 @@ test("ui state keeps build catalog selection independently and normalizes it aga
 
   state.setBuild({
     disciplines: {
-      attack: { score: 32, unlockedBaselineCount: 2 },
-      defense: { score: 15, unlockedBaselineCount: 1 },
-      utility: { score: 5, unlockedBaselineCount: 0 },
+      attack: { score: 32, currentTier: 3, nextTierScore: 40, scoreToNextTier: 8 },
+      defense: { score: 15, currentTier: 1, nextTierScore: 20, scoreToNextTier: 5 },
+      utility: { score: 5, currentTier: 0, nextTierScore: 10, scoreToNextTier: 5 },
     },
     themeMap: {
       attack: [
@@ -82,9 +94,9 @@ test("ui state keeps build catalog selection independently and normalizes it aga
 
   state.setBuild({
     disciplines: {
-      attack: { score: 32, unlockedBaselineCount: 2 },
-      defense: { score: 15, unlockedBaselineCount: 1 },
-      utility: { score: 5, unlockedBaselineCount: 0 },
+      attack: { score: 32, currentTier: 3, nextTierScore: 40, scoreToNextTier: 8 },
+      defense: { score: 15, currentTier: 1, nextTierScore: 20, scoreToNextTier: 5 },
+      utility: { score: 5, currentTier: 0, nextTierScore: 10, scoreToNextTier: 5 },
     },
     themeMap: {
       attack: [
@@ -119,9 +131,9 @@ test("ui state prefers grouped theme rows for the active build selection", () =>
 
   state.setBuild({
     disciplines: {
-      attack: { score: 32, unlockedBaselineCount: 2 },
-      defense: { score: 15, unlockedBaselineCount: 1 },
-      utility: { score: 5, unlockedBaselineCount: 0 },
+      attack: { score: 32, currentTier: 3, nextTierScore: 40, scoreToNextTier: 8 },
+      defense: { score: 15, currentTier: 1, nextTierScore: 20, scoreToNextTier: 5 },
+      utility: { score: 5, currentTier: 0, nextTierScore: 10, scoreToNextTier: 5 },
     },
     themeMap: {
       attack: [
@@ -173,9 +185,9 @@ test("ui state honors payload-selected discipline/theme/option before any local 
 
   state.setBuild({
     disciplines: {
-      attack: { score: 32, unlockedBaselineCount: 2 },
-      defense: { score: 30, unlockedBaselineCount: 2 },
-      utility: { score: 5, unlockedBaselineCount: 0 },
+      attack: { score: 32, currentTier: 3, nextTierScore: 40, scoreToNextTier: 8 },
+      defense: { score: 30, currentTier: 3, nextTierScore: 40, scoreToNextTier: 10 },
+      utility: { score: 5, currentTier: 0, nextTierScore: 10, scoreToNextTier: 5 },
     },
     themeMap: {
       attack: [{ id: "devastation", titleKey: "build.theme.attack.devastation", optionCount: 1 }],

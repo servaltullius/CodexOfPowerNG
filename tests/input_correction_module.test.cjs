@@ -303,6 +303,69 @@ test("installDirectWheelScroll routes Build wheel input to the catalog scroller 
   assert.equal(rootEl.listenerCount("wheel"), 0);
 });
 
+test("installDirectWheelScroll routes Build wheel input to the hovered detail scroller when it is scrollable", () => {
+  const rootEl = makeEventTarget({
+    scrollTop: 0,
+    scrollHeight: 1600,
+    clientHeight: 400,
+  });
+  const buildCatalogScroller = {
+    scrollTop: 0,
+    scrollHeight: 2000,
+    clientHeight: 360,
+  };
+  const buildDetailScroller = {
+    scrollTop: 0,
+    scrollHeight: 900,
+    clientHeight: 240,
+    getAttribute(name) {
+      if (name === "data-wheel-surface") return "build-detail";
+      return null;
+    },
+    parentNode: null,
+  };
+  const detailChild = {
+    parentNode: buildDetailScroller,
+    getAttribute() {
+      return null;
+    },
+  };
+
+  const detach = mod.installDirectWheelScroll({
+    documentObj: {
+      querySelector(selector) {
+        if (selector === ".section.active") return { id: "tabBuild" };
+        return rootEl;
+      },
+      getElementById(id) {
+        if (id === "buildCatalogScroller") return buildCatalogScroller;
+        return null;
+      },
+    },
+    rootEl,
+    clamp: (v, min, max) => Math.max(min, Math.min(max, Number(v))),
+    getCurrentUiScale: () => 1,
+    performanceObj: { now: () => 100 },
+  });
+
+  rootEl.fire("wheel", {
+    isTrusted: true,
+    deltaY: 1,
+    deltaMode: 0,
+    timeStamp: 100,
+    target: detailChild,
+    preventDefault: () => {},
+    stopPropagation: () => {},
+  });
+
+  assert.equal(rootEl.scrollTop, 0, "Build root should stay fixed when a nested surface handles wheel");
+  assert.equal(buildCatalogScroller.scrollTop, 0, "Catalog should not move when the hovered detail panel can scroll");
+  assert.equal(buildDetailScroller.scrollTop, 24, "Build wheel should advance the hovered detail scroller");
+
+  detach();
+  assert.equal(rootEl.listenerCount("wheel"), 0);
+});
+
 test("installDirectWheelScroll routes Quick Register wheel input to the quick table scroller when available", () => {
   const rootEl = makeEventTarget({
     scrollTop: 0,

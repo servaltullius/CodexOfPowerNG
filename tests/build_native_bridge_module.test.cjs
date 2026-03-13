@@ -40,7 +40,12 @@ test("build bridge exports build normalization helpers", () => {
 test("interop bridge normalizes build payloads and grouped quick-list sections", () => {
   const normalizedBuild = interopBridge.normalizeBuildPayload({
     disciplines: {
-      attack: { score: 12 },
+      attack: {
+        score: 12,
+        currentTier: 1,
+        nextTierScore: 20,
+        scoreToNextTier: 8,
+      },
     },
     groupedCatalog: {
       attack: {
@@ -49,10 +54,27 @@ test("interop bridge normalizes build payloads and grouped quick-list sections",
     },
     selectedThemeRows: [{ id: "build.attack.ferocity", discipline: "attack", themeId: "devastation" }],
     selectedOptionDetail: { id: "build.attack.ferocity", discipline: "attack", themeId: "devastation" },
-    options: [{ id: "build.attack.ferocity", discipline: "attack", themeId: "devastation" }],
+    options: [
+      {
+        id: "build.attack.ferocity",
+        discipline: "attack",
+        themeId: "devastation",
+        magnitude: 6,
+        baseMagnitude: 5,
+        magnitudePerTier: 1,
+        currentMagnitude: 6,
+        nextMagnitude: 7,
+        currentTier: 1,
+        nextTierScore: 20,
+        scoreToNextTier: 8,
+      },
+    ],
     activeSlots: [{ slotId: "attack_1", optionId: "build.attack.ferocity" }],
   });
   assert.equal(normalizedBuild.disciplines.attack.score, 12);
+  assert.equal(normalizedBuild.disciplines.attack.currentTier, 1);
+  assert.equal(normalizedBuild.disciplines.attack.nextTierScore, 20);
+  assert.equal(normalizedBuild.disciplines.attack.scoreToNextTier, 8);
   assert.equal(normalizedBuild.activeSlots.length, 6);
   assert.equal(normalizedBuild.themeMap.attack.length, 3);
   assert.equal(normalizedBuild.groupedCatalog.attack.themes.length, 1);
@@ -60,6 +82,9 @@ test("interop bridge normalizes build payloads and grouped quick-list sections",
   assert.equal(normalizedBuild.selectedOptionDetail.id, "build.attack.ferocity");
   assert.equal(normalizedBuild.options[0].themeId, "devastation");
   assert.equal(normalizedBuild.options[0].hierarchy, "standard");
+  assert.equal(normalizedBuild.options[0].currentMagnitude, 6);
+  assert.equal(normalizedBuild.options[0].nextMagnitude, 7);
+  assert.equal(normalizedBuild.options[0].currentTier, 1);
 
   const normalizedQuickList = interopBridge.normalizeInventoryPayload({
     sections: [
@@ -95,7 +120,12 @@ test("native state bridge forwards build payloads to build renderer", () => {
 
   bridge.onBuild({
     disciplines: {
-      attack: { score: 12 },
+      attack: {
+        score: 12,
+        currentTier: 1,
+        nextTierScore: 20,
+        scoreToNextTier: 8,
+      },
     },
     groupedCatalog: {
       attack: {
@@ -104,16 +134,30 @@ test("native state bridge forwards build payloads to build renderer", () => {
     },
     selectedThemeRows: [{ id: "build.attack.ferocity", discipline: "attack", themeId: "devastation" }],
     selectedOptionDetail: { id: "build.attack.ferocity", discipline: "attack", themeId: "devastation" },
-    options: [{ id: "build.attack.ferocity", discipline: "attack", themeId: "devastation" }],
+    options: [
+      {
+        id: "build.attack.ferocity",
+        discipline: "attack",
+        themeId: "devastation",
+        magnitude: 6,
+        currentMagnitude: 6,
+        nextMagnitude: 7,
+        currentTier: 1,
+      },
+    ],
     activeSlots: [{ slotId: "attack_1", optionId: "build.attack.ferocity" }],
   });
 
   assert.equal(recorded.build.disciplines.attack.score, 12);
+  assert.equal(recorded.build.disciplines.attack.currentTier, 1);
+  assert.equal(recorded.build.disciplines.attack.nextTierScore, 20);
+  assert.equal(recorded.build.disciplines.attack.scoreToNextTier, 8);
   assert.equal(recorded.build.activeSlots.length, 6);
   assert.equal(recorded.build.themeMap.attack.length, 3);
   assert.equal(recorded.build.groupedCatalog.attack.themes.length, 1);
   assert.equal(recorded.build.selectedThemeRows.length, 1);
   assert.equal(recorded.build.selectedOptionDetail.id, "build.attack.ferocity");
+  assert.equal(recorded.build.options[0].currentMagnitude, 6);
   assert.deepEqual(recorded.renders, ["build"]);
 });
 
@@ -132,13 +176,30 @@ test("native bridge bootstrap installs build callback fallback", () => {
   win.copng_setBuild(
     JSON.stringify({
       disciplines: {
-        attack: { score: 12 },
+        attack: {
+          score: 12,
+          currentTier: 1,
+          nextTierScore: 20,
+          scoreToNextTier: 8,
+        },
       },
+      options: [
+        {
+          id: "build.attack.ferocity",
+          discipline: "attack",
+          themeId: "devastation",
+          currentMagnitude: 6,
+          nextMagnitude: 7,
+          currentTier: 1,
+        },
+      ],
       activeSlots: [{ slotId: "attack_1", optionId: "build.attack.ferocity" }],
     }),
   );
   assert.equal(recorded.build.disciplines.attack.score, 12);
+  assert.equal(recorded.build.disciplines.attack.currentTier, 1);
   assert.equal(recorded.build.activeSlots.length, 6);
+  assert.equal(recorded.build.options[0].currentMagnitude, 6);
 
   detach();
   assert.equal(win.copng_setBuild, undefined);

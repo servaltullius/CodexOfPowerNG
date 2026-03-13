@@ -69,6 +69,25 @@
       effectType: typeof source.effectType === "string" ? source.effectType : "",
       effectKey: typeof source.effectKey === "string" ? source.effectKey : "",
       magnitude: source.magnitude && typeof source.magnitude === "object" ? Object.assign({}, source.magnitude) : source.magnitude,
+      baseMagnitude:
+        source.baseMagnitude && typeof source.baseMagnitude === "object"
+          ? Object.assign({}, source.baseMagnitude)
+          : source.baseMagnitude,
+      magnitudePerTier:
+        source.magnitudePerTier && typeof source.magnitudePerTier === "object"
+          ? Object.assign({}, source.magnitudePerTier)
+          : source.magnitudePerTier,
+      currentMagnitude:
+        source.currentMagnitude && typeof source.currentMagnitude === "object"
+          ? Object.assign({}, source.currentMagnitude)
+          : source.currentMagnitude,
+      nextMagnitude:
+        source.nextMagnitude && typeof source.nextMagnitude === "object"
+          ? Object.assign({}, source.nextMagnitude)
+          : source.nextMagnitude,
+      currentTier: Number(source.currentTier || 0) >>> 0,
+      nextTierScore: Number(source.nextTierScore || 0) >>> 0,
+      scoreToNextTier: Number(source.scoreToNextTier || 0) >>> 0,
       exclusivityGroup: typeof source.exclusivityGroup === "string" ? source.exclusivityGroup : "",
       titleKey: typeof source.titleKey === "string" ? source.titleKey : "",
       descriptionKey: typeof source.descriptionKey === "string" ? source.descriptionKey : "",
@@ -167,21 +186,21 @@
       disciplines: {
         attack: {
           score: Number((disciplines.attack && disciplines.attack.score) || 0) >>> 0,
-          unlockedBaselineCount: Number(
-            (disciplines.attack && disciplines.attack.unlockedBaselineCount) || 0,
-          ) >>> 0,
+          currentTier: Number((disciplines.attack && disciplines.attack.currentTier) || 0) >>> 0,
+          nextTierScore: Number((disciplines.attack && disciplines.attack.nextTierScore) || 0) >>> 0,
+          scoreToNextTier: Number((disciplines.attack && disciplines.attack.scoreToNextTier) || 0) >>> 0,
         },
         defense: {
           score: Number((disciplines.defense && disciplines.defense.score) || 0) >>> 0,
-          unlockedBaselineCount: Number(
-            (disciplines.defense && disciplines.defense.unlockedBaselineCount) || 0,
-          ) >>> 0,
+          currentTier: Number((disciplines.defense && disciplines.defense.currentTier) || 0) >>> 0,
+          nextTierScore: Number((disciplines.defense && disciplines.defense.nextTierScore) || 0) >>> 0,
+          scoreToNextTier: Number((disciplines.defense && disciplines.defense.scoreToNextTier) || 0) >>> 0,
         },
         utility: {
           score: Number((disciplines.utility && disciplines.utility.score) || 0) >>> 0,
-          unlockedBaselineCount: Number(
-            (disciplines.utility && disciplines.utility.unlockedBaselineCount) || 0,
-          ) >>> 0,
+          currentTier: Number((disciplines.utility && disciplines.utility.currentTier) || 0) >>> 0,
+          nextTierScore: Number((disciplines.utility && disciplines.utility.nextTierScore) || 0) >>> 0,
+          scoreToNextTier: Number((disciplines.utility && disciplines.utility.scoreToNextTier) || 0) >>> 0,
         },
       },
       themeMap: normalizedThemeMap,

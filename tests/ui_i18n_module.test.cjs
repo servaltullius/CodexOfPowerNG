@@ -38,6 +38,18 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.altarTitle":\s*"빌드 제단"/);
   assert.match(moduleSource, /"build\.compatibleSlots":\s*"Compatible Slots: \{slots\}"/);
   assert.match(moduleSource, /"build\.compatibleSlots":\s*"호환 슬롯: \{slots\}"/);
+  assert.match(moduleSource, /"build\.help":\s*"Build score unlocks options permanently, and slotted options grow stronger every 10 discipline score\."/);
+  assert.match(moduleSource, /"build\.help":\s*"빌드 점수로 옵션을 영구 해금하고, 활성 슬롯 효과는 계통 점수 10마다 한 단계씩 강화됩니다\."/);
+  assert.match(moduleSource, /"build\.summaryTier":\s*"Tier \{tier\}"/);
+  assert.match(moduleSource, /"build\.summaryTier":\s*"단계 \{tier\}"/);
+  assert.match(moduleSource, /"build\.summaryNextTier":\s*"\{score\} score to next tier"/);
+  assert.match(moduleSource, /"build\.summaryNextTier":\s*"다음 강화까지 \{score\}점"/);
+  assert.match(moduleSource, /"build\.currentEffectLabel":\s*"Current Effect"/);
+  assert.match(moduleSource, /"build\.currentEffectLabel":\s*"현재 효과"/);
+  assert.match(moduleSource, /"build\.nextEffectLabel":\s*"Next Tier Effect"/);
+  assert.match(moduleSource, /"build\.nextEffectLabel":\s*"다음 단계 효과"/);
+  assert.match(moduleSource, /"build\.nextTierInline":\s*"Next tier in \{score\} score"/);
+  assert.match(moduleSource, /"build\.nextTierInline":\s*"\{score\}점 후 다음 단계"/);
   assert.match(moduleSource, /"build\.attack\.vitals\.title":\s*"Vitals"/);
   assert.match(moduleSource, /"build\.attack\.vitals\.description":\s*"\+3% attack damage while this option is slotted\."/);
   assert.match(moduleSource, /"build\.attack\.pinpoint\.title":\s*"Pinpoint"/);

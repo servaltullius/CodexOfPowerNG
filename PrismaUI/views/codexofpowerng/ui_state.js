@@ -33,9 +33,9 @@
   function createDefaultBuildState() {
     return {
       disciplines: {
-        attack: { score: 0, unlockedBaselineCount: 0 },
-        defense: { score: 0, unlockedBaselineCount: 0 },
-        utility: { score: 0, unlockedBaselineCount: 0 },
+        attack: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
+        defense: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
+        utility: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
       },
       themeMap: {
         attack: [],

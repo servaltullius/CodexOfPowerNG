@@ -23,9 +23,24 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
   const renderedHtml = mod.renderBuildPanelHtml(
     {
       disciplines: {
-        attack: { score: 32, unlockedBaselineCount: 2 },
-        defense: { score: 30, unlockedBaselineCount: 1 },
-        utility: { score: 30, unlockedBaselineCount: 1 },
+        attack: {
+          score: 32,
+          currentTier: 3,
+          nextTierScore: 40,
+          scoreToNextTier: 8,
+        },
+        defense: {
+          score: 30,
+          currentTier: 3,
+          nextTierScore: 40,
+          scoreToNextTier: 10,
+        },
+        utility: {
+          score: 30,
+          currentTier: 3,
+          nextTierScore: 40,
+          scoreToNextTier: 10,
+        },
       },
       selectedDiscipline: "attack",
       selectedTheme: "precision",
@@ -67,7 +82,16 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
           unlocked: true,
           titleKey: "build.attack.vitals.title",
           descriptionKey: "build.attack.vitals.description",
+          effectKey: "attack_damage_mult",
           slotCompatibility: "same_or_wildcard",
+          magnitude: 6,
+          baseMagnitude: 3,
+          magnitudePerTier: 1,
+          currentMagnitude: 6,
+          nextMagnitude: 7,
+          currentTier: 3,
+          nextTierScore: 40,
+          scoreToNextTier: 8,
         },
       ],
       selectedOptionDetail: {
@@ -79,7 +103,16 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
         unlocked: true,
         titleKey: "build.attack.vitals.title",
         descriptionKey: "build.attack.vitals.description",
+        effectKey: "attack_damage_mult",
         slotCompatibility: "same_or_wildcard",
+        magnitude: 6,
+        baseMagnitude: 3,
+        magnitudePerTier: 1,
+        currentMagnitude: 6,
+        nextMagnitude: 7,
+        currentTier: 3,
+        nextTierScore: 40,
+        scoreToNextTier: 8,
       },
       options: [
         {
@@ -91,7 +124,16 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
           unlocked: true,
           titleKey: "build.attack.vitals.title",
           descriptionKey: "build.attack.vitals.description",
+          effectKey: "attack_damage_mult",
           slotCompatibility: "same_or_wildcard",
+          magnitude: 6,
+          baseMagnitude: 3,
+          magnitudePerTier: 1,
+          currentMagnitude: 6,
+          nextMagnitude: 7,
+          currentTier: 3,
+          nextTierScore: 40,
+          scoreToNextTier: 8,
         },
         {
           id: "build.defense.endurance",
@@ -102,7 +144,16 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
           unlocked: true,
           titleKey: "build.defense.endurance.title",
           descriptionKey: "build.defense.endurance.description",
+          effectKey: "health",
           slotCompatibility: "same_or_wildcard",
+          magnitude: 30,
+          baseMagnitude: 15,
+          magnitudePerTier: 5,
+          currentMagnitude: 30,
+          nextMagnitude: 35,
+          currentTier: 3,
+          nextTierScore: 40,
+          scoreToNextTier: 10,
         },
         {
           id: "build.utility.mobility",
@@ -113,7 +164,16 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
           unlocked: true,
           titleKey: "build.utility.mobility.title",
           descriptionKey: "build.utility.mobility.description",
+          effectKey: "speed_mult",
           slotCompatibility: "same_or_wildcard",
+          magnitude: 5,
+          baseMagnitude: 2,
+          magnitudePerTier: 1,
+          currentMagnitude: 5,
+          nextMagnitude: 6,
+          currentTier: 3,
+          nextTierScore: 40,
+          scoreToNextTier: 10,
         },
       ],
       activeSlots: [
@@ -147,6 +207,9 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
   assert.match(renderedHtml, /buildSummaryCard disc-attack/);
   assert.match(renderedHtml, /buildSummaryCard disc-defense/);
   assert.match(renderedHtml, /buildSummaryCard disc-utility/);
+  assert.match(renderedHtml, /현재 단계|티어/);
+  assert.match(renderedHtml, /다음 강화|다음 단계/);
+  assert.match(renderedHtml, /8점/);
   assert.match(renderedHtml, /buildCatalogHeader/);
   assert.match(renderedHtml, /buildThemeTab isActive/);
   assert.match(renderedHtml, /buildThemeTab isActive[\s\S]*정밀/);
@@ -154,13 +217,15 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
   assert.doesNotMatch(renderedHtml, /buildCatalogRow [^"]*isSpecial/);
   assert.match(renderedHtml, /buildCatalogState/);
   assert.match(renderedHtml, /buildSelectedOptionPanel/);
+  assert.match(renderedHtml, /buildSelectedOptionPanel [^>]*data-wheel-surface="build-detail"/);
   assert.match(renderedHtml, /buildSlotMatrixCard/);
   assert.doesNotMatch(renderedHtml, /buildCatalogActions/);
-  assert.match(renderedHtml, /현재 빌드에는 활성 슬롯에 넣은 효과만 적용됩니다\./);
+  assert.match(renderedHtml, /활성 슬롯 효과는 계통 점수 10마다 한 단계씩 강화됩니다\./);
   assert.doesNotMatch(renderedHtml, /rewardCharacterImg/);
   assert.match(renderedHtml, /호환 슬롯|슬롯/);
   assert.match(renderedHtml, /잠김|해금됨|활성 중/);
   assert.match(renderedHtml, /점수 \d+ 필요/);
+  assert.match(renderedHtml, /buildFocusActions[\s\S]*buildFocusMeta/);
   assert.match(renderedHtml, /기존 보상이 새 빌드 진행도로 이관되었습니다|과거 등록/);
   assert.match(renderedHtml, /활성화/);
   assert.match(renderedHtml, /비활성화|교체/);
@@ -168,6 +233,8 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
   assert.match(renderedHtml, /파괴|정밀|격노/);
   assert.match(renderedHtml, /급소/);
   assert.match(renderedHtml, /슬롯 활성 시 공격 피해가 3% 증가합니다\./);
+  assert.match(renderedHtml, /현재 효과/);
+  assert.match(renderedHtml, /다음 단계 효과|다음 효과/);
   assert.doesNotMatch(renderedHtml, /인내/);
   assert.doesNotMatch(renderedHtml, /기동/);
   assert.doesNotMatch(renderedHtml, /핵심 표지|일반|특수/);
@@ -176,9 +243,9 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
 test("build panel renders supported-first option descriptions from grouped catalog rows", () => {
   const translator = i18n.createTranslator({ getLanguage: () => "en" });
   const baseDisciplines = {
-    attack: { score: 32, unlockedBaselineCount: 2 },
-    defense: { score: 30, unlockedBaselineCount: 1 },
-    utility: { score: 30, unlockedBaselineCount: 1 },
+    attack: { score: 32, currentTier: 3, nextTierScore: 40, scoreToNextTier: 8 },
+    defense: { score: 30, currentTier: 3, nextTierScore: 40, scoreToNextTier: 10 },
+    utility: { score: 30, currentTier: 3, nextTierScore: 40, scoreToNextTier: 10 },
   };
   const baseActiveSlots = [
     { slotId: "attack_1", slotKind: "attack", optionId: null, occupied: false },
@@ -680,9 +747,9 @@ test("build panel prefers grouped theme rows and selected detail payloads over r
   const renderedHtml = mod.renderBuildPanelHtml(
     {
       disciplines: {
-        attack: { score: 32, unlockedBaselineCount: 2 },
-        defense: { score: 30, unlockedBaselineCount: 1 },
-        utility: { score: 30, unlockedBaselineCount: 1 },
+        attack: { score: 32, currentTier: 3, nextTierScore: 40, scoreToNextTier: 8 },
+        defense: { score: 30, currentTier: 3, nextTierScore: 40, scoreToNextTier: 10 },
+        utility: { score: 30, currentTier: 3, nextTierScore: 40, scoreToNextTier: 10 },
       },
       selectedDiscipline: "attack",
       selectedTheme: "precision",
@@ -711,7 +778,13 @@ test("build panel prefers grouped theme rows and selected detail payloads over r
           unlocked: true,
           titleKey: "build.attack.vitals.title",
           descriptionKey: "build.attack.vitals.description",
+          effectKey: "attack_damage_mult",
           slotCompatibility: "same_or_wildcard",
+          currentMagnitude: 6,
+          nextMagnitude: 7,
+          currentTier: 3,
+          nextTierScore: 40,
+          scoreToNextTier: 8,
         },
       ],
       selectedOptionDetail: {
@@ -723,7 +796,13 @@ test("build panel prefers grouped theme rows and selected detail payloads over r
         unlocked: true,
         titleKey: "build.attack.vitals.title",
         descriptionKey: "build.attack.vitals.description",
+        effectKey: "attack_damage_mult",
         slotCompatibility: "same_or_wildcard",
+        currentMagnitude: 6,
+        nextMagnitude: 7,
+        currentTier: 3,
+        nextTierScore: 40,
+        scoreToNextTier: 8,
       },
       options: [
         {
@@ -735,6 +814,7 @@ test("build panel prefers grouped theme rows and selected detail payloads over r
           unlocked: true,
           titleKey: "build.attack.vitals.title",
           descriptionKey: "build.attack.vitals.description",
+          effectKey: "attack_damage_mult",
           slotCompatibility: "same_or_wildcard",
         },
         {
@@ -783,15 +863,19 @@ test("build view source includes a fixed catalog-first layout contract", () => {
   assert.match(html, /\.buildFixedSurface\s*\{[\s\S]*flex:\s*1 1 auto/);
   assert.match(html, /\.buildFixedSurface\s*\{[\s\S]*min-height:\s*0/);
   assert.match(html, /\.buildCatalogShell\s*\{/);
-  assert.match(html, /\.buildCatalogLayout\s*\{[\s\S]*grid-template-columns:/);
+  assert.match(html, /\.buildCatalogLayout\s*\{[\s\S]*grid-template-columns:[\s\S]*minmax\(calc\(136px \* var\(--uiScale\)\),\s*0\.42fr\)[\s\S]*minmax\(0,\s*1\.75fr\)[\s\S]*minmax\(calc\(260px \* var\(--uiScale\)\),\s*0\.78fr\)/);
   assert.match(html, /\.buildDisciplineRail\s*\{/);
-  assert.match(html, /\.buildThemeTabs\s*\{/);
+  assert.match(html, /\.buildCatalogPanel\s*\{[\s\S]*grid-template-rows:\s*auto auto minmax\(0,\s*1fr\)/);
+  assert.match(html, /\.buildThemeTabs\s*\{[\s\S]*flex-wrap:\s*nowrap/);
+  assert.match(html, /\.buildThemeTabs\s*\{[\s\S]*overflow-x:\s*auto/);
   assert.match(html, /\.buildCatalogScroller\s*\{[\s\S]*overflow:\s*auto/);
   assert.match(html, /\.buildCatalogScroller\s*\{[\s\S]*overscroll-behavior:\s*contain/);
   assert.match(html, /\.buildDetailRail\s*\{/);
   assert.match(html, /\.buildSlotMatrix\s*\{/);
   assert.match(html, /\.buildSummaryCard\s*\{[\s\S]*rgba\(12,\s*14,\s*22,\s*0\.94\)/);
-  assert.match(html, /\.buildSummaryValue\s*\{[\s\S]*font-size:\s*calc\(32px \* var\(--uiScale\)\)/);
+  assert.match(html, /\.buildSummaryValue\s*\{[\s\S]*font-size:\s*calc\(28px \* var\(--uiScale\)\)/);
+  assert.match(html, /\.buildDisciplineButton\s*\{[\s\S]*min-height:\s*calc\(44px \* var\(--uiScale\)\)/);
+  assert.match(html, /\.buildSlotMatrixCard\s*\{[\s\S]*padding:\s*calc\(10px \* var\(--uiScale\)\)/);
   assert.match(html, /\.buildCatalogEffect\s*\{[\s\S]*white-space:\s*nowrap/);
   assert.match(html, /\.buildCatalogEffect\s*\{[\s\S]*text-overflow:\s*ellipsis/);
   assert.doesNotMatch(html, /\.buildCatalogRow\.isSignpost\s*\{/);

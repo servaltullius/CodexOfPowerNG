@@ -40,13 +40,6 @@ namespace CodexOfPowerNG::BuildProgression
 		const Registration::BuildScoreContribution& contribution) noexcept;
 	[[nodiscard]] std::size_t RollbackRegistrationContribution(
 		const Registration::BuildScoreContribution& contribution) noexcept;
-	[[nodiscard]] std::size_t CountUnlockedBaselineMilestones(
-		Builds::BuildDiscipline discipline,
-		std::uint32_t           score) noexcept;
-	[[nodiscard]] bool BaselineMilestonesChanged(
-		Builds::BuildDiscipline discipline,
-		std::uint32_t           previousScore,
-		std::uint32_t           nextScore) noexcept;
 
 	[[nodiscard]] std::optional<Builds::BuildMigrationNoticeSnapshot> ConsumeMigrationNotice(
 		SerializationStateStore::Snapshot& snapshot) noexcept;

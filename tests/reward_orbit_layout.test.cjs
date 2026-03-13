@@ -37,9 +37,9 @@ test("build panel module renders slot actions and grouped discipline sections", 
   const htmlOut = buildPanel.renderBuildPanelHtml(
     {
       disciplines: {
-        attack: { score: 12, unlockedBaselineCount: 1 },
-        defense: { score: 4, unlockedBaselineCount: 0 },
-        utility: { score: 7, unlockedBaselineCount: 0 },
+        attack: { score: 12, currentTier: 1, nextTierScore: 20, scoreToNextTier: 8 },
+        defense: { score: 4, currentTier: 0, nextTierScore: 10, scoreToNextTier: 6 },
+        utility: { score: 7, currentTier: 0, nextTierScore: 10, scoreToNextTier: 3 },
       },
       selectedDiscipline: "attack",
       selectedTheme: "devastation",
@@ -111,11 +111,11 @@ test("build panel strings exist in both locales", () => {
   assert.match(i18nModuleSource, /"build\.activate": "활성화"/);
   assert.match(
     i18nModuleSource,
-    /"build\.help": "Build score opens options permanently, but only your active slots apply to the current build\."/,
+    /"build\.help": "Build score unlocks options permanently, and slotted options grow stronger every 10 discipline score\."/,
   );
   assert.match(
     i18nModuleSource,
-    /"build\.help": "빌드 점수로 해금한 옵션은 영구 보유되지만, 현재 빌드에는 활성 슬롯에 넣은 효과만 적용됩니다\."/,
+    /"build\.help": "빌드 점수로 옵션을 영구 해금하고, 활성 슬롯 효과는 계통 점수 10마다 한 단계씩 강화됩니다\."/,
   );
   assert.doesNotMatch(html, /class="small buildHelp"/);
   assert.match(buildPanelModuleSource, /buildCatalogLead/);

@@ -93,9 +93,35 @@
     return doc.getElementById("quickTableScroller") || rootEl;
   }
 
-  function resolveWheelContainer(doc, rootEl, options) {
+  function getWheelSurfaceMarker(node) {
+    if (!node || typeof node !== "object") return "";
+    if (typeof node.getAttribute === "function") {
+      return String(node.getAttribute("data-wheel-surface") || "");
+    }
+    return "";
+  }
+
+  function findWheelSurfaceFromTarget(target) {
+    let node = target;
+    while (node && typeof node === "object") {
+      const marker = getWheelSurfaceMarker(node);
+      if (marker) return node;
+      node = node.parentNode || null;
+    }
+    return null;
+  }
+
+  function resolveWheelContainer(doc, rootEl, options, eventTarget) {
     const activeTabId = getActiveTabId(doc, options);
     const normalized = String(activeTabId || "").toLowerCase();
+    const targetedSurface = findWheelSurfaceFromTarget(eventTarget);
+    if (targetedSurface) {
+      const targetedMaxScroll = Math.max(
+        0,
+        Number((targetedSurface && targetedSurface.scrollHeight) || 0) - Number((targetedSurface && targetedSurface.clientHeight) || 0),
+      );
+      if (targetedMaxScroll > 0) return targetedSurface;
+    }
     if (normalized === "tabbuild") {
       const buildContainer = resolveBuildWheelContainer(doc, rootEl, options);
       const buildMaxScroll = Math.max(
@@ -233,7 +259,7 @@
 
     const onWheel = function (e) {
       if (!e || e.isTrusted === false) return;
-      const scrollContainer = resolveWheelContainer(doc, rootEl, options);
+      const scrollContainer = resolveWheelContainer(doc, rootEl, options, e.target);
       if (!scrollContainer) return;
       const maxScroll = currentMaxScroll(scrollContainer);
       if (maxScroll <= 0) return;

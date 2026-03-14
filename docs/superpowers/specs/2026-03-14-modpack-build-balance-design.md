@@ -1,286 +1,312 @@
-# Modpack Build Balance Design
+# Modpack Build Point Balance Design
 
 ## Summary
 
-The current build model assumes that registration count and practical build power can grow on the same linear scale.
-That works well enough for vanilla-sized item pools, but it breaks down in large modpacks such as Nolvus or LoreRim where the number of registerable items rises sharply, especially in `Utility`.
+The current build system still ties practical power too closely to raw registration count.
+That makes large curated modpacks such as Nolvus or LoreRim feel overtuned even after the first compression pass, especially in `Utility`.
 
-The goal of this design is to keep the new build system readable and rewarding while preventing modpack item volume from turning raw registration count directly into runaway build power.
-The key change is to separate `rawScore` from `effectiveScore`.
-Unlocks will continue to use raw registration totals, while active option strength will scale from a compressed effective score curve.
+The approved direction is to stop compressing late-game score curves and instead make each registered item contribute a fixed amount of build progression from the start.
+This keeps every new registration valuable, avoids the feeling that progress is secretly throttled later, and lets the game stay readable in both vanilla-sized and modpack-sized item pools.
 
-This preserves player-facing progression and unlock cadence, but it stops high-count load orders from pushing active option values far past the balance envelope that the current catalog assumes.
+The new model separates:
+
+- `recordCount`: honest registration count for each discipline
+- `buildPoints`: weighted progression currency used for unlocks and active option scaling
+
+`recordCount` preserves collection motivation and player-visible history.
+`buildPoints` keeps unlock and effect growth stable across very different load orders.
 
 ## Goals
 
-- Preserve the existing registration loop and automatic unlock model.
-- Keep early and midgame vanilla pacing close to the current live feel.
-- Prevent large modpacks from converting item-count inflation into near-linear late-game stat inflation.
-- Reduce the current `Utility` discipline bias without making registration rules opaque.
-- Retune the most exposed option magnitudes so their capped practical range matches the compressed score curve.
+- Keep the registration loop honest: one successful registration still increases the visible record count.
+- Remove the “late-game compression” feeling that weakens motivation in large saves.
+- Make item value predictable from the first item to the last item.
+- Reduce `Utility` overgrowth structurally instead of relying on late-game tapering.
+- Preserve the current three-discipline model and the existing slot layout.
+- Keep the first-pass option retunes already implemented unless a later balance pass proves they are still too high.
 
 ## Non-Goals
 
-- Do not redesign the three-discipline model.
-- Do not add new slot types or change slot counts.
-- Do not introduce spendable score currencies or respec points.
+- Do not redesign the Attack / Defense / Utility discipline split.
+- Do not introduce spendable currencies, perk trees, or respec points.
 - Do not add per-item manual discipline assignment.
-- Do not solve every future balance issue with one pass; this pass targets score inflation and the most obvious overtuned rows.
+- Do not solve every balance issue through one data pass; this change targets progression shape first.
+- Do not remove record count from the UI.
 
 ## Problem Statement
 
-### 1. Raw item count is not stable across load orders
+### 1. Raw count is stable for motivation, but unstable for balance
 
-The current build system grants one score per successful registration and uses a shared `10 score = 1 tier` rule for option growth.
-This assumes the available item pool is roughly within a vanilla-like range.
-That assumption is false in large curated modpacks.
+Raw registration count is a good player-facing metric because it clearly answers “how much have I collected?”
+It is a bad universal balance metric because different load orders expose dramatically different item volumes.
 
-When the registerable pool doubles or triples, the system does not merely speed up unlocks.
-It also increases the final values of active options because the same raw score feeds scaling.
+When the same `1 registration = 1 score` rule drives both unlock cadence and active stat growth, modpacks produce much higher final power than the catalog was tuned for.
 
-### 2. Utility grows faster than the other disciplines
+### 2. Compression fixes power, but weakens reward psychology
 
-The current discipline mapping sends all of the following into `Utility`:
+The previous approved design used `rawScore` and `effectiveScore`, with late-game piecewise compression.
+That does solve runaway growth, but it creates a new problem:
 
-- alchemy items
-- ingredients
-- books
-- scrolls
-- soul gems
-- misc items
+- the player keeps registering items
+- the displayed count keeps rising
+- but each later item matters less than earlier items
 
-That mapping is simple and readable, but in modpacks it produces a strong structural skew.
-Utility receives the widest and noisiest item pool, so it reaches high tiers earlier and more often than Attack or Defense.
+That is mathematically safe, but it feels like diminishing returns were added after the fact.
+The user explicitly rejected that tradeoff because it weakens the motivation to keep collecting.
 
-### 3. Linear scaling turns catalog values into modpack liabilities
+### 3. Utility is structurally broader than the other disciplines
 
-Several options are reasonable on vanilla-adjacent score ranges but become too efficient when the score curve stretches.
-This is most visible in:
+The current mapping in [BuildProgression.cpp](/home/kdw73/Codex%20of%20Power%20NG/src/BuildProgression.cpp) sends all of the following into `Utility`:
 
-- carry weight
-- movement speed
-- crafting modifiers
-- stealth / utility modifiers
-- broad defensive stats such as health and stamina
+- `AlchemyItem`
+- `Ingredient`
+- `Book`
+- `Scroll`
+- `SoulGem`
+- `Misc`
 
-The root problem is not one bad row.
-The root problem is that the catalog was tuned against a much smaller practical score environment.
+That mapping is still acceptable, but it cannot keep using a universal `1 item = 1 progression unit` rule.
+The input pool is too broad.
+The fix should happen at contribution size, not through hidden late-game slowdown.
 
 ## Chosen Approach
 
-We will separate progression into two score concepts:
-
-- `rawScore`: exact registration-derived score for a discipline
-- `effectiveScore`: compressed score used only for active option scaling
+We will replace score compression with weighted fixed-point accumulation.
 
 Rules:
 
-- `rawScore` determines unlock eligibility.
-- `effectiveScore` determines current tier and scaled magnitude.
-- `rawScore` is still shown in the UI as the real record count.
-- the UI may optionally show the current effective tier, but not a second hidden currency
+- `recordCount` remains a whole-number registration count.
+- `buildPoints` becomes the only value used for:
+  - option unlock checks
+  - tier calculation
+  - scaled magnitude calculation
+  - “next upgrade” progress
+- every form type contributes the same fixed amount every time it is registered
+- the contribution does not change at high totals
 
 One-line rule:
 
-`Registration count stays honest, but combat/crafting/traversal power is derived from a modpack-safe compressed curve.`
+`Collection history stays linear, and progression power also stays linear, but each item type starts with a modpack-safe fixed weight instead of pretending every item is worth the same amount.`
 
-## Score Compression Model
+## Build Point Accumulation Model
 
-### Attack / Defense
+### Storage Format
 
-Attack and Defense keep most of their early linear feel, then taper off.
+To avoid float drift in saves and runtime state, build points should be stored internally as integer hundredths.
 
-Proposed curve:
+Examples:
 
-- `0-30 raw`: 100% effective
-- `31-80 raw`: 50% effective on the overflow
-- `81+ raw`: 25% effective on the overflow
+- `0.80 pt` -> `80`
+- `0.10 pt` -> `10`
+- `24.0 pt` -> `2400`
+
+The UI may display one decimal place, but serialization and runtime logic should use integer centi-points.
+
+### Approved Fixed Weights
+
+These weights are the approved first pass.
+They are intentionally conservative for `Utility`.
+
+| Form type | Discipline | Build points |
+| --- | --- | --- |
+| `Weapon` | Attack | `0.80` |
+| `Ammo` | Attack | `0.35` |
+| `Armor` | Defense | `0.40` |
+| `AlchemyItem` | Utility | `0.25` |
+| `Ingredient` | Utility | `0.10` |
+| `Book` | Utility | `0.08` |
+| `Scroll` | Utility | `0.18` |
+| `SoulGem` | Utility | `0.30` |
+| `Misc` | Utility | `0.05` |
+
+### Why These Numbers
+
+- `Weapon` is kept high because Attack has the narrowest practical input pool.
+- `Armor` is lower than Weapon because armor counts rise faster in large lists.
+- `SoulGem` and `AlchemyItem` stay meaningful, but far below the old `1 per item` rule.
+- `Book`, `Ingredient`, and especially `Misc` are intentionally tiny because they are the largest modpack inflation sources.
+
+This is the core balancing idea:
+
+`Utility does not need a slower curve if it starts with a smaller per-item step.`
+
+## Tier And Unlock Model
+
+### Tier Interval
+
+The approved tier cadence is:
+
+- `8.0 pt = 1 tier`
 
 Formula:
 
 ```text
-if raw <= 30:
-  effective = raw
-else if raw <= 80:
-  effective = 30 + floor((raw - 30) * 0.5)
-else:
-  effective = 55 + floor((raw - 80) * 0.25)
+tier = floor(buildPoints / 8.0)
 ```
 
-Examples:
-
-- raw `35` -> effective `32`
-- raw `60` -> effective `45`
-- raw `120` -> effective `65`
-
-### Utility
-
-Utility needs stronger tapering because its input pool is structurally larger.
-
-Proposed curve:
-
-- `0-20 raw`: 100% effective
-- `21-60 raw`: 40% effective on the overflow
-- `61+ raw`: 20% effective on the overflow
-
-Formula:
+With centi-points:
 
 ```text
-if raw <= 20:
-  effective = raw
-else if raw <= 60:
-  effective = 20 + floor((raw - 20) * 0.4)
-else:
-  effective = 36 + floor((raw - 60) * 0.2)
+tier = buildPointsCenti / 800
 ```
 
-Examples:
+This keeps tier progression linear forever.
 
-- raw `35` -> effective `26`
-- raw `60` -> effective `36`
-- raw `120` -> effective `48`
+### Unlock Threshold Ladder
 
-## Why This Approach
+The current unlock ordering should remain intact, but its thresholds should move from raw-count semantics to point semantics.
 
-### 1. Unlock pacing stays readable
+Approved ladder:
 
-The user still sees the honest registration count and still unlocks options from that same count.
-We avoid the frustrating feeling that “the mod stopped counting my progress.”
+| Previous unlock | New unlock |
+| --- | --- |
+| `5` | `4.0 pt` |
+| `10` | `8.0 pt` |
+| `15` | `12.0 pt` |
+| `20` | `16.0 pt` |
+| `25` | `20.0 pt` |
+| `30` | `24.0 pt` |
+| `35` | `28.0 pt` |
+| `40` | `32.0 pt` |
 
-### 2. Early vanilla feel remains close to current live behavior
+This preserves the catalog’s relative pacing while converting its absolute scale to the new weighted model.
 
-Most normal score ranges remain near-linear.
-The compression mainly affects the high-count ranges that modpacks hit far more often than vanilla.
+## Expected Balance Envelope
 
-### 3. It solves the real problem instead of sanding down every row forever
+The purpose of the fixed-point model is not to nerf every discipline equally.
+It is to preserve meaningful growth while shrinking the large-modpack spread.
 
-If we only nerf row magnitudes, a sufficiently inflated item pool will still eventually break the tuning again.
-Compressing effective score addresses the structural source of the runaway growth.
+Target expectations:
 
-### 4. Utility can be corrected without making registration rules obscure
+- Attack should remain close to current feel in ordinary saves.
+- Defense should land somewhat lower than the current compressed pass at high totals.
+- Utility should land much lower than the current compressed pass when the save is dominated by books, ingredients, soul gems, and misc clutter.
 
-This pass does not immediately remove broad item categories from Utility scoring.
-Instead, it makes the downstream power curve safer while preserving the simple mental model of current registration mapping.
+Informal target ranges for the current observed save shape:
 
-## Option Retune Pass
+- `Attack 33 records` -> roughly `22-26 pt`
+- `Defense 119 records` -> roughly `47-48 pt`
+- `Utility 204 records` -> roughly `26-34 pt`, depending on actual form mix
 
-Score compression alone is not enough.
-Several rows should also be brought down so their new peak values stay within a more conservative envelope.
+That puts the current screenshot closer to:
 
-The first pass should use these revised magnitudes:
+- Attack tier `2-3`
+- Defense tier `5`
+- Utility tier `3-4`
 
-### Attack
-
-- `build.attack.ferocity`: `5 / 1` -> `4 / 0.75`
-- `build.attack.precision`: `3 / 0.5` -> `2.5 / 0.35`
-
-### Defense
-
-- `build.defense.guard`: `10 / 2` -> `8 / 1.5`
-- `build.defense.bulwark`: `8 / 4` -> `6 / 2.5`
-
-### Utility
-
-- `build.utility.cache`: `25 / 2` -> `20 / 1`
-- `build.utility.barter`: `10 / 1` -> `8 / 1`
-- `build.utility.smithing`: `0.05 / 0.01` -> `0.03 / 0.005`
-- `build.utility.alchemy`: `0.05 / 0.01` -> `0.03 / 0.005`
-- `build.utility.enchanting`: `0.05 / 0.01` -> `0.03 / 0.005`
-- `build.utility.mobility`: `3 / 0.25` -> `2 / 0.15`
-- `build.utility.sneak`: `0.05 / 0.01` -> `0.03 / 0.005`
-- `build.utility.lockpicking`: `0.05 / 0.01` -> `0.03 / 0.005`
-- `build.utility.pickpocket`: `0.05 / 0.01` -> `0.03 / 0.005`
-- `build.utility.conjuration`: `0.05 / 0.01` -> `0.03 / 0.005`
-- `build.utility.illusion`: `0.05 / 0.01` -> `0.03 / 0.005`
-- `build.utility.echo`: `-0.01 / -0.003` -> `-0.007 / -0.002`
-
-These values are intentionally conservative.
-The goal of this pass is to restore safe headroom for large load orders, not to maximize top-end power.
+which is materially safer than the live `Utility 204 -> tier 6` result.
 
 ## Runtime Rules
 
+### Registration
+
+- successful registration still increments the visible discipline record count by `1`
+- successful registration also adds the form-type-specific build point gain
+- undo must subtract both:
+  - `1` record count
+  - the matching fixed build point amount
+
 ### Unlocks
 
-- continue to use `rawScore`
-- no option should relock differently than it does today
-- rollback should still subtract raw registration score
+- option unlock checks should use `buildPoints`
+- the old `unlockScore` naming should be retired or explicitly migrated to `unlockPoints`
 
 ### Scaling
 
-- current option magnitude should use `effectiveScore`
-- tier derivation should use compressed effective score, not raw score
-- all active option recomputation paths should call the same effective score helper
+- active option magnitude should use build-point-derived tier only
+- next-tier magnitude should use the next linear point threshold, not a compressed helper
+- the previous compression helpers should be removed after the migration is complete
 
-### Serialization
+## UI And Payload Rules
 
-- store raw discipline scores only
-- do not serialize effective score as a separate source of truth
-- recompute effective score on load
+The UI should not hide the distinction between collection history and progression power.
 
-This keeps saves deterministic and avoids migration complexity.
+Approved payload intent:
 
-## UI Rules
+- keep `recordCount`
+- add `buildPoints`
+- keep `currentTier`
+- replace next-upgrade progress with point-based fields
 
-The UI should continue to surface the real registration total as the primary number because that is what the player earned.
+The Build UI should show both:
 
-Recommended display model:
+- discipline record count
+- progression build points
 
-- top summary: show `rawScore`
-- option details: show current effect and next tier preview from effective scaling
-- next-tier messaging: based on the next compressed effective tier threshold, not the next raw multiple of ten
+Example presentation:
 
-This means the detail panel should not imply that every raw ten points always yields a tier forever.
-If the compression curve changes the next tier threshold, the panel should show the actual remaining raw score needed.
+- `기록 204`
+- `빌드 포인트 29.4`
+- `다음 강화까지 2.6 pt`
 
-## Rejected Alternatives
+This preserves motivation while making progression math honest.
 
-### 1. Nerf every row only
+## Persistence And Migration
 
-Rejected because it does not solve the inflated score source.
-It would force repeated nerf passes whenever modpack item volume rises again.
+### Source Of Truth
 
-### 2. Increase the global tier interval from 10 to 15 or 20
+The system can no longer derive progression from record count alone, because the same record count can represent very different form mixes.
 
-Rejected because it hurts vanilla pacing too much and still does not address Utility inflation specifically.
+Therefore the runtime snapshot must persist build-point totals as their own fields.
 
-### 3. Immediately exclude categories like `Misc` from Utility
+Approved persistence rule:
 
-Rejected for this pass because it changes registration semantics too abruptly and makes player expectations less clear.
-That remains a valid future follow-up if Utility still outpaces the others after effective-score compression.
+- keep existing per-discipline record counts
+- add per-discipline build-point totals in centi-points
+- continue to keep enough registration history for undo and migration logic
 
-## Risks
+### Migration
 
-### 1. Unlocks may feel more exciting than actual strength gains
+Existing saves should be migrated by replaying registered forms and re-deriving:
 
-If compression is too aggressive, players may unlock new options frequently but feel that equipped options grow too slowly.
-That is why the early curve remains near-linear.
+- record counts
+- build-point totals
 
-### 2. Utility may still lead in very large load orders
+Migration should use current registered form types when available.
+If a historical registration can no longer resolve to a concrete form, it should fall back to the old discipline bucket and use a conservative default weight for that discipline.
 
-This design reduces the slope but does not fully erase the mapping bias.
-That is acceptable for this pass as long as Utility no longer dominates by default.
+Approved conservative fallback weights:
 
-### 3. Some rows may become too weak under both compression and retuning
+- Attack fallback: `0.60 pt`
+- Defense fallback: `0.35 pt`
+- Utility fallback: `0.10 pt`
 
-That is possible, especially for niche utility rows.
-The intended mitigation is targeted post-pass adjustment, not abandoning the score compression model.
+These fallbacks should be rare, but they prevent unresolved historical records from producing zero progression.
 
-## Validation Targets
+## Rejected Alternative
 
-The implementation should prove these outcomes:
+### Piecewise Effective-Score Compression
 
-- vanilla-like score ranges remain close to current live values
-- high raw scores no longer translate to near-linear high-end option growth
-- Utility high-score outcomes stay meaningfully below current live values
-- unlock behavior is unchanged
-- save/load round-trips continue to depend on raw stored score only
+This design intentionally replaces the earlier `rawScore -> effectiveScore` compression model.
 
-## Follow-Up Criteria
+Reasons:
 
-If this pass lands and Utility still dominates modpack play, the next pass should consider one of:
+- it fixed balance by weakening later registrations
+- it made late-game collection feel less rewarding
+- it obscured the practical value of the next item
+- it still required special casing `Utility` as a curve problem instead of a contribution problem
 
-- category-weighted raw score contributions
-- excluding part of `Misc` from score contribution
-- a second Utility-only taper segment
+The user explicitly preferred a system where every new registration keeps a predictable fixed value.
 
-That work should only start after the effective-score model is validated in runtime and UI.
+## Testing Expectations
+
+The implementation should prove all of the following:
+
+- weighted point gain is assigned from form type correctly
+- unlock thresholds are now point-based
+- runtime magnitudes scale from build-point tier, not record count
+- payloads expose both record count and build point progress
+- UI copy no longer claims a hidden `10 score = 1 tier` rule
+- migration reconstructs safe point totals from existing registrations
+
+## Final Decision
+
+The final approved design is:
+
+- keep record counts for motivation and visibility
+- remove late-game compression
+- add per-discipline fixed build-point totals
+- drive unlocks and scaling from build points only
+- use conservative item-type weights, especially in `Utility`
+
+This is the cleanest way to make large modpacks feel fair without making late progression psychologically flat.

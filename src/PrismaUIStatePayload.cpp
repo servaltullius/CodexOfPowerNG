@@ -33,11 +33,19 @@ namespace CodexOfPowerNG::PrismaUIManager::Internal
 		const auto attackScore = BuildStateStore::GetAttackScore();
 		const auto defenseScore = BuildStateStore::GetDefenseScore();
 		const auto utilityScore = BuildStateStore::GetUtilityScore();
+		const auto attackBuildPointsCenti = BuildStateStore::GetAttackBuildPointsCenti();
+		const auto defenseBuildPointsCenti = BuildStateStore::GetDefenseBuildPointsCenti();
+		const auto utilityBuildPointsCenti = BuildStateStore::GetUtilityBuildPointsCenti();
 		j["buildSummary"] = {
 			{ "attackScore", attackScore },
 			{ "defenseScore", defenseScore },
 			{ "utilityScore", utilityScore },
 			{ "totalScore", attackScore + defenseScore + utilityScore },
+			{ "attackBuildPoints", Builds::FromBuildPointCenti(attackBuildPointsCenti) },
+			{ "defenseBuildPoints", Builds::FromBuildPointCenti(defenseBuildPointsCenti) },
+			{ "utilityBuildPoints", Builds::FromBuildPointCenti(utilityBuildPointsCenti) },
+			{ "totalBuildPoints", Builds::FromBuildPointCenti(
+				  attackBuildPointsCenti + defenseBuildPointsCenti + utilityBuildPointsCenti) },
 		};
 		j["buildMigration"] = {
 			{ "state", static_cast<std::uint32_t>(BuildStateStore::MigrationState()) },

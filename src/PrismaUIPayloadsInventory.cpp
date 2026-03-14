@@ -44,6 +44,8 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 					{ "discipline", discipline },
 					{ "totalCount", it.totalCount },
 					{ "safeCount", it.safeCount },
+					{ "buildPoints", Builds::FromBuildPointCenti(it.buildPointsCenti) },
+					{ "buildPointsCenti", it.buildPointsCenti },
 					{ "actionable", it.safeCount > 0 && it.disabledReason.empty() },
 					{ "disabledReason", it.disabledReason.empty() ? json(nullptr) : json(it.disabledReason) },
 				});
@@ -74,6 +76,8 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 				{ "groupName", Registration::GetDiscoveryGroupName(it.group) },
 				{ "totalCount", it.totalCount },
 				{ "safeCount", it.safeCount },
+				{ "buildPoints", Builds::FromBuildPointCenti(it.buildPointsCenti) },
+				{ "buildPointsCenti", it.buildPointsCenti },
 			});
 		}
 		payload["items"] = std::move(arr);

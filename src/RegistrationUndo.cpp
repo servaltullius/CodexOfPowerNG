@@ -116,7 +116,9 @@ namespace CodexOfPowerNG::Registration
 		bool hadRollbackTarget = false;
 		bool rollbackApplied = false;
 		if (record.buildContribution.has_value()) {
-			hadRollbackTarget = record.buildContribution->scoreDelta > 0;
+			hadRollbackTarget =
+				record.buildContribution->recordDelta > 0 ||
+				record.buildContribution->pointsDeltaCenti > 0;
 			const auto rollbackResult =
 				BuildProgression::RollbackRegistrationContributionDetailed(record.buildContribution.value());
 			rollbackApplied = rollbackResult.scoreChanged || rollbackResult.deactivatedSlots > 0u;

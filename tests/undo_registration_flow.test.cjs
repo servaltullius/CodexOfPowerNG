@@ -40,7 +40,7 @@ test("request ops route undo payload and refresh relevant panels", () => {
 
 test("registration path records build contribution metadata for undo", () => {
   const src = read("src/RegistrationQuickRegister.cpp");
-  assert.match(src, /const auto buildContribution = BuildProgression::MakeRegistrationContribution\(group\);/);
+  assert.match(src, /const auto buildContribution = BuildProgression::MakeRegistrationContribution\(group,\s*regKey->GetFormType\(\)\);/);
   assert.match(src, /if \(buildContribution\.has_value\(\)\)/);
   assert.match(src, /BuildProgression::ApplyRegistrationContribution\(buildContribution\.value\(\)\);/);
   assert.match(src, /undoRecord\.buildContribution = buildContribution;/);
@@ -56,12 +56,15 @@ test("undo records are serialized and restored", () => {
   assert.match(saveSrc, /WriteUndoRecord/);
   assert.match(saveSrc, /hasBuildContribution/);
   assert.match(saveSrc, /disciplineRaw/);
-  assert.match(saveSrc, /scoreDelta/);
+  assert.match(saveSrc, /recordDelta/);
+  assert.match(saveSrc, /pointsDeltaCenti/);
   assert.match(loadSrc, /case kRecordUndoHistory:/);
   assert.match(loadSrc, /hasBuildContribution/);
   assert.match(loadSrc, /buildDisciplineRaw/);
-  assert.match(loadSrc, /buildScoreDelta/);
+  assert.match(loadSrc, /buildRecordDelta/);
+  assert.match(loadSrc, /buildPointsDeltaCenti/);
   assert.match(loadSrc, /entry\.buildContribution = Registration::BuildScoreContribution/);
+  assert.match(loadSrc, /LegacyUndoPointsDeltaForDiscipline/);
   assert.match(loadSrc, /ResolveFormID\(oldRegKey, newRegKey\)/);
   assert.match(loadSrc, /ResolveFormID\(oldFormId, newFormId\)/);
   assert.match(loadSrc, /if \(!regKeyResolved \|\| !formIdResolved\)/);

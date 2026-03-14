@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <string_view>
+#include <utility>
 #include <variant>
 
 namespace CodexOfPowerNG::Builds
@@ -73,8 +74,25 @@ namespace CodexOfPowerNG::Builds
 	};
 
 	using BuildMagnitude = std::variant<float, std::int32_t>;
+	using BuildPointCenti = std::uint32_t;
 	inline constexpr std::size_t kBuildSlotCount = static_cast<std::size_t>(BuildSlotId::Wildcard1) + 1;
-	inline constexpr std::uint32_t kBuildScalingScoreInterval = 10u;
+	inline constexpr BuildPointCenti kBuildPointScale = 100u;
+	inline constexpr BuildPointCenti kBuildPointsPerTierCenti = 800u;
+
+	[[nodiscard]] constexpr BuildPointCenti ToBuildPointCenti(std::uint32_t wholePoints) noexcept
+	{
+		return wholePoints * kBuildPointScale;
+	}
+
+	[[nodiscard]] constexpr float FromBuildPointCenti(BuildPointCenti points) noexcept
+	{
+		return static_cast<float>(points) / static_cast<float>(kBuildPointScale);
+	}
+
+	[[nodiscard]] constexpr BuildPointCenti NormalizeLegacyUnlockToBuildPointsCenti(std::uint32_t value) noexcept
+	{
+		return value < kBuildPointScale ? ((value / 5u) * ToBuildPointCenti(4u)) : value;
+	}
 
 	[[nodiscard]] constexpr std::size_t ToIndex(BuildSlotId slotId) noexcept
 	{
@@ -83,13 +101,48 @@ namespace CodexOfPowerNG::Builds
 
 	struct BuildOptionDef
 	{
+		constexpr BuildOptionDef(
+			std::string_view id,
+			BuildDiscipline discipline,
+			std::string_view themeId,
+			std::string_view themeTitleKey,
+			std::string_view hierarchy,
+			BuildLayer layer,
+			std::uint32_t unlockValue,
+			BuildSlotCompatibility slotCompatibility,
+			BuildEffectType effectType,
+			std::string_view effectKey,
+			BuildMagnitude magnitude,
+			BuildMagnitude magnitudePerTier,
+			std::string_view exclusivityGroup,
+			BuildStackRule stackRule,
+			std::string_view titleKey,
+			std::string_view descriptionKey) noexcept :
+			id(id),
+			discipline(discipline),
+			themeId(themeId),
+			themeTitleKey(themeTitleKey),
+			hierarchy(hierarchy),
+			layer(layer),
+			unlockPointsCenti(NormalizeLegacyUnlockToBuildPointsCenti(unlockValue)),
+			slotCompatibility(slotCompatibility),
+			effectType(effectType),
+			effectKey(effectKey),
+			magnitude(std::move(magnitude)),
+			magnitudePerTier(std::move(magnitudePerTier)),
+			exclusivityGroup(exclusivityGroup),
+			stackRule(stackRule),
+			titleKey(titleKey),
+			descriptionKey(descriptionKey)
+		{}
+
 		std::string_view id;
 		BuildDiscipline discipline;
 		std::string_view themeId;
 		std::string_view themeTitleKey;
 		std::string_view hierarchy;
 		BuildLayer layer;
-		std::uint32_t unlockScore;
+		BuildPointCenti unlockPointsCenti;
 		BuildSlotCompatibility slotCompatibility;
 		BuildEffectType effectType;
 		std::string_view effectKey;
@@ -104,7 +157,7 @@ namespace CodexOfPowerNG::Builds
 	struct BuildBaselineMilestoneDef
 	{
 		BuildDiscipline discipline;
-		std::uint32_t threshold;
+		BuildPointCenti threshold;
 		BuildEffectType effectType;
 		std::string_view effectKey;
 		BuildMagnitude magnitude;

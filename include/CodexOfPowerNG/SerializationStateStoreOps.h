@@ -17,6 +17,9 @@ namespace CodexOfPowerNG::SerializationStateStore::Ops
 		snapshot.attackScore = state.attackScore;
 		snapshot.defenseScore = state.defenseScore;
 		snapshot.utilityScore = state.utilityScore;
+		snapshot.attackBuildPointsCenti = state.attackBuildPointsCenti;
+		snapshot.defenseBuildPointsCenti = state.defenseBuildPointsCenti;
+		snapshot.utilityBuildPointsCenti = state.utilityBuildPointsCenti;
 		snapshot.activeBuildSlots = state.activeBuildSlots;
 		snapshot.buildMigrationVersion = state.buildMigrationVersion;
 		snapshot.buildMigrationState = state.buildMigrationState;
@@ -37,6 +40,9 @@ namespace CodexOfPowerNG::SerializationStateStore::Ops
 		state.attackScore = snapshot.attackScore;
 		state.defenseScore = snapshot.defenseScore;
 		state.utilityScore = snapshot.utilityScore;
+		state.attackBuildPointsCenti = snapshot.attackBuildPointsCenti;
+		state.defenseBuildPointsCenti = snapshot.defenseBuildPointsCenti;
+		state.utilityBuildPointsCenti = snapshot.utilityBuildPointsCenti;
 		state.activeBuildSlots = std::move(snapshot.activeBuildSlots);
 		state.buildMigrationVersion = snapshot.buildMigrationVersion;
 		state.buildMigrationState = snapshot.buildMigrationState;
@@ -56,6 +62,9 @@ namespace CodexOfPowerNG::SerializationStateStore::Ops
 		state.attackScore = 0;
 		state.defenseScore = 0;
 		state.utilityScore = 0;
+		state.attackBuildPointsCenti = 0;
+		state.defenseBuildPointsCenti = 0;
+		state.utilityBuildPointsCenti = 0;
 		state.activeBuildSlots = {};
 		state.buildMigrationVersion = 0;
 		state.buildMigrationState = decltype(state.buildMigrationState)::kNotStarted;

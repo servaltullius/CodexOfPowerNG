@@ -15,6 +15,7 @@ namespace
 	using CodexOfPowerNG::BuildProgression::RollbackRegistrationContribution;
 	using CodexOfPowerNG::BuildStateStore::GetActiveSlot;
 	using CodexOfPowerNG::BuildStateStore::GetAttackScore;
+	using CodexOfPowerNG::BuildStateStore::GetAttackBuildPointsCenti;
 	using CodexOfPowerNG::BuildStateStore::SetActiveSlot;
 	using CodexOfPowerNG::Builds::BuildDiscipline;
 	using CodexOfPowerNG::Builds::BuildSlotId;
@@ -24,42 +25,46 @@ namespace
 	bool RegisterGrantsOneScoreToMappedDiscipline()
 	{
 		CodexOfPowerNG::SerializationStateStore::Clear();
-		const auto contribution = MakeRegistrationContribution(0u);
+		const auto contribution = MakeRegistrationContribution(0u, RE::FormType::Weapon);
 		if (!contribution.has_value()) {
 			return false;
 		}
-		if (contribution->discipline != BuildDiscipline::Attack || contribution->scoreDelta != 1u) {
+		if (contribution->discipline != BuildDiscipline::Attack ||
+		    contribution->recordDelta != 1 ||
+		    contribution->pointsDeltaCenti != 70) {
 			return false;
 		}
 
 		if (!ApplyRegistrationContribution(contribution.value())) {
 			return false;
 		}
-		return GetAttackScore() == 1u;
+		return GetAttackScore() == 1u &&
+		       GetAttackBuildPointsCenti() == 70u;
 	}
 
 	bool UndoRemovesThatScoreContribution()
 	{
 		CodexOfPowerNG::SerializationStateStore::Clear();
-		const auto contribution = MakeRegistrationContribution(0u);
+		const auto contribution = MakeRegistrationContribution(0u, RE::FormType::Weapon);
 		if (!contribution.has_value()) {
 			return false;
 		}
 
 		(void)ApplyRegistrationContribution(contribution.value());
 		(void)RollbackRegistrationContribution(contribution.value());
-		return GetAttackScore() == 0u;
+		return GetAttackScore() == 0u &&
+		       GetAttackBuildPointsCenti() == 0u;
 	}
 
 	bool UndoDeactivatesNowIneligibleOption()
 	{
 		CodexOfPowerNG::SerializationStateStore::Clear();
-		const auto contribution = MakeRegistrationContribution(0u);
+		const auto contribution = MakeRegistrationContribution(0u, RE::FormType::Weapon);
 		if (!contribution.has_value()) {
 			return false;
 		}
 
-		for (std::uint32_t i = 0; i < 5u; ++i) {
+		for (std::uint32_t i = 0; i < 6u; ++i) {
 			if (!ApplyRegistrationContribution(contribution.value())) {
 				return false;
 			}
@@ -69,7 +74,8 @@ namespace
 		}
 
 		const auto deactivatedSlots = RollbackRegistrationContribution(contribution.value());
-		return GetAttackScore() == 4u &&
+		return GetAttackScore() == 5u &&
+		       GetAttackBuildPointsCenti() == 350u &&
 		       deactivatedSlots == 1u &&
 		       !GetActiveSlot(BuildSlotId::Attack1).has_value();
 	}
@@ -77,7 +83,7 @@ namespace
 	bool DetailedRollbackReportsScoreChangesAndClearedSlots()
 	{
 		CodexOfPowerNG::SerializationStateStore::Clear();
-		const auto contribution = MakeRegistrationContribution(0u);
+		const auto contribution = MakeRegistrationContribution(0u, RE::FormType::Weapon);
 		if (!contribution.has_value()) {
 			return false;
 		}
@@ -89,7 +95,8 @@ namespace
 		const auto result = RollbackRegistrationContributionDetailed(contribution.value());
 		return result.scoreChanged &&
 		       result.deactivatedSlots == 0u &&
-		       GetAttackScore() == 0u;
+		       GetAttackScore() == 0u &&
+		       GetAttackBuildPointsCenti() == 0u;
 	}
 
 	bool DetailedRollbackClearsInvalidSlotsEvenWhenScoreIsAlreadyZero()
@@ -97,10 +104,11 @@ namespace
 		CodexOfPowerNG::SerializationStateStore::Clear();
 		auto snapshot = CodexOfPowerNG::SerializationStateStore::SnapshotState();
 		snapshot.attackScore = 0u;
+		snapshot.attackBuildPointsCenti = 0u;
 		snapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack1)] = "build.attack.ferocity";
 		CodexOfPowerNG::SerializationStateStore::ReplaceState(std::move(snapshot));
 
-		const auto contribution = MakeRegistrationContribution(0u);
+		const auto contribution = MakeRegistrationContribution(0u, RE::FormType::Weapon);
 		if (!contribution.has_value()) {
 			return false;
 		}
@@ -121,7 +129,8 @@ namespace
 		record.group = 1u;
 		record.buildContribution = BuildScoreContribution{
 			.discipline = BuildDiscipline::Defense,
-			.scoreDelta = 1u,
+			.recordDelta = 1,
+			.pointsDeltaCenti = 40,
 		};
 
 		(void)CodexOfPowerNG::RegistrationStateStore::PushUndoRecord(record);
@@ -133,7 +142,8 @@ namespace
 		return restored.size() == 1u &&
 		       restored.front().buildContribution.has_value() &&
 		       restored.front().buildContribution->discipline == BuildDiscipline::Defense &&
-		       restored.front().buildContribution->scoreDelta == 1u;
+		       restored.front().buildContribution->recordDelta == 1 &&
+		       restored.front().buildContribution->pointsDeltaCenti == 40;
 	}
 }
 

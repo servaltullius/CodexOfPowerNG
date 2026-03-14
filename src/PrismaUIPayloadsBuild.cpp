@@ -83,6 +83,25 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 			return 0u;
 		}
 
+		[[nodiscard]] Builds::BuildPointCenti DisciplineBuildPointsCenti(
+			Builds::BuildDiscipline discipline) noexcept
+		{
+			switch (discipline) {
+			case Builds::BuildDiscipline::Attack:
+				return BuildStateStore::GetAttackBuildPointsCenti();
+			case Builds::BuildDiscipline::Defense:
+				return BuildStateStore::GetDefenseBuildPointsCenti();
+			case Builds::BuildDiscipline::Utility:
+				return BuildStateStore::GetUtilityBuildPointsCenti();
+			}
+			return 0u;
+		}
+
+		[[nodiscard]] json BuildPointsToJson(Builds::BuildPointCenti pointsCenti) noexcept
+		{
+			return json(Builds::FromBuildPointCenti(pointsCenti));
+		}
+
 		[[nodiscard]] const char* SlotKindToJs(Builds::BuildSlotId slotId) noexcept
 		{
 			switch (slotId) {
@@ -257,15 +276,16 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 
 		[[nodiscard]] json BuildCatalogRowPayload(
 			const Builds::BuildOptionDef& option,
-			std::uint32_t activeScore) noexcept
+			std::uint32_t                 activeScore,
+			Builds::BuildPointCenti       activeBuildPointsCenti) noexcept
 		{
-			const bool unlocked = activeScore >= option.unlockScore;
+			const bool unlocked = activeBuildPointsCenti >= option.unlockPointsCenti;
 			const auto activeSlotId = FindActiveSlotForOption(option.id);
-			const auto currentTier = Builds::GetBuildScalingTier(activeScore);
-			const auto nextTierScore = Builds::GetNextBuildScalingScore(activeScore);
-			const auto scoreToNextTier = Builds::GetScoreToNextBuildScalingTier(activeScore);
-			const auto currentMagnitude = Builds::GetScaledBuildMagnitude(option, activeScore);
-			const auto nextMagnitude = Builds::GetNextTierBuildMagnitude(option, activeScore);
+			const auto currentTier = Builds::GetBuildPointsTier(activeBuildPointsCenti);
+			const auto nextTierPointsCenti = Builds::GetNextBuildPointsThresholdCenti(activeBuildPointsCenti);
+			const auto pointsToNextTierCenti = Builds::GetBuildPointsToNextTierCenti(activeBuildPointsCenti);
+			const auto currentMagnitude = Builds::GetScaledBuildMagnitude(option, activeBuildPointsCenti);
+			const auto nextMagnitude = Builds::GetNextTierBuildMagnitude(option, activeBuildPointsCenti);
 			return {
 				{ "id", option.id },
 				{ "optionId", option.id },
@@ -273,7 +293,10 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 				{ "themeId", option.themeId },
 				{ "themeTitleKey", option.themeTitleKey },
 				{ "hierarchy", option.hierarchy },
-				{ "unlockScore", option.unlockScore },
+				{ "recordCount", activeScore },
+				{ "unlockPoints", BuildPointsToJson(option.unlockPointsCenti) },
+				{ "unlockPointsCenti", option.unlockPointsCenti },
+				{ "unlockScore", BuildPointsToJson(option.unlockPointsCenti) },
 				{ "unlocked", unlocked },
 				{ "state", OptionStateToJs(unlocked, activeSlotId.has_value()) },
 				{ "slotCompatibility", SlotCompatibilityToJs(option.slotCompatibility) },
@@ -289,8 +312,10 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 				{ "currentMagnitude", MagnitudeToJson(currentMagnitude) },
 				{ "nextMagnitude", MagnitudeToJson(nextMagnitude) },
 				{ "currentTier", currentTier },
-				{ "nextTierScore", nextTierScore },
-				{ "scoreToNextTier", scoreToNextTier },
+				{ "nextTierPoints", BuildPointsToJson(nextTierPointsCenti) },
+				{ "pointsToNextTier", BuildPointsToJson(pointsToNextTierCenti) },
+				{ "nextTierScore", BuildPointsToJson(nextTierPointsCenti) },
+				{ "scoreToNextTier", BuildPointsToJson(pointsToNextTierCenti) },
 				{ "exclusivityGroup", option.exclusivityGroup },
 			};
 		}
@@ -315,8 +340,8 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 					if (lhsRank != rhsRank) {
 						return lhsRank < rhsRank;
 					}
-					if (lhs->unlockScore != rhs->unlockScore) {
-						return lhs->unlockScore < rhs->unlockScore;
+					if (lhs->unlockPointsCenti != rhs->unlockPointsCenti) {
+						return lhs->unlockPointsCenti < rhs->unlockPointsCenti;
 					}
 					return lhs->id < rhs->id;
 				});
@@ -343,6 +368,7 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 			std::string_view themeId) noexcept
 		{
 			const auto activeScore = DisciplineScore(discipline);
+			const auto activeBuildPointsCenti = DisciplineBuildPointsCenti(discipline);
 			const auto rows = CollectThemeRows(discipline, themeId);
 			for (const auto* option : rows) {
 				if (FindActiveSlotForOption(option->id).has_value()) {
@@ -350,7 +376,7 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 				}
 			}
 			for (const auto* option : rows) {
-				if (activeScore >= option->unlockScore) {
+				if (activeBuildPointsCenti >= option->unlockPointsCenti) {
 					return option;
 				}
 			}
@@ -360,25 +386,46 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 
 	json BuildBuildPayload() noexcept
 	{
+		const auto attackScore = BuildStateStore::GetAttackScore();
+		const auto defenseScore = BuildStateStore::GetDefenseScore();
+		const auto utilityScore = BuildStateStore::GetUtilityScore();
+		const auto attackBuildPointsCenti = BuildStateStore::GetAttackBuildPointsCenti();
+		const auto defenseBuildPointsCenti = BuildStateStore::GetDefenseBuildPointsCenti();
+		const auto utilityBuildPointsCenti = BuildStateStore::GetUtilityBuildPointsCenti();
 		json payload;
 		payload["disciplines"] = {
 			{ "attack", {
-				{ "score", BuildStateStore::GetAttackScore() },
-				{ "currentTier", Builds::GetBuildScalingTier(BuildStateStore::GetAttackScore()) },
-				{ "nextTierScore", Builds::GetNextBuildScalingScore(BuildStateStore::GetAttackScore()) },
-				{ "scoreToNextTier", Builds::GetScoreToNextBuildScalingTier(BuildStateStore::GetAttackScore()) },
+				{ "score", attackScore },
+				{ "recordCount", attackScore },
+				{ "buildPoints", BuildPointsToJson(attackBuildPointsCenti) },
+				{ "buildPointsCenti", attackBuildPointsCenti },
+				{ "currentTier", Builds::GetBuildPointsTier(attackBuildPointsCenti) },
+				{ "nextTierPoints", BuildPointsToJson(Builds::GetNextBuildPointsThresholdCenti(attackBuildPointsCenti)) },
+				{ "pointsToNextTier", BuildPointsToJson(Builds::GetBuildPointsToNextTierCenti(attackBuildPointsCenti)) },
+				{ "nextTierScore", BuildPointsToJson(Builds::GetNextBuildPointsThresholdCenti(attackBuildPointsCenti)) },
+				{ "scoreToNextTier", BuildPointsToJson(Builds::GetBuildPointsToNextTierCenti(attackBuildPointsCenti)) },
 			} },
 			{ "defense", {
-				{ "score", BuildStateStore::GetDefenseScore() },
-				{ "currentTier", Builds::GetBuildScalingTier(BuildStateStore::GetDefenseScore()) },
-				{ "nextTierScore", Builds::GetNextBuildScalingScore(BuildStateStore::GetDefenseScore()) },
-				{ "scoreToNextTier", Builds::GetScoreToNextBuildScalingTier(BuildStateStore::GetDefenseScore()) },
+				{ "score", defenseScore },
+				{ "recordCount", defenseScore },
+				{ "buildPoints", BuildPointsToJson(defenseBuildPointsCenti) },
+				{ "buildPointsCenti", defenseBuildPointsCenti },
+				{ "currentTier", Builds::GetBuildPointsTier(defenseBuildPointsCenti) },
+				{ "nextTierPoints", BuildPointsToJson(Builds::GetNextBuildPointsThresholdCenti(defenseBuildPointsCenti)) },
+				{ "pointsToNextTier", BuildPointsToJson(Builds::GetBuildPointsToNextTierCenti(defenseBuildPointsCenti)) },
+				{ "nextTierScore", BuildPointsToJson(Builds::GetNextBuildPointsThresholdCenti(defenseBuildPointsCenti)) },
+				{ "scoreToNextTier", BuildPointsToJson(Builds::GetBuildPointsToNextTierCenti(defenseBuildPointsCenti)) },
 			} },
 			{ "utility", {
-				{ "score", BuildStateStore::GetUtilityScore() },
-				{ "currentTier", Builds::GetBuildScalingTier(BuildStateStore::GetUtilityScore()) },
-				{ "nextTierScore", Builds::GetNextBuildScalingScore(BuildStateStore::GetUtilityScore()) },
-				{ "scoreToNextTier", Builds::GetScoreToNextBuildScalingTier(BuildStateStore::GetUtilityScore()) },
+				{ "score", utilityScore },
+				{ "recordCount", utilityScore },
+				{ "buildPoints", BuildPointsToJson(utilityBuildPointsCenti) },
+				{ "buildPointsCenti", utilityBuildPointsCenti },
+				{ "currentTier", Builds::GetBuildPointsTier(utilityBuildPointsCenti) },
+				{ "nextTierPoints", BuildPointsToJson(Builds::GetNextBuildPointsThresholdCenti(utilityBuildPointsCenti)) },
+				{ "pointsToNextTier", BuildPointsToJson(Builds::GetBuildPointsToNextTierCenti(utilityBuildPointsCenti)) },
+				{ "nextTierScore", BuildPointsToJson(Builds::GetNextBuildPointsThresholdCenti(utilityBuildPointsCenti)) },
+				{ "scoreToNextTier", BuildPointsToJson(Builds::GetBuildPointsToNextTierCenti(utilityBuildPointsCenti)) },
 			} },
 		};
 
@@ -390,6 +437,7 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 		json options = json::array();
 		for (const auto& option : Builds::GetBuildOptionCatalog()) {
 			const auto activeScore = DisciplineScore(option.discipline);
+			const auto activeBuildPointsCenti = DisciplineBuildPointsCenti(option.discipline);
 			const auto activeSlotId = FindActiveSlotForOption(option.id);
 			options.push_back({
 				{ "id", option.id },
@@ -398,22 +446,27 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 				{ "themeTitleKey", option.themeTitleKey },
 				{ "hierarchy", option.hierarchy },
 				{ "layer", BuildLayerToJs(option.layer) },
-				{ "unlockScore", option.unlockScore },
-				{ "unlocked", activeScore >= option.unlockScore },
-				{ "state", OptionStateToJs(activeScore >= option.unlockScore, activeSlotId.has_value()) },
+				{ "recordCount", activeScore },
+				{ "unlockPoints", BuildPointsToJson(option.unlockPointsCenti) },
+				{ "unlockPointsCenti", option.unlockPointsCenti },
+				{ "unlockScore", BuildPointsToJson(option.unlockPointsCenti) },
+				{ "unlocked", activeBuildPointsCenti >= option.unlockPointsCenti },
+				{ "state", OptionStateToJs(activeBuildPointsCenti >= option.unlockPointsCenti, activeSlotId.has_value()) },
 				{ "slotCompatibility", SlotCompatibilityToJs(option.slotCompatibility) },
 				{ "compatibleSlots", CompatibleSlotIdsJson(option) },
 				{ "activeSlotId", activeSlotId.has_value() ? json(SlotIdToJs(activeSlotId.value())) : json(nullptr) },
 				{ "effectType", EffectTypeToJs(option.effectType) },
 				{ "effectKey", option.effectKey },
-				{ "magnitude", MagnitudeToJson(Builds::GetScaledBuildMagnitude(option, activeScore)) },
+				{ "magnitude", MagnitudeToJson(Builds::GetScaledBuildMagnitude(option, activeBuildPointsCenti)) },
 				{ "baseMagnitude", MagnitudeToJson(option.magnitude) },
 				{ "magnitudePerTier", MagnitudeToJson(option.magnitudePerTier) },
-				{ "currentMagnitude", MagnitudeToJson(Builds::GetScaledBuildMagnitude(option, activeScore)) },
-				{ "nextMagnitude", MagnitudeToJson(Builds::GetNextTierBuildMagnitude(option, activeScore)) },
-				{ "currentTier", Builds::GetBuildScalingTier(activeScore) },
-				{ "nextTierScore", Builds::GetNextBuildScalingScore(activeScore) },
-				{ "scoreToNextTier", Builds::GetScoreToNextBuildScalingTier(activeScore) },
+				{ "currentMagnitude", MagnitudeToJson(Builds::GetScaledBuildMagnitude(option, activeBuildPointsCenti)) },
+				{ "nextMagnitude", MagnitudeToJson(Builds::GetNextTierBuildMagnitude(option, activeBuildPointsCenti)) },
+				{ "currentTier", Builds::GetBuildPointsTier(activeBuildPointsCenti) },
+				{ "nextTierPoints", BuildPointsToJson(Builds::GetNextBuildPointsThresholdCenti(activeBuildPointsCenti)) },
+				{ "pointsToNextTier", BuildPointsToJson(Builds::GetBuildPointsToNextTierCenti(activeBuildPointsCenti)) },
+				{ "nextTierScore", BuildPointsToJson(Builds::GetNextBuildPointsThresholdCenti(activeBuildPointsCenti)) },
+				{ "scoreToNextTier", BuildPointsToJson(Builds::GetBuildPointsToNextTierCenti(activeBuildPointsCenti)) },
 				{ "exclusivityGroup", option.exclusivityGroup },
 				{ "titleKey", option.titleKey },
 				{ "descriptionKey", option.descriptionKey },
@@ -439,7 +492,11 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 				const auto rows = CollectThemeRows(discipline, theme.id);
 				json rowPayload = json::array();
 				for (const auto* option : rows) {
-					rowPayload.push_back(BuildCatalogRowPayload(*option, DisciplineScore(discipline)));
+					rowPayload.push_back(
+						BuildCatalogRowPayload(
+							*option,
+							DisciplineScore(discipline),
+							DisciplineBuildPointsCenti(discipline)));
 				}
 
 				themeMap[disciplineJs].push_back({
@@ -474,11 +531,18 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 
 		json selectedThemeRows = json::array();
 		for (const auto* option : CollectThemeRows(defaultDiscipline, selectedThemeId)) {
-			selectedThemeRows.push_back(BuildCatalogRowPayload(*option, DisciplineScore(defaultDiscipline)));
+			selectedThemeRows.push_back(
+				BuildCatalogRowPayload(
+					*option,
+					DisciplineScore(defaultDiscipline),
+					DisciplineBuildPointsCenti(defaultDiscipline)));
 		}
 		payload["selectedThemeRows"] = std::move(selectedThemeRows);
 		payload["selectedOptionDetail"] = selectedOption != nullptr
-			? BuildCatalogRowPayload(*selectedOption, DisciplineScore(defaultDiscipline))
+			? BuildCatalogRowPayload(
+				  *selectedOption,
+				  DisciplineScore(defaultDiscipline),
+				  DisciplineBuildPointsCenti(defaultDiscipline))
 			: json(nullptr);
 
 		json activeSlots = json::array();

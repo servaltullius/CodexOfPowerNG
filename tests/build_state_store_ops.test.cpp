@@ -17,14 +17,17 @@ namespace
 		SetAttackScore(15u);
 		SetDefenseScore(30u);
 		SetUtilityScore(30u);
+		SetAttackBuildPointsCenti(1600u);
+		SetDefenseBuildPointsCenti(1600u);
+		SetUtilityBuildPointsCenti(1600u);
 
 		if (!SetActiveSlot(BuildSlotId::Attack1, "build.attack.precision")) {
 			return false;
 		}
-		if (!SetActiveSlot(BuildSlotId::Defense1, "build.defense.stalwart")) {
+		if (!SetActiveSlot(BuildSlotId::Defense1, "build.defense.guard")) {
 			return false;
 		}
-		if (!SetActiveSlot(BuildSlotId::Wildcard1, "build.utility.scout")) {
+		if (!SetActiveSlot(BuildSlotId::Wildcard1, "build.utility.smithing")) {
 			return false;
 		}
 
@@ -40,6 +43,11 @@ namespace
 		CodexOfPowerNG::SerializationStateStore::Clear();
 
 		if (GetAttackScore() != 0u || GetDefenseScore() != 0u || GetUtilityScore() != 0u) {
+			return false;
+		}
+		if (GetAttackBuildPointsCenti() != 0u ||
+			GetDefenseBuildPointsCenti() != 0u ||
+			GetUtilityBuildPointsCenti() != 0u) {
 			return false;
 		}
 		if (GetActiveSlot(BuildSlotId::Attack1).has_value()) {
@@ -64,12 +72,15 @@ namespace
 		return GetAttackScore() == 15u &&
 		       GetDefenseScore() == 30u &&
 		       GetUtilityScore() == 30u &&
+		       GetAttackBuildPointsCenti() == 1600u &&
+		       GetDefenseBuildPointsCenti() == 1600u &&
+		       GetUtilityBuildPointsCenti() == 1600u &&
 		       attackSlot.has_value() &&
 		       attackSlot.value() == "build.attack.precision" &&
 		       defenseSlot.has_value() &&
-		       defenseSlot.value() == "build.defense.stalwart" &&
+		       defenseSlot.value() == "build.defense.guard" &&
 		       wildcardSlot.has_value() &&
-		       wildcardSlot.value() == "build.utility.scout" &&
+		       wildcardSlot.value() == "build.utility.smithing" &&
 		       MigrationVersion() == 2u &&
 		       MigrationState() == BuildMigrationState::kPendingCleanup &&
 		       restoredNotice.needsNotice &&
@@ -120,9 +131,14 @@ int main()
 	if (!expect(GetAttackScore() == 0u, "attack score must default to zero")) {
 		return 1;
 	}
+	if (!expect(GetAttackBuildPointsCenti() == 0u, "attack build points must default to zero")) {
+		return 1;
+	}
 
 	SetAttackScore(15u);
+	SetAttackBuildPointsCenti(400u);
 	SetDefenseScore(5u);
+	SetDefenseBuildPointsCenti(400u);
 
 	constexpr BuildSlotId      slotId = BuildSlotId::Attack1;
 	constexpr std::string_view optionId = "build.attack.ferocity";

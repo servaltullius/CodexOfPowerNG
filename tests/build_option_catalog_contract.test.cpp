@@ -40,7 +40,7 @@ namespace
 	bool AllOptionsUseThresholdUnlocks()
 	{
 		for (const auto& option : GetBuildOptionCatalog()) {
-			if (option.layer != BuildLayer::Slotted || option.unlockScore == 0u) {
+			if (option.layer != BuildLayer::Slotted || option.unlockPointsCenti == 0u) {
 				return false;
 			}
 		}
@@ -155,16 +155,21 @@ namespace
 		return true;
 	}
 
-	bool UsesCommonScalingInterval()
+	bool UsesLinearBuildPointProgression()
 	{
-		return kBuildScalingScoreInterval == 10u &&
-		       GetBuildScalingTier(0u) == 0u &&
-		       GetBuildScalingTier(9u) == 0u &&
-		       GetBuildScalingTier(10u) == 1u &&
-		       GetBuildScalingTier(33u) == 3u &&
-		       GetNextBuildScalingScore(33u) == 40u &&
-		       GetScoreToNextBuildScalingTier(33u) == 7u &&
-		       GetScoreToNextBuildScalingTier(40u) == 10u;
+		return kBuildPointScale == 100u &&
+		       kBuildPointsPerTierCenti == 800u &&
+		       GetBuildPointsTier(0u) == 0u &&
+		       GetBuildPointsTier(799u) == 0u &&
+		       GetBuildPointsTier(800u) == 1u &&
+		       GetBuildPointsTier(2400u) == 3u &&
+		       GetNextBuildPointsThresholdCenti(0u) == 800u &&
+		       GetNextBuildPointsThresholdCenti(800u) == 1600u &&
+		       GetNextBuildPointsThresholdCenti(2400u) == 3200u &&
+		       GetBuildPointsToNextTierCenti(0u) == 800u &&
+		       GetBuildPointsToNextTierCenti(799u) == 1u &&
+		       GetBuildPointsToNextTierCenti(800u) == 800u &&
+		       GetBuildPointsToNextTierCenti(3199u) == 1u;
 	}
 
 	bool HasExpectedCatalogContents()
@@ -176,52 +181,54 @@ namespace
 			std::string_view themeId;
 			std::string_view themeTitleKey;
 			std::string_view hierarchy;
-			std::uint32_t unlockScore;
+			BuildPointCenti unlockPointsCenti;
 			BuildEffectType effectType;
 			std::string_view effectKey;
 		};
 
 		constexpr std::array expectedOptions{
-			ExpectedOption{ "build.attack.ferocity", BuildDiscipline::Attack, "devastation", "build.theme.attack.devastation", "signpost", 5u, BuildEffectType::ActorValue, "attack_damage_mult" },
-			ExpectedOption{ "build.attack.brawler", BuildDiscipline::Attack, "devastation", "build.theme.attack.devastation", "special", 25u, BuildEffectType::ActorValue, "unarmed_damage" },
-			ExpectedOption{ "build.attack.destruction", BuildDiscipline::Attack, "devastation", "build.theme.attack.devastation", "special", 30u, BuildEffectType::ActorValue, "destruction_modifier" },
-			ExpectedOption{ "build.attack.precision", BuildDiscipline::Attack, "precision", "build.theme.attack.precision", "standard", 15u, BuildEffectType::ActorValue, "weapon_speed_mult" },
-			ExpectedOption{ "build.attack.pinpoint", BuildDiscipline::Attack, "precision", "build.theme.attack.precision", "standard", 20u, BuildEffectType::ActorValue, "critical_chance" },
-			ExpectedOption{ "build.attack.vitals", BuildDiscipline::Attack, "precision", "build.theme.attack.precision", "special", 35u, BuildEffectType::ActorValue, "attack_damage_mult" },
-			ExpectedOption{ "build.attack.reserve", BuildDiscipline::Attack, "fury", "build.theme.attack.fury", "signpost", 5u, BuildEffectType::ActorValue, "stamina" },
-			ExpectedOption{ "build.attack.secondwind", BuildDiscipline::Attack, "fury", "build.theme.attack.fury", "standard", 10u, BuildEffectType::ActorValue, "stamina_rate" },
-			ExpectedOption{ "build.defense.guard", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "signpost", 5u, BuildEffectType::ActorValue, "damage_resist" },
-			ExpectedOption{ "build.defense.bulwark", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "standard", 20u, BuildEffectType::ActorValue, "health" },
-			ExpectedOption{ "build.defense.recovery", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "standard", 30u, BuildEffectType::ActorValue, "heal_rate" },
-			ExpectedOption{ "build.defense.restoration", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "special", 40u, BuildEffectType::ActorValue, "restoration_modifier" },
-			ExpectedOption{ "build.defense.bastion", BuildDiscipline::Defense, "bastion", "build.theme.defense.bastion", "standard", 15u, BuildEffectType::ActorValue, "block_power_modifier" },
-			ExpectedOption{ "build.defense.reprisal", BuildDiscipline::Defense, "bastion", "build.theme.defense.bastion", "special", 25u, BuildEffectType::ActorValue, "reflect_damage" },
-			ExpectedOption{ "build.defense.alteration", BuildDiscipline::Defense, "bastion", "build.theme.defense.bastion", "special", 30u, BuildEffectType::ActorValue, "alteration_modifier" },
-			ExpectedOption{ "build.defense.endurance", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "special", 35u, BuildEffectType::ActorValue, "health" },
-			ExpectedOption{ "build.defense.warding", BuildDiscipline::Defense, "resistance", "build.theme.defense.resistance", "signpost", 10u, BuildEffectType::ActorValue, "magic_resist_bundle" },
-			ExpectedOption{ "build.defense.elementalWard", BuildDiscipline::Defense, "resistance", "build.theme.defense.resistance", "standard", 20u, BuildEffectType::ActorValue, "elemental_resist_bundle" },
-			ExpectedOption{ "build.defense.purification", BuildDiscipline::Defense, "resistance", "build.theme.defense.resistance", "standard", 25u, BuildEffectType::ActorValue, "status_resist_bundle" },
-			ExpectedOption{ "build.defense.absorption", BuildDiscipline::Defense, "resistance", "build.theme.defense.resistance", "special", 35u, BuildEffectType::ActorValue, "absorb_chance" },
-			ExpectedOption{ "build.utility.cache", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "signpost", 10u, BuildEffectType::CarryWeight, "carry_weight" },
-			ExpectedOption{ "build.utility.barter", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 25u, BuildEffectType::Economy, "speechcraft_modifier" },
-			ExpectedOption{ "build.utility.smithing", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 20u, BuildEffectType::ActorValue, "smithing_modifier" },
-			ExpectedOption{ "build.utility.alchemy", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 25u, BuildEffectType::ActorValue, "alchemy_modifier" },
-			ExpectedOption{ "build.utility.meditation", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 30u, BuildEffectType::ActorValue, "magicka_rate" },
-			ExpectedOption{ "build.utility.enchanting", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "special", 35u, BuildEffectType::ActorValue, "enchanting_modifier" },
-			ExpectedOption{ "build.utility.magicka", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "special", 30u, BuildEffectType::ActorValue, "magicka" },
-			ExpectedOption{ "build.utility.hauler", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 30u, BuildEffectType::CarryWeight, "carry_weight" },
-			ExpectedOption{ "build.utility.mobility", BuildDiscipline::Utility, "exploration", "build.theme.utility.exploration", "signpost", 20u, BuildEffectType::ActorValue, "speed_mult" },
-			ExpectedOption{ "build.utility.wayfinder", BuildDiscipline::Utility, "exploration", "build.theme.utility.exploration", "standard", 30u, BuildEffectType::ActorValue, "speed_mult" },
-			ExpectedOption{ "build.utility.echo", BuildDiscipline::Utility, "exploration", "build.theme.utility.exploration", "special", 35u, BuildEffectType::ActorValue, "shout_recovery_mult" },
-			ExpectedOption{ "build.utility.sneak", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "signpost", 10u, BuildEffectType::ActorValue, "sneaking_modifier" },
-			ExpectedOption{ "build.utility.lockpicking", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "standard", 15u, BuildEffectType::ActorValue, "lockpicking_modifier" },
-			ExpectedOption{ "build.utility.pickpocket", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "standard", 20u, BuildEffectType::ActorValue, "pickpocket_modifier" },
-			ExpectedOption{ "build.utility.conjuration", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "special", 25u, BuildEffectType::ActorValue, "conjuration_modifier" },
-			ExpectedOption{ "build.utility.illusion", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "special", 30u, BuildEffectType::ActorValue, "illusion_modifier" },
+			ExpectedOption{ "build.attack.ferocity", BuildDiscipline::Attack, "devastation", "build.theme.attack.devastation", "signpost", 400u, BuildEffectType::ActorValue, "attack_damage_mult" },
+			ExpectedOption{ "build.attack.brawler", BuildDiscipline::Attack, "devastation", "build.theme.attack.devastation", "special", 2000u, BuildEffectType::ActorValue, "unarmed_damage" },
+			ExpectedOption{ "build.attack.destruction", BuildDiscipline::Attack, "devastation", "build.theme.attack.devastation", "special", 2400u, BuildEffectType::ActorValue, "destruction_modifier" },
+			ExpectedOption{ "build.attack.precision", BuildDiscipline::Attack, "precision", "build.theme.attack.precision", "standard", 1200u, BuildEffectType::ActorValue, "weapon_speed_mult" },
+			ExpectedOption{ "build.attack.pinpoint", BuildDiscipline::Attack, "precision", "build.theme.attack.precision", "standard", 1600u, BuildEffectType::ActorValue, "critical_chance" },
+			ExpectedOption{ "build.attack.vitals", BuildDiscipline::Attack, "precision", "build.theme.attack.precision", "special", 2800u, BuildEffectType::ActorValue, "melee_damage" },
+			ExpectedOption{ "build.attack.reserve", BuildDiscipline::Attack, "fury", "build.theme.attack.fury", "signpost", 400u, BuildEffectType::ActorValue, "stamina" },
+			ExpectedOption{ "build.attack.secondwind", BuildDiscipline::Attack, "fury", "build.theme.attack.fury", "standard", 800u, BuildEffectType::ActorValue, "stamina_rate" },
+			ExpectedOption{ "build.defense.guard", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "signpost", 400u, BuildEffectType::ActorValue, "damage_resist" },
+			ExpectedOption{ "build.defense.bulwark", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "standard", 1600u, BuildEffectType::ActorValue, "health" },
+			ExpectedOption{ "build.defense.recovery", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "standard", 2400u, BuildEffectType::ActorValue, "heal_rate" },
+			ExpectedOption{ "build.defense.restoration", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "special", 3200u, BuildEffectType::ActorValue, "restoration_modifier" },
+			ExpectedOption{ "build.defense.bastion", BuildDiscipline::Defense, "bastion", "build.theme.defense.bastion", "standard", 1200u, BuildEffectType::ActorValue, "block_power_modifier" },
+			ExpectedOption{ "build.defense.reprisal", BuildDiscipline::Defense, "bastion", "build.theme.defense.bastion", "special", 2000u, BuildEffectType::ActorValue, "reflect_damage" },
+			ExpectedOption{ "build.defense.alteration", BuildDiscipline::Defense, "bastion", "build.theme.defense.bastion", "special", 2400u, BuildEffectType::ActorValue, "alteration_modifier" },
+			ExpectedOption{ "build.defense.endurance", BuildDiscipline::Defense, "guard", "build.theme.defense.guard", "special", 2800u, BuildEffectType::ActorValue, "stamina" },
+			ExpectedOption{ "build.defense.warding", BuildDiscipline::Defense, "resistance", "build.theme.defense.resistance", "signpost", 800u, BuildEffectType::ActorValue, "magic_resist_bundle" },
+			ExpectedOption{ "build.defense.elementalWard", BuildDiscipline::Defense, "resistance", "build.theme.defense.resistance", "standard", 1600u, BuildEffectType::ActorValue, "elemental_resist_bundle" },
+			ExpectedOption{ "build.defense.purification", BuildDiscipline::Defense, "resistance", "build.theme.defense.resistance", "standard", 2000u, BuildEffectType::ActorValue, "status_resist_bundle" },
+			ExpectedOption{ "build.defense.absorption", BuildDiscipline::Defense, "resistance", "build.theme.defense.resistance", "special", 2800u, BuildEffectType::ActorValue, "absorb_chance" },
+			ExpectedOption{ "build.utility.cache", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "signpost", 800u, BuildEffectType::CarryWeight, "carry_weight" },
+			ExpectedOption{ "build.utility.barter", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 2000u, BuildEffectType::Economy, "speechcraft_modifier" },
+			ExpectedOption{ "build.utility.smithing", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 1600u, BuildEffectType::ActorValue, "smithing_modifier" },
+			ExpectedOption{ "build.utility.alchemy", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 2000u, BuildEffectType::ActorValue, "alchemy_modifier" },
+			ExpectedOption{ "build.utility.meditation", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 2400u, BuildEffectType::ActorValue, "magicka_rate" },
+			ExpectedOption{ "build.utility.enchanting", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "special", 2800u, BuildEffectType::ActorValue, "enchanting_modifier" },
+			ExpectedOption{ "build.utility.magicka", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "special", 2400u, BuildEffectType::ActorValue, "magicka" },
+			ExpectedOption{ "build.utility.hauler", BuildDiscipline::Utility, "livelihood", "build.theme.utility.livelihood", "standard", 2400u, BuildEffectType::ActorValue, "stamina" },
+			ExpectedOption{ "build.utility.mobility", BuildDiscipline::Utility, "exploration", "build.theme.utility.exploration", "signpost", 1600u, BuildEffectType::ActorValue, "speed_mult" },
+			ExpectedOption{ "build.utility.wayfinder", BuildDiscipline::Utility, "exploration", "build.theme.utility.exploration", "standard", 2400u, BuildEffectType::ActorValue, "stamina_rate" },
+			ExpectedOption{ "build.utility.echo", BuildDiscipline::Utility, "exploration", "build.theme.utility.exploration", "special", 2800u, BuildEffectType::ActorValue, "shout_recovery_mult" },
+			ExpectedOption{ "build.utility.sneak", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "signpost", 800u, BuildEffectType::ActorValue, "sneaking_modifier" },
+			ExpectedOption{ "build.utility.lockpicking", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "standard", 1200u, BuildEffectType::ActorValue, "lockpicking_modifier" },
+			ExpectedOption{ "build.utility.pickpocket", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "standard", 1600u, BuildEffectType::ActorValue, "pickpocket_modifier" },
+			ExpectedOption{ "build.utility.conjuration", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "special", 2000u, BuildEffectType::ActorValue, "conjuration_modifier" },
+			ExpectedOption{ "build.utility.illusion", BuildDiscipline::Utility, "trickery", "build.theme.utility.trickery", "special", 2400u, BuildEffectType::ActorValue, "illusion_modifier" },
 		};
 
 		const auto actual = GetBuildOptionCatalog();
 		if (actual.size() != expectedOptions.size()) {
+			std::cerr << "catalog size mismatch: actual=" << actual.size()
+			          << " expected=" << expectedOptions.size() << '\n';
 			return false;
 		}
 
@@ -233,9 +240,12 @@ namespace
 				option.themeId != expected.themeId ||
 				option.themeTitleKey != expected.themeTitleKey ||
 				option.hierarchy != expected.hierarchy ||
-				option.unlockScore != expected.unlockScore ||
+				option.unlockPointsCenti != expected.unlockPointsCenti ||
 				option.effectType != expected.effectType ||
 				option.effectKey != expected.effectKey) {
+				std::cerr << "catalog option mismatch at index " << i
+				          << " actual=" << option.id
+				          << " expected=" << expected.id << '\n';
 				return false;
 			}
 		}
@@ -248,12 +258,73 @@ namespace
 		};
 
 		constexpr std::array expectedScaling{
-			ExpectedScaling{ "build.attack.ferocity", 5.0f, 1.0f },
-			ExpectedScaling{ "build.defense.guard", 10.0f, 2.0f },
-			ExpectedScaling{ "build.defense.warding", 3.0f, 1.0f },
-			ExpectedScaling{ "build.utility.cache", 25.0f, 5.0f },
-			ExpectedScaling{ "build.utility.barter", 10, 2 },
-			ExpectedScaling{ "build.utility.echo", -0.02f, -0.01f },
+			ExpectedScaling{ "build.attack.ferocity", 3.0f, 0.5f },
+			ExpectedScaling{ "build.attack.precision", 2.5f, 0.35f },
+			ExpectedScaling{ "build.attack.destruction", 0.06f, 0.01f },
+			ExpectedScaling{ "build.attack.pinpoint", 1.5f, 0.3f },
+			ExpectedScaling{ "build.defense.guard", 8.0f, 1.5f },
+			ExpectedScaling{ "build.defense.bulwark", 6.0f, 2.5f },
+			ExpectedScaling{ "build.defense.recovery", 0.01f, 0.005f },
+			ExpectedScaling{ "build.defense.restoration", 0.05f, 0.01f },
+			ExpectedScaling{ "build.defense.bastion", 5.0f, 0.75f },
+			ExpectedScaling{ "build.defense.reprisal", 0.1f, 0.05f },
+			ExpectedScaling{ "build.defense.alteration", 0.05f, 0.01f },
+			ExpectedScaling{ "build.defense.warding", 2.0f, 0.5f },
+			ExpectedScaling{ "build.defense.elementalWard", 2.0f, 0.5f },
+			ExpectedScaling{ "build.defense.purification", 2.0f, 0.5f },
+			ExpectedScaling{ "build.attack.vitals", 2.0f, 0.5f },
+			ExpectedScaling{ "build.utility.cache", 20.0f, 1.0f },
+			ExpectedScaling{ "build.utility.barter", 8, 1 },
+			ExpectedScaling{ "build.utility.echo", -0.007f, -0.002f },
+			ExpectedScaling{ "build.utility.smithing", 0.03f, 0.005f },
+			ExpectedScaling{ "build.utility.alchemy", 0.03f, 0.005f },
+			ExpectedScaling{ "build.utility.enchanting", 0.03f, 0.005f },
+			ExpectedScaling{ "build.defense.endurance", 10.0f, 3.0f },
+			ExpectedScaling{ "build.utility.hauler", 8.0f, 2.0f },
+			ExpectedScaling{ "build.utility.mobility", 2.0f, 0.15f },
+			ExpectedScaling{ "build.utility.wayfinder", 0.05f, 0.01f },
+			ExpectedScaling{ "build.utility.sneak", 0.03f, 0.005f },
+			ExpectedScaling{ "build.utility.lockpicking", 0.03f, 0.005f },
+			ExpectedScaling{ "build.utility.pickpocket", 0.03f, 0.005f },
+			ExpectedScaling{ "build.utility.conjuration", 0.03f, 0.005f },
+			ExpectedScaling{ "build.utility.illusion", 0.03f, 0.005f },
+		};
+
+		struct ExpectedCompatibility
+		{
+			std::string_view       id;
+			BuildSlotCompatibility slotCompatibility;
+		};
+
+		constexpr std::array expectedCompatibility{
+			ExpectedCompatibility{ "build.attack.ferocity", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.attack.precision", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.attack.reserve", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.attack.pinpoint", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.attack.vitals", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.attack.secondwind", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.attack.brawler", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.attack.destruction", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.defense.guard", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.defense.warding", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.defense.reprisal", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.defense.absorption", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.utility.cache", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.utility.meditation", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.utility.magicka", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.utility.hauler", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.utility.mobility", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.utility.wayfinder", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.utility.sneak", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.utility.lockpicking", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.utility.pickpocket", BuildSlotCompatibility::SameDisciplineOnly },
+			ExpectedCompatibility{ "build.utility.barter", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.utility.smithing", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.utility.alchemy", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.utility.enchanting", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.utility.echo", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.utility.conjuration", BuildSlotCompatibility::SameOrWildcard },
+			ExpectedCompatibility{ "build.utility.illusion", BuildSlotCompatibility::SameOrWildcard },
 		};
 
 		for (const auto& expected : expectedScaling) {
@@ -262,8 +333,20 @@ namespace
 				actual.end(),
 				[&expected](const BuildOptionDef& option) { return option.id == expected.id; });
 			if (it == actual.end() ||
-			    it->magnitude != expected.baseMagnitude ||
-			    it->magnitudePerTier != expected.perTierMagnitude) {
+				it->magnitude != expected.baseMagnitude ||
+				it->magnitudePerTier != expected.perTierMagnitude) {
+				std::cerr << "catalog scaling mismatch for " << expected.id << '\n';
+				return false;
+			}
+		}
+
+		for (const auto& expected : expectedCompatibility) {
+			const auto it = std::find_if(
+				actual.begin(),
+				actual.end(),
+				[&expected](const BuildOptionDef& option) { return option.id == expected.id; });
+			if (it == actual.end() || it->slotCompatibility != expected.slotCompatibility) {
+				std::cerr << "catalog compatibility mismatch for " << expected.id << '\n';
 				return false;
 			}
 		}
@@ -309,7 +392,7 @@ int main()
 	if (!expect(AllOptionsDeclareEffectPayloads(), "options must declare effect payloads")) {
 		return 1;
 	}
-	if (!expect(UsesCommonScalingInterval(), "build scaling must use the common 10-score interval")) {
+	if (!expect(UsesLinearBuildPointProgression(), "build progression must use the approved linear point tiers")) {
 		return 1;
 	}
 	if (!expect(HasExpectedCatalogContents(), "catalog contents must match the fixed MVP contract")) {

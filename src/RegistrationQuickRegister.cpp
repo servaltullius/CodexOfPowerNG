@@ -286,7 +286,7 @@ namespace CodexOfPowerNG::Registration
 			L10n::T("msg.totalPrefix", "total ") + std::to_string(totalRegistered) +
 			L10n::T("msg.totalSuffix", " items") + ")";
 		RE::DebugNotification(msg.c_str());
-		const auto buildContribution = BuildProgression::MakeRegistrationContribution(group);
+		const auto buildContribution = BuildProgression::MakeRegistrationContribution(group, regKey->GetFormType());
 		if (buildContribution.has_value()) {
 			(void)BuildProgression::ApplyRegistrationContribution(buildContribution.value());
 			BuildEffectRuntime::SyncCurrentBuildEffectsToPlayer();

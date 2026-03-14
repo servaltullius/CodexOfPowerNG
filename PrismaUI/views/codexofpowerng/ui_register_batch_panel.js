@@ -39,6 +39,18 @@
     return "0x" + hex;
   }
 
+  function normalizeNumber(value, fallback) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : fallback;
+  }
+
+  function formatBuildPoints(value) {
+    const n = normalizeNumber(value, 0);
+    if (Math.abs(n - Math.round(n)) < 0.000001) return String(Math.round(n));
+    if (Math.abs(n * 10 - Math.round(n * 10)) < 0.000001) return n.toFixed(1);
+    return n.toFixed(2);
+  }
+
   function humanizeDiscipline(id) {
     const value = String(id || "").toLowerCase();
     if (value === "attack") return "Attack";
@@ -69,6 +81,8 @@
     const actionableOnly = !!options.actionableOnly;
     const query = String(options.query || "").trim().toLowerCase();
     const disciplineGain = { attack: 0, defense: 0, utility: 0 };
+    const disciplinePointGain = { attack: 0, defense: 0, utility: 0 };
+    const disciplinePointGainCenti = { attack: 0, defense: 0, utility: 0 };
     const rows = [];
     const disabledRows = [];
     const viewSections = [];
@@ -99,6 +113,8 @@
           groupName: section.groupName || row.groupName || discipline,
           totalCount: Number(row.totalCount || 0) >>> 0,
           safeCount: Number(row.safeCount || 0) >>> 0,
+          buildPoints: normalizeNumber(row.buildPoints, normalizeNumber(row.buildPointsCenti, 0) / 100),
+          buildPointsCenti: Number(row.buildPointsCenti || 0) >>> 0,
           actionable,
           canBatchSelect,
           singleRegisterAction: actionable ? "enabled" : "disabled",
@@ -137,7 +153,11 @@
       if (!row.isSelected) continue;
       if (Object.prototype.hasOwnProperty.call(disciplineGain, row.discipline)) {
         disciplineGain[row.discipline] += 1;
+        disciplinePointGainCenti[row.discipline] += Number(row.buildPointsCenti || Math.round(normalizeNumber(row.buildPoints, 0) * 100)) || 0;
       }
+    }
+    for (const discipline of Object.keys(disciplinePointGain)) {
+      disciplinePointGain[discipline] = disciplinePointGainCenti[discipline] / 100;
     }
 
     return {
@@ -148,6 +168,7 @@
       summary: {
         selectedRows: formIds.length,
         disciplineGain,
+        disciplinePointGain,
         formIds,
       },
     };
@@ -163,6 +184,7 @@
     const model = viewModel && typeof viewModel === "object" ? viewModel : buildRegisterBatchViewModel({}, [], {});
     const escapeHtml = asFn(helpers && helpers.escapeHtml, defaultEscapeHtml);
     const t = asFn(helpers && helpers.t, defaultT);
+    const tFmt = asFn(helpers && helpers.tFmt, defaultTFmt);
     const toHex32 = asFn(helpers && helpers.toHex32, defaultToHex32);
     const parts = [];
 
@@ -204,6 +226,10 @@
         const buttonClass = row.singleRegisterAction === "enabled" ? "rowActionButton" : "rowActionButton isDisabled";
         const countClass = row.actionable ? "countValue isSafe" : "countValue";
         const tagsBlock = tags ? `<div class="stateTagRow">${tags}</div>` : "";
+        const pointLabel = escapeHtml(
+          tFmt("quick.row.buildPoints", "Weight +{points} pt", { points: formatBuildPoints(row.buildPoints) }),
+        );
+        const pointTag = `<span class="stateTag pointTag" data-state="build_points">${pointLabel}</span>`;
 
         parts.push(`
         <tr class="dataRow codexRow ${rowClass} ${row.isSelected ? "selected" : ""}" data-discipline="${escapeHtml(
@@ -211,10 +237,13 @@
         )}" data-row-id="${rowIdAttr}">
           <td class="colSelect">${checkbox}</td>
           <td class="colGroup">
-            <span class="disciplineMark ${rowClass}">
-              <span class="disciplineMarkIcon" aria-hidden="true"></span>
-              <span>${escapeHtml(t("build." + row.discipline, row.discipline))}</span>
-            </span>
+            <div class="groupMeta">
+              <span class="disciplineMark ${rowClass}">
+                <span class="disciplineMarkIcon" aria-hidden="true"></span>
+                <span>${escapeHtml(t("build." + row.discipline, row.discipline))}</span>
+              </span>
+              ${pointTag}
+            </div>
           </td>
           <td class="colItem">
             <div class="itemName">${escapeHtml(row.name)}</div>
@@ -238,11 +267,20 @@
     const escapeHtml = asFn(helpers && helpers.escapeHtml, defaultEscapeHtml);
     const t = asFn(helpers && helpers.t, defaultT);
     const tFmt = asFn(helpers && helpers.tFmt, defaultTFmt);
+    const countGain = (model.summary && model.summary.disciplineGain) || {};
+    const pointGain = (model.summary && model.summary.disciplinePointGain) || {};
     return `
       <div class="quickBatchSummaryInner">
         <div class="small">${escapeHtml(tFmt("quick.batch.selected", "Selected rows: {count}", { count: model.summary.selectedRows }))}</div>
         <div class="small">${escapeHtml(
-          tFmt("quick.batch.disciplineGain", "Attack +{attack} / Defense +{defense} / Utility +{utility}", model.summary.disciplineGain),
+          tFmt("quick.batch.disciplineGain", "Attack +{attackPoints} pt ({attackRows}) / Defense +{defensePoints} pt ({defenseRows}) / Utility +{utilityPoints} pt ({utilityRows})", {
+            attackPoints: formatBuildPoints(pointGain.attack),
+            attackRows: Number(countGain.attack || 0) >>> 0,
+            defensePoints: formatBuildPoints(pointGain.defense),
+            defenseRows: Number(countGain.defense || 0) >>> 0,
+            utilityPoints: formatBuildPoints(pointGain.utility),
+            utilityRows: Number(countGain.utility || 0) >>> 0,
+          }),
         )}</div>
       </div>`;
   }

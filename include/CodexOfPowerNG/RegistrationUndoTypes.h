@@ -23,7 +23,8 @@ namespace CodexOfPowerNG::Registration
 	struct BuildScoreContribution
 	{
 		Builds::BuildDiscipline discipline{ Builds::BuildDiscipline::Attack };
-		std::int32_t           scoreDelta{ 0 };
+		std::int32_t           recordDelta{ 0 };
+		std::int32_t           pointsDeltaCenti{ 0 };
 	};
 
 	struct UndoRecord

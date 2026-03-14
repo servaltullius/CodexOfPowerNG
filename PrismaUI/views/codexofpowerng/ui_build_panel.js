@@ -35,9 +35,9 @@
   function createEmptyBuild() {
     return {
       disciplines: {
-        attack: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
-        defense: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
-        utility: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
+        attack: { score: 0, recordCount: 0, buildPoints: 0, currentTier: 0, nextTierPoints: 8, pointsToNextTier: 8, nextTierScore: 8, scoreToNextTier: 8 },
+        defense: { score: 0, recordCount: 0, buildPoints: 0, currentTier: 0, nextTierPoints: 8, pointsToNextTier: 8, nextTierScore: 8, scoreToNextTier: 8 },
+        utility: { score: 0, recordCount: 0, buildPoints: 0, currentTier: 0, nextTierPoints: 8, pointsToNextTier: 8, nextTierScore: 8, scoreToNextTier: 8 },
       },
       selectedDiscipline: "attack",
       selectedTheme: "",
@@ -142,6 +142,48 @@
     return String(Number(numeric.toFixed(1)));
   }
 
+  function normalizeNumber(value, fallback) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : fallback;
+  }
+
+  function formatBuildPoints(value) {
+    return formatMagnitude(normalizeNumber(value, 0));
+  }
+
+  const FRACTIONAL_PERCENT_EFFECT_KEYS = new Set([
+    "stamina_rate",
+    "heal_rate",
+    "magicka_rate",
+    "destruction_modifier",
+    "restoration_modifier",
+    "alteration_modifier",
+    "conjuration_modifier",
+    "illusion_modifier",
+    "smithing_modifier",
+    "alchemy_modifier",
+    "enchanting_modifier",
+    "sneaking_modifier",
+    "lockpicking_modifier",
+    "pickpocket_modifier",
+  ]);
+  const ABSOLUTE_PERCENT_EFFECT_KEYS = new Set([
+    "shout_recovery_mult",
+  ]);
+
+  function formatEffectDisplayMagnitude(effectKey, magnitude) {
+    const numeric = Number(magnitude || 0);
+    if (!Number.isFinite(numeric)) return "0";
+    const normalizedKey = String(effectKey || "").toLowerCase();
+    if (FRACTIONAL_PERCENT_EFFECT_KEYS.has(normalizedKey)) {
+      return formatMagnitude(numeric * 100);
+    }
+    if (ABSOLUTE_PERCENT_EFFECT_KEYS.has(normalizedKey)) {
+      return formatMagnitude(Math.abs(numeric) * 100);
+    }
+    return formatMagnitude(numeric);
+  }
+
   function magnitudeValue(option, key) {
     if (!option || typeof option !== "object") return 0;
     const raw = option[key];
@@ -150,13 +192,13 @@
   }
 
   function summarizeScaledEffect(effectKey, magnitude, tFmt, t) {
-    const numericValue = formatMagnitude(magnitude);
+    const numericValue = formatEffectDisplayMagnitude(effectKey, magnitude);
     if (!effectKey) return t("build.none", "No options");
     return tFmt("build.effectMagnitude." + effectKey, effectKey + " {value}", { value: numericValue });
   }
 
   function summarizeDiscipline(discipline, disciplines, options, activeSlots) {
-    const info = disciplines[discipline] || { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 };
+    const info = disciplines[discipline] || { score: 0, recordCount: 0, buildPoints: 0, currentTier: 0, nextTierPoints: 8, pointsToNextTier: 8, nextTierScore: 8, scoreToNextTier: 8 };
     const optionRows = options.filter((option) => String((option && option.discipline) || "").toLowerCase() === discipline);
     const unlockedCount = optionRows.filter((option) => !!option.unlocked).length;
     const activeCount = optionRows.filter((option) =>
@@ -164,9 +206,13 @@
     ).length;
     return {
       score: Number(info.score || 0) >>> 0,
+      recordCount: Number((info.recordCount != null ? info.recordCount : info.score) || 0) >>> 0,
+      buildPoints: normalizeNumber(info.buildPoints != null ? info.buildPoints : info.score, 0),
       currentTier: Number(info.currentTier || 0) >>> 0,
-      nextTierScore: Number(info.nextTierScore || 0) >>> 0,
-      scoreToNextTier: Number(info.scoreToNextTier || 0) >>> 0,
+      nextTierPoints: normalizeNumber(info.nextTierPoints != null ? info.nextTierPoints : info.nextTierScore, 0),
+      pointsToNextTier: normalizeNumber(info.pointsToNextTier != null ? info.pointsToNextTier : info.scoreToNextTier, 0),
+      nextTierScore: normalizeNumber(info.nextTierScore != null ? info.nextTierScore : info.nextTierPoints, 0),
+      scoreToNextTier: normalizeNumber(info.scoreToNextTier != null ? info.scoreToNextTier : info.pointsToNextTier, 0),
       unlockedCount,
       activeCount,
     };
@@ -293,7 +339,7 @@
 
   function buildOptionView(option, activeSlots, t, tFmt) {
     const optionId = String((option && option.id) || "");
-    const unlockScore = Number((option && option.unlockScore) || 0) >>> 0;
+    const unlockPoints = normalizeNumber(option && (option.unlockPoints != null ? option.unlockPoints : option.unlockScore), 0);
     const compatibleSlots = activeSlots.filter((slot) => slotSupportsOption(slot, option));
     const activeSlot = compatibleSlots.find((slot) => slot && slot.optionId === optionId) || null;
     const emptySlot = compatibleSlots.find((slot) => slot && !slot.optionId) || null;
@@ -306,13 +352,13 @@
     const stateKey = activeSlot ? "build.active" : unlocked ? "build.unlocked" : "build.locked";
     const stateText = t(stateKey, activeSlot ? "Active" : unlocked ? "Unlocked" : "Locked");
     const stateClass = activeSlot ? "isActive" : unlocked ? "isUnlocked" : "isLocked";
-    const unlockText = tFmt("build.requiresScore", "Need {score} Score", { score: unlockScore });
+    const unlockText = tFmt("build.requiresScore", "Need {score} pt", { score: formatBuildPoints(unlockPoints) });
     const compatibleText = compatibleSlots.length
       ? compatibleSlots.map((slot) => slotTitle(slot, t)).join(" / ")
       : t("build.noCompatibleSlots", "No compatible slots");
     const currentTier = Number((option && option.currentTier) || 0) >>> 0;
-    const nextTierScore = Number((option && option.nextTierScore) || 0) >>> 0;
-    const scoreToNextTier = Number((option && option.scoreToNextTier) || 0) >>> 0;
+    const nextTierPoints = normalizeNumber(option && (option.nextTierPoints != null ? option.nextTierPoints : option.nextTierScore), 0);
+    const pointsToNextTier = normalizeNumber(option && (option.pointsToNextTier != null ? option.pointsToNextTier : option.scoreToNextTier), 0);
     const hasCurrentMagnitude =
       option && Object.prototype.hasOwnProperty.call(option, "currentMagnitude")
         ? option.currentMagnitude != null
@@ -359,7 +405,7 @@
       title,
       description,
       unlockText,
-      unlockScore,
+      unlockPoints,
       stateText,
       stateClass,
       unlocked,
@@ -368,8 +414,8 @@
       compatibleSlots,
       compatibleText,
       currentTier,
-      nextTierScore,
-      scoreToNextTier,
+      nextTierPoints,
+      pointsToNextTier,
       currentEffectText,
       nextEffectText,
       actionHtml,
@@ -451,12 +497,15 @@
           <article class="buildSummaryCard ${sectionClass}">
             <div class="small buildPanelEyebrow">${escapeHtml(t("build.scoreSummaryLabel", "Build Score"))}</div>
             <strong>${escapeHtml(label)}</strong>
-            <div class="buildSummaryValue">${escapeHtml(String(info.score))}</div>
+            <div class="buildSummaryValue">${escapeHtml(String(info.recordCount))}</div>
+            <div class="small">${escapeHtml(
+              tFmt("build.pointsSummaryLabel", "{points} pt", { points: formatBuildPoints(info.buildPoints) }),
+            )}</div>
             <div class="small">${escapeHtml(
               tFmt("build.summaryTier", "Tier {tier}", { tier: info.currentTier }),
             )}</div>
             <div class="small">${escapeHtml(
-              tFmt("build.summaryNextTier", "{score} score to next tier", { score: info.scoreToNextTier }),
+              tFmt("build.summaryNextTier", "{score} pt to next tier", { score: formatBuildPoints(info.pointsToNextTier) }),
             )}</div>
           </article>`;
       })
@@ -494,7 +543,7 @@
             data-discipline="${escapeHtml(discipline)}"
           >
             <span class="buildDisciplineButtonLabel">${escapeHtml(disciplineLabel(discipline, t))}</span>
-            <span class="small">${escapeHtml(tFmt("build.scorePill", "Score {score}", { score: info.score }))}</span>
+            <span class="small">${escapeHtml(tFmt("build.scorePill", "Record {score}", { score: info.recordCount }))}</span>
           </button>`;
       })
       .join("");
@@ -551,7 +600,7 @@
                       <div class="buildCatalogMeta">
                         <span class="small mono">${escapeHtml(view.unlockText)}</span>
                         <span class="small">${escapeHtml(
-                          tFmt("build.nextTierInline", "Next tier in {score} score", { score: view.scoreToNextTier }),
+                          tFmt("build.nextTierInline", "Next tier in {score} pt", { score: formatBuildPoints(view.pointsToNextTier) }),
                         )}</span>
                       </div>
                     </button>
@@ -618,7 +667,7 @@
           <div class="small buildFocusStat">${escapeHtml(
             tFmt("build.nextTierLabel", "Next Tier In", {}),
           )}: ${escapeHtml(
-            tFmt("build.nextTierInline", "Next tier in {score} score", { score: focusedView.scoreToNextTier }),
+            tFmt("build.nextTierInline", "Next tier in {score} pt", { score: formatBuildPoints(focusedView.pointsToNextTier) }),
           )}</div>
           <div class="buildFocusActions">${focusedView.actionHtml}</div>
           <div class="buildFocusMeta">
@@ -665,7 +714,7 @@
                 <div class="small buildCatalogLead">${escapeHtml(
                   t(
                     "build.help",
-                    "Build score unlocks options permanently, and slotted options grow stronger every 10 discipline score.",
+                    "Record count stays visible for collection motivation, while weighted build points unlock options and linearly scale slotted effects.",
                   ),
                 )}</div>
               </div>

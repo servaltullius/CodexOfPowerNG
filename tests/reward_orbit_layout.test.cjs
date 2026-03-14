@@ -111,11 +111,11 @@ test("build panel strings exist in both locales", () => {
   assert.match(i18nModuleSource, /"build\.activate": "활성화"/);
   assert.match(
     i18nModuleSource,
-    /"build\.help": "Build score unlocks options permanently, and slotted options grow stronger every 10 discipline score\."/,
+    /"build\.help": "Record count stays visible for collection motivation, while weighted build points unlock options and linearly scale slotted effects\."/,
   );
   assert.match(
     i18nModuleSource,
-    /"build\.help": "빌드 점수로 옵션을 영구 해금하고, 활성 슬롯 효과는 계통 점수 10마다 한 단계씩 강화됩니다\."/,
+    /"build\.help": "기록 수는 수집 동기용으로 그대로 남기고, 가중치가 적용된 빌드 포인트로 옵션 해금과 슬롯 효과의 선형 성장을 처리합니다\."/,
   );
   assert.doesNotMatch(html, /class="small buildHelp"/);
   assert.match(buildPanelModuleSource, /buildCatalogLead/);

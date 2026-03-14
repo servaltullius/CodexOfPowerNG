@@ -36,6 +36,9 @@ namespace CodexOfPowerNG
 		std::uint32_t                                        attackScore{ 0 };
 		std::uint32_t                                        defenseScore{ 0 };
 		std::uint32_t                                        utilityScore{ 0 };
+		Builds::BuildPointCenti                             attackBuildPointsCenti{ 0 };
+		Builds::BuildPointCenti                             defenseBuildPointsCenti{ 0 };
+		Builds::BuildPointCenti                             utilityBuildPointsCenti{ 0 };
 		std::array<std::string, Builds::kBuildSlotCount>     activeBuildSlots{};
 		std::uint32_t                                        buildMigrationVersion{ 0 };
 		Builds::BuildMigrationState                          buildMigrationState{ Builds::BuildMigrationState::kNotStarted };

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "CodexOfPowerNG/BuildTypes.h"
 #include "CodexOfPowerNG/RegistrationUndoTypes.h"
 
 #include <RE/Skyrim.h>
@@ -20,6 +21,7 @@ namespace CodexOfPowerNG::Registration
 		bool            excluded{ false };
 		bool            registered{ false };
 		bool            blocked{ false };
+		Builds::BuildPointCenti buildPointsCenti{ 0 };
 		std::string     disabledReason;
 		std::string     name;
 	};

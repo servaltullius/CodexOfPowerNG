@@ -11,6 +11,11 @@
     return value === undefined || value === null ? fallback : value;
   }
 
+  function normalizeNumber(value, fallback) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : fallback;
+  }
+
   const DEFAULT_BUILD_SLOT_LAYOUT = Object.freeze([
     Object.freeze({ slotId: "attack_1", slotKind: "attack", optionId: null, occupied: false }),
     Object.freeze({ slotId: "attack_2", slotKind: "attack", optionId: null, occupied: false }),
@@ -72,21 +77,33 @@
       disciplines: {
         attack: {
           score: Number((disciplines.attack && disciplines.attack.score) || 0) >>> 0,
+          recordCount: Number((disciplines.attack && (disciplines.attack.recordCount != null ? disciplines.attack.recordCount : disciplines.attack.score)) || 0) >>> 0,
+          buildPoints: normalizeNumber(disciplines.attack && (disciplines.attack.buildPoints != null ? disciplines.attack.buildPoints : disciplines.attack.score), 0),
           currentTier: Number((disciplines.attack && disciplines.attack.currentTier) || 0) >>> 0,
-          nextTierScore: Number((disciplines.attack && disciplines.attack.nextTierScore) || 0) >>> 0,
-          scoreToNextTier: Number((disciplines.attack && disciplines.attack.scoreToNextTier) || 0) >>> 0,
+          nextTierPoints: normalizeNumber(disciplines.attack && (disciplines.attack.nextTierPoints != null ? disciplines.attack.nextTierPoints : disciplines.attack.nextTierScore), 0),
+          pointsToNextTier: normalizeNumber(disciplines.attack && (disciplines.attack.pointsToNextTier != null ? disciplines.attack.pointsToNextTier : disciplines.attack.scoreToNextTier), 0),
+          nextTierScore: normalizeNumber(disciplines.attack && (disciplines.attack.nextTierScore != null ? disciplines.attack.nextTierScore : disciplines.attack.nextTierPoints), 0),
+          scoreToNextTier: normalizeNumber(disciplines.attack && (disciplines.attack.scoreToNextTier != null ? disciplines.attack.scoreToNextTier : disciplines.attack.pointsToNextTier), 0),
         },
         defense: {
           score: Number((disciplines.defense && disciplines.defense.score) || 0) >>> 0,
+          recordCount: Number((disciplines.defense && (disciplines.defense.recordCount != null ? disciplines.defense.recordCount : disciplines.defense.score)) || 0) >>> 0,
+          buildPoints: normalizeNumber(disciplines.defense && (disciplines.defense.buildPoints != null ? disciplines.defense.buildPoints : disciplines.defense.score), 0),
           currentTier: Number((disciplines.defense && disciplines.defense.currentTier) || 0) >>> 0,
-          nextTierScore: Number((disciplines.defense && disciplines.defense.nextTierScore) || 0) >>> 0,
-          scoreToNextTier: Number((disciplines.defense && disciplines.defense.scoreToNextTier) || 0) >>> 0,
+          nextTierPoints: normalizeNumber(disciplines.defense && (disciplines.defense.nextTierPoints != null ? disciplines.defense.nextTierPoints : disciplines.defense.nextTierScore), 0),
+          pointsToNextTier: normalizeNumber(disciplines.defense && (disciplines.defense.pointsToNextTier != null ? disciplines.defense.pointsToNextTier : disciplines.defense.scoreToNextTier), 0),
+          nextTierScore: normalizeNumber(disciplines.defense && (disciplines.defense.nextTierScore != null ? disciplines.defense.nextTierScore : disciplines.defense.nextTierPoints), 0),
+          scoreToNextTier: normalizeNumber(disciplines.defense && (disciplines.defense.scoreToNextTier != null ? disciplines.defense.scoreToNextTier : disciplines.defense.pointsToNextTier), 0),
         },
         utility: {
           score: Number((disciplines.utility && disciplines.utility.score) || 0) >>> 0,
+          recordCount: Number((disciplines.utility && (disciplines.utility.recordCount != null ? disciplines.utility.recordCount : disciplines.utility.score)) || 0) >>> 0,
+          buildPoints: normalizeNumber(disciplines.utility && (disciplines.utility.buildPoints != null ? disciplines.utility.buildPoints : disciplines.utility.score), 0),
           currentTier: Number((disciplines.utility && disciplines.utility.currentTier) || 0) >>> 0,
-          nextTierScore: Number((disciplines.utility && disciplines.utility.nextTierScore) || 0) >>> 0,
-          scoreToNextTier: Number((disciplines.utility && disciplines.utility.scoreToNextTier) || 0) >>> 0,
+          nextTierPoints: normalizeNumber(disciplines.utility && (disciplines.utility.nextTierPoints != null ? disciplines.utility.nextTierPoints : disciplines.utility.nextTierScore), 0),
+          pointsToNextTier: normalizeNumber(disciplines.utility && (disciplines.utility.pointsToNextTier != null ? disciplines.utility.pointsToNextTier : disciplines.utility.scoreToNextTier), 0),
+          nextTierScore: normalizeNumber(disciplines.utility && (disciplines.utility.nextTierScore != null ? disciplines.utility.nextTierScore : disciplines.utility.nextTierPoints), 0),
+          scoreToNextTier: normalizeNumber(disciplines.utility && (disciplines.utility.scoreToNextTier != null ? disciplines.utility.scoreToNextTier : disciplines.utility.pointsToNextTier), 0),
         },
       },
       options: Array.isArray(source.options)
@@ -94,8 +111,12 @@
             option && typeof option === "object"
               ? Object.assign({}, option, {
                   currentTier: Number(option.currentTier || 0) >>> 0,
-                  nextTierScore: Number(option.nextTierScore || 0) >>> 0,
-                  scoreToNextTier: Number(option.scoreToNextTier || 0) >>> 0,
+                  unlockPoints: normalizeNumber(option.unlockPoints != null ? option.unlockPoints : option.unlockScore, 0),
+                  unlockScore: normalizeNumber(option.unlockScore != null ? option.unlockScore : option.unlockPoints, 0),
+                  nextTierPoints: normalizeNumber(option.nextTierPoints != null ? option.nextTierPoints : option.nextTierScore, 0),
+                  pointsToNextTier: normalizeNumber(option.pointsToNextTier != null ? option.pointsToNextTier : option.scoreToNextTier, 0),
+                  nextTierScore: normalizeNumber(option.nextTierScore != null ? option.nextTierScore : option.nextTierPoints, 0),
+                  scoreToNextTier: normalizeNumber(option.scoreToNextTier != null ? option.scoreToNextTier : option.pointsToNextTier, 0),
                 })
               : option,
           )

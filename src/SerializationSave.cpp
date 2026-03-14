@@ -14,7 +14,7 @@ namespace CodexOfPowerNG::Serialization::Internal
 {
 	namespace
 	{
-		inline constexpr std::uint32_t kUndoRecordVersion = 3u;
+		inline constexpr std::uint32_t kUndoRecordVersion = 4u;
 
 		[[nodiscard]] bool WriteString(SKSE::SerializationInterface* a_intfc, const std::string& value) noexcept
 		{
@@ -97,13 +97,16 @@ namespace CodexOfPowerNG::Serialization::Internal
 			SKSE::SerializationInterface*          a_intfc,
 			const SerializationStateStore::Snapshot& state) noexcept
 		{
-			if (!a_intfc->OpenRecord(kRecordBuildScores, 1u)) {
+			if (!a_intfc->OpenRecord(kRecordBuildScores, 2u)) {
 				SKSE::log::error("Failed to open co-save record BSCR");
 				return false;
 			}
 			return a_intfc->WriteRecordData(state.attackScore) &&
 			       a_intfc->WriteRecordData(state.defenseScore) &&
-			       a_intfc->WriteRecordData(state.utilityScore);
+			       a_intfc->WriteRecordData(state.utilityScore) &&
+			       a_intfc->WriteRecordData(state.attackBuildPointsCenti) &&
+			       a_intfc->WriteRecordData(state.defenseBuildPointsCenti) &&
+			       a_intfc->WriteRecordData(state.utilityBuildPointsCenti);
 		}
 
 		[[nodiscard]] bool WriteBuildSlotsRecord(
@@ -216,8 +219,11 @@ namespace CodexOfPowerNG::Serialization::Internal
 				const std::uint32_t disciplineRaw = entry.buildContribution.has_value()
 					? static_cast<std::uint32_t>(entry.buildContribution->discipline)
 					: 0u;
-				const std::int32_t scoreDelta = entry.buildContribution.has_value()
-					? entry.buildContribution->scoreDelta
+				const std::int32_t recordDelta = entry.buildContribution.has_value()
+					? entry.buildContribution->recordDelta
+					: 0;
+				const std::int32_t pointsDeltaCenti = entry.buildContribution.has_value()
+					? entry.buildContribution->pointsDeltaCenti
 					: 0;
 				const std::uint32_t rewardCount = static_cast<std::uint32_t>(entry.rewardDeltas.size());
 				if (!a_intfc->WriteRecordData(entry.actionId) ||
@@ -226,7 +232,8 @@ namespace CodexOfPowerNG::Serialization::Internal
 				    !a_intfc->WriteRecordData(entry.group) ||
 				    !a_intfc->WriteRecordData(hasBuildContribution) ||
 				    !a_intfc->WriteRecordData(disciplineRaw) ||
-				    !a_intfc->WriteRecordData(scoreDelta) ||
+				    !a_intfc->WriteRecordData(recordDelta) ||
+				    !a_intfc->WriteRecordData(pointsDeltaCenti) ||
 				    !a_intfc->WriteRecordData(rewardCount)) {
 					SKSE::log::error("Failed to write undo entry header");
 					return false;

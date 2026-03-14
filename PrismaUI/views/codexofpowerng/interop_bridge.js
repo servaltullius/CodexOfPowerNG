@@ -79,6 +79,11 @@
     return Array.isArray(payload) ? payload : [];
   }
 
+  function normalizeNumber(value, fallback) {
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : fallback;
+  }
+
   function normalizeBuildOption(option) {
     const source = option && typeof option === "object" ? option : null;
     if (!source) return null;
@@ -89,7 +94,8 @@
       themeTitleKey: typeof source.themeTitleKey === "string" ? source.themeTitleKey : "",
       hierarchy: typeof source.hierarchy === "string" ? source.hierarchy : "standard",
       layer: typeof source.layer === "string" ? source.layer : "",
-      unlockScore: Number(source.unlockScore || 0) >>> 0,
+      unlockPoints: normalizeNumber(source.unlockPoints != null ? source.unlockPoints : source.unlockScore, 0),
+      unlockScore: normalizeNumber(source.unlockScore != null ? source.unlockScore : source.unlockPoints, 0),
       unlocked: !!source.unlocked,
       state: typeof source.state === "string" ? source.state : "",
       slotCompatibility: typeof source.slotCompatibility === "string" ? source.slotCompatibility : "",
@@ -122,8 +128,10 @@
           ? Object.assign({}, source.nextMagnitude)
           : source.nextMagnitude,
       currentTier: Number(source.currentTier || 0) >>> 0,
-      nextTierScore: Number(source.nextTierScore || 0) >>> 0,
-      scoreToNextTier: Number(source.scoreToNextTier || 0) >>> 0,
+      nextTierPoints: normalizeNumber(source.nextTierPoints != null ? source.nextTierPoints : source.nextTierScore, 0),
+      pointsToNextTier: normalizeNumber(source.pointsToNextTier != null ? source.pointsToNextTier : source.scoreToNextTier, 0),
+      nextTierScore: normalizeNumber(source.nextTierScore != null ? source.nextTierScore : source.nextTierPoints, 0),
+      scoreToNextTier: normalizeNumber(source.scoreToNextTier != null ? source.scoreToNextTier : source.pointsToNextTier, 0),
       exclusivityGroup: typeof source.exclusivityGroup === "string" ? source.exclusivityGroup : "",
       titleKey: typeof source.titleKey === "string" ? source.titleKey : "",
       descriptionKey: typeof source.descriptionKey === "string" ? source.descriptionKey : "",
@@ -222,21 +230,33 @@
       disciplines: {
         attack: {
           score: Number((disciplines.attack && disciplines.attack.score) || 0) >>> 0,
+          recordCount: Number((disciplines.attack && (disciplines.attack.recordCount != null ? disciplines.attack.recordCount : disciplines.attack.score)) || 0) >>> 0,
+          buildPoints: normalizeNumber(disciplines.attack && (disciplines.attack.buildPoints != null ? disciplines.attack.buildPoints : disciplines.attack.score), 0),
           currentTier: Number((disciplines.attack && disciplines.attack.currentTier) || 0) >>> 0,
-          nextTierScore: Number((disciplines.attack && disciplines.attack.nextTierScore) || 0) >>> 0,
-          scoreToNextTier: Number((disciplines.attack && disciplines.attack.scoreToNextTier) || 0) >>> 0,
+          nextTierPoints: normalizeNumber(disciplines.attack && (disciplines.attack.nextTierPoints != null ? disciplines.attack.nextTierPoints : disciplines.attack.nextTierScore), 0),
+          pointsToNextTier: normalizeNumber(disciplines.attack && (disciplines.attack.pointsToNextTier != null ? disciplines.attack.pointsToNextTier : disciplines.attack.scoreToNextTier), 0),
+          nextTierScore: normalizeNumber(disciplines.attack && (disciplines.attack.nextTierScore != null ? disciplines.attack.nextTierScore : disciplines.attack.nextTierPoints), 0),
+          scoreToNextTier: normalizeNumber(disciplines.attack && (disciplines.attack.scoreToNextTier != null ? disciplines.attack.scoreToNextTier : disciplines.attack.pointsToNextTier), 0),
         },
         defense: {
           score: Number((disciplines.defense && disciplines.defense.score) || 0) >>> 0,
+          recordCount: Number((disciplines.defense && (disciplines.defense.recordCount != null ? disciplines.defense.recordCount : disciplines.defense.score)) || 0) >>> 0,
+          buildPoints: normalizeNumber(disciplines.defense && (disciplines.defense.buildPoints != null ? disciplines.defense.buildPoints : disciplines.defense.score), 0),
           currentTier: Number((disciplines.defense && disciplines.defense.currentTier) || 0) >>> 0,
-          nextTierScore: Number((disciplines.defense && disciplines.defense.nextTierScore) || 0) >>> 0,
-          scoreToNextTier: Number((disciplines.defense && disciplines.defense.scoreToNextTier) || 0) >>> 0,
+          nextTierPoints: normalizeNumber(disciplines.defense && (disciplines.defense.nextTierPoints != null ? disciplines.defense.nextTierPoints : disciplines.defense.nextTierScore), 0),
+          pointsToNextTier: normalizeNumber(disciplines.defense && (disciplines.defense.pointsToNextTier != null ? disciplines.defense.pointsToNextTier : disciplines.defense.scoreToNextTier), 0),
+          nextTierScore: normalizeNumber(disciplines.defense && (disciplines.defense.nextTierScore != null ? disciplines.defense.nextTierScore : disciplines.defense.nextTierPoints), 0),
+          scoreToNextTier: normalizeNumber(disciplines.defense && (disciplines.defense.scoreToNextTier != null ? disciplines.defense.scoreToNextTier : disciplines.defense.pointsToNextTier), 0),
         },
         utility: {
           score: Number((disciplines.utility && disciplines.utility.score) || 0) >>> 0,
+          recordCount: Number((disciplines.utility && (disciplines.utility.recordCount != null ? disciplines.utility.recordCount : disciplines.utility.score)) || 0) >>> 0,
+          buildPoints: normalizeNumber(disciplines.utility && (disciplines.utility.buildPoints != null ? disciplines.utility.buildPoints : disciplines.utility.score), 0),
           currentTier: Number((disciplines.utility && disciplines.utility.currentTier) || 0) >>> 0,
-          nextTierScore: Number((disciplines.utility && disciplines.utility.nextTierScore) || 0) >>> 0,
-          scoreToNextTier: Number((disciplines.utility && disciplines.utility.scoreToNextTier) || 0) >>> 0,
+          nextTierPoints: normalizeNumber(disciplines.utility && (disciplines.utility.nextTierPoints != null ? disciplines.utility.nextTierPoints : disciplines.utility.nextTierScore), 0),
+          pointsToNextTier: normalizeNumber(disciplines.utility && (disciplines.utility.pointsToNextTier != null ? disciplines.utility.pointsToNextTier : disciplines.utility.scoreToNextTier), 0),
+          nextTierScore: normalizeNumber(disciplines.utility && (disciplines.utility.nextTierScore != null ? disciplines.utility.nextTierScore : disciplines.utility.nextTierPoints), 0),
+          scoreToNextTier: normalizeNumber(disciplines.utility && (disciplines.utility.scoreToNextTier != null ? disciplines.utility.scoreToNextTier : disciplines.utility.pointsToNextTier), 0),
         },
       },
       themeMap: normalizedThemeMap,

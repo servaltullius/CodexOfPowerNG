@@ -17,6 +17,9 @@ namespace CodexOfPowerNG::Builds
 		std::uint32_t                                    attackScore{ 0 };
 		std::uint32_t                                    defenseScore{ 0 };
 		std::uint32_t                                    utilityScore{ 0 };
+		BuildPointCenti                                  attackBuildPointsCenti{ 0 };
+		BuildPointCenti                                  defenseBuildPointsCenti{ 0 };
+		BuildPointCenti                                  utilityBuildPointsCenti{ 0 };
 		std::array<std::string, kBuildSlotCount> activeBuildSlots{};
 	};
 

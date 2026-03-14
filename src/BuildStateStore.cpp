@@ -53,6 +53,23 @@ namespace CodexOfPowerNG::BuildStateStore
 			return 0u;
 		}
 
+		[[nodiscard]] Builds::BuildPointCenti BuildPointsForDiscipline(
+			const RuntimeState&       state,
+			Builds::BuildDiscipline discipline) noexcept
+		{
+			using Builds::BuildDiscipline;
+			switch (discipline) {
+			case BuildDiscipline::Attack:
+				return state.attackBuildPointsCenti;
+			case BuildDiscipline::Defense:
+				return state.defenseBuildPointsCenti;
+			case BuildDiscipline::Utility:
+				return state.utilityBuildPointsCenti;
+			}
+
+			return 0u;
+		}
+
 		[[nodiscard]] bool IsSlotCompatible(
 			const Builds::BuildOptionDef& option,
 			Builds::BuildSlotId          slotId) noexcept
@@ -97,6 +114,27 @@ namespace CodexOfPowerNG::BuildStateStore
 		return state.utilityScore;
 	}
 
+	Builds::BuildPointCenti GetAttackBuildPointsCenti() noexcept
+	{
+		auto& state = GetState();
+		std::scoped_lock lock(state.mutex);
+		return state.attackBuildPointsCenti;
+	}
+
+	Builds::BuildPointCenti GetDefenseBuildPointsCenti() noexcept
+	{
+		auto& state = GetState();
+		std::scoped_lock lock(state.mutex);
+		return state.defenseBuildPointsCenti;
+	}
+
+	Builds::BuildPointCenti GetUtilityBuildPointsCenti() noexcept
+	{
+		auto& state = GetState();
+		std::scoped_lock lock(state.mutex);
+		return state.utilityBuildPointsCenti;
+	}
+
 	void SetAttackScore(std::uint32_t score) noexcept
 	{
 		auto& state = GetState();
@@ -116,6 +154,27 @@ namespace CodexOfPowerNG::BuildStateStore
 		auto& state = GetState();
 		std::scoped_lock lock(state.mutex);
 		state.utilityScore = score;
+	}
+
+	void SetAttackBuildPointsCenti(Builds::BuildPointCenti points) noexcept
+	{
+		auto& state = GetState();
+		std::scoped_lock lock(state.mutex);
+		state.attackBuildPointsCenti = points;
+	}
+
+	void SetDefenseBuildPointsCenti(Builds::BuildPointCenti points) noexcept
+	{
+		auto& state = GetState();
+		std::scoped_lock lock(state.mutex);
+		state.defenseBuildPointsCenti = points;
+	}
+
+	void SetUtilityBuildPointsCenti(Builds::BuildPointCenti points) noexcept
+	{
+		auto& state = GetState();
+		std::scoped_lock lock(state.mutex);
+		state.utilityBuildPointsCenti = points;
 	}
 
 	std::optional<std::string> GetActiveSlot(Builds::BuildSlotId slotId) noexcept
@@ -146,7 +205,7 @@ namespace CodexOfPowerNG::BuildStateStore
 		if (!IsSlotCompatible(*option, slotId)) {
 			return false;
 		}
-		if (ScoreForDiscipline(state, option->discipline) < option->unlockScore) {
+		if (BuildPointsForDiscipline(state, option->discipline) < option->unlockPointsCenti) {
 			return false;
 		}
 

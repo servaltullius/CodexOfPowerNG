@@ -95,6 +95,9 @@ namespace
 		return snapshot.attackScore == 2u &&
 		       snapshot.defenseScore == 2u &&
 		       snapshot.utilityScore == 2u &&
+		       snapshot.attackBuildPointsCenti == 100u &&
+		       snapshot.defenseBuildPointsCenti == 60u &&
+		       snapshot.utilityBuildPointsCenti == 20u &&
 		       snapshot.buildMigrationVersion == kBuildMigrationVersion &&
 		       snapshot.buildMigrationState == BuildMigrationState::kPendingCleanup &&
 		       snapshot.buildMigrationNotice.needsNotice &&
@@ -111,12 +114,18 @@ namespace
 		const auto attackScore = snapshot.attackScore;
 		const auto defenseScore = snapshot.defenseScore;
 		const auto utilityScore = snapshot.utilityScore;
+		const auto attackPoints = snapshot.attackBuildPointsCenti;
+		const auto defensePoints = snapshot.defenseBuildPointsCenti;
+		const auto utilityPoints = snapshot.utilityBuildPointsCenti;
 
 		NormalizeLoadedSnapshot(snapshot, ResolveLegacyDisciplineForTest);
 
 		return snapshot.attackScore == attackScore &&
 		       snapshot.defenseScore == defenseScore &&
 		       snapshot.utilityScore == utilityScore &&
+		       snapshot.attackBuildPointsCenti == attackPoints &&
+		       snapshot.defenseBuildPointsCenti == defensePoints &&
+		       snapshot.utilityBuildPointsCenti == utilityPoints &&
 		       snapshot.buildMigrationState == BuildMigrationState::kPendingCleanup;
 	}
 
@@ -126,7 +135,8 @@ namespace
 		NormalizeLoadedSnapshot(snapshot, ResolveLegacyDisciplineForTest);
 
 		return snapshot.buildMigrationNotice.unresolvedHistoricalRegistrations == 1u &&
-		       snapshot.attackScore + snapshot.defenseScore + snapshot.utilityScore == 6u;
+		       snapshot.attackScore + snapshot.defenseScore + snapshot.utilityScore == 6u &&
+		       snapshot.attackBuildPointsCenti + snapshot.defenseBuildPointsCenti + snapshot.utilityBuildPointsCenti == 180u;
 	}
 
 	bool MigrationStaysPendingUntilCleanupSucceeds()
@@ -186,6 +196,9 @@ namespace
 		snapshot.attackScore = 9u;
 		snapshot.defenseScore = 4u;
 		snapshot.utilityScore = 7u;
+		snapshot.attackBuildPointsCenti = 900u;
+		snapshot.defenseBuildPointsCenti = 450u;
+		snapshot.utilityBuildPointsCenti = 700u;
 		snapshot.undoHistory.front().rewardDeltas.push_back({
 			RE::ActorValue::kHealth,
 			3.0f,
@@ -196,6 +209,9 @@ namespace
 		return snapshot.attackScore == 9u &&
 		       snapshot.defenseScore == 4u &&
 		       snapshot.utilityScore == 7u &&
+		       snapshot.attackBuildPointsCenti == 900u &&
+		       snapshot.defenseBuildPointsCenti == 450u &&
+		       snapshot.utilityBuildPointsCenti == 700u &&
 		       snapshot.buildMigrationState == BuildMigrationState::kComplete &&
 		       snapshot.undoHistory.front().rewardDeltas.empty() &&
 		       !ConsumeMigrationNotice(snapshot).has_value();

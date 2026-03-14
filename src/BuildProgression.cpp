@@ -91,6 +91,33 @@ namespace CodexOfPowerNG::BuildProgression
 			}
 		}
 
+		void ApplyDerivedBuildPoints(
+			SerializationStateStore::Snapshot& snapshot,
+			Builds::BuildDiscipline           discipline,
+			Builds::BuildPointCenti           pointsCenti) noexcept
+		{
+			switch (discipline) {
+			case Builds::BuildDiscipline::Attack:
+				snapshot.attackBuildPointsCenti += pointsCenti;
+				break;
+			case Builds::BuildDiscipline::Defense:
+				snapshot.defenseBuildPointsCenti += pointsCenti;
+				break;
+			case Builds::BuildDiscipline::Utility:
+				snapshot.utilityBuildPointsCenti += pointsCenti;
+				break;
+			}
+		}
+
+		void ApplyDerivedContribution(
+			SerializationStateStore::Snapshot& snapshot,
+			Builds::BuildDiscipline           discipline,
+			Builds::BuildPointCenti           pointsCenti) noexcept
+		{
+			ApplyDerivedScore(snapshot, discipline);
+			ApplyDerivedBuildPoints(snapshot, discipline, pointsCenti);
+		}
+
 		[[nodiscard]] std::uint32_t CurrentScore(Builds::BuildDiscipline discipline) noexcept
 		{
 			switch (discipline) {
@@ -118,6 +145,50 @@ namespace CodexOfPowerNG::BuildProgression
 				BuildStateStore::SetUtilityScore(score);
 				break;
 			}
+		}
+
+		[[nodiscard]] Builds::BuildPointCenti CurrentBuildPointsCenti(Builds::BuildDiscipline discipline) noexcept
+		{
+			switch (discipline) {
+			case Builds::BuildDiscipline::Attack:
+				return BuildStateStore::GetAttackBuildPointsCenti();
+			case Builds::BuildDiscipline::Defense:
+				return BuildStateStore::GetDefenseBuildPointsCenti();
+			case Builds::BuildDiscipline::Utility:
+				return BuildStateStore::GetUtilityBuildPointsCenti();
+			}
+
+			return 0u;
+		}
+
+		void SetBuildPointsCenti(Builds::BuildDiscipline discipline, Builds::BuildPointCenti pointsCenti) noexcept
+		{
+			switch (discipline) {
+			case Builds::BuildDiscipline::Attack:
+				BuildStateStore::SetAttackBuildPointsCenti(pointsCenti);
+				break;
+			case Builds::BuildDiscipline::Defense:
+				BuildStateStore::SetDefenseBuildPointsCenti(pointsCenti);
+				break;
+			case Builds::BuildDiscipline::Utility:
+				BuildStateStore::SetUtilityBuildPointsCenti(pointsCenti);
+				break;
+			}
+		}
+
+		[[nodiscard]] Builds::BuildPointCenti ResolveFallbackBuildPointsCenti(
+			Builds::BuildDiscipline discipline) noexcept
+		{
+			switch (discipline) {
+			case Builds::BuildDiscipline::Attack:
+				return 50u;
+			case Builds::BuildDiscipline::Defense:
+				return 30u;
+			case Builds::BuildDiscipline::Utility:
+				return 10u;
+			}
+
+			return 0u;
 		}
 
 		[[nodiscard]] const Builds::BuildOptionDef* FindOption(std::string_view optionId) noexcept
@@ -188,6 +259,32 @@ namespace CodexOfPowerNG::BuildProgression
 		}
 	}
 
+	Builds::BuildPointCenti ResolveBuildPointsForFormType(RE::FormType formType) noexcept
+	{
+		switch (formType) {
+		case RE::FormType::Weapon:
+			return 70u;
+		case RE::FormType::Ammo:
+			return 20u;
+		case RE::FormType::Armor:
+			return 30u;
+		case RE::FormType::AlchemyItem:
+			return 25u;
+		case RE::FormType::Ingredient:
+			return 10u;
+		case RE::FormType::Book:
+			return 8u;
+		case RE::FormType::Scroll:
+			return 18u;
+		case RE::FormType::SoulGem:
+			return 30u;
+		case RE::FormType::Misc:
+			return 5u;
+		default:
+			return 0u;
+		}
+	}
+
 	std::optional<Builds::BuildDiscipline> TryResolveDisciplineFromFormType(RE::FormType formType) noexcept
 	{
 		switch (formType) {
@@ -243,16 +340,31 @@ namespace CodexOfPowerNG::BuildProgression
 		snapshot.attackScore = 0u;
 		snapshot.defenseScore = 0u;
 		snapshot.utilityScore = 0u;
+		snapshot.attackBuildPointsCenti = 0u;
+		snapshot.defenseBuildPointsCenti = 0u;
+		snapshot.utilityBuildPointsCenti = 0u;
 		ClearActiveSlots(snapshot);
 
 		std::uint32_t unresolvedHistoricalRegistrations = 0u;
 		for (const auto& [formId, group] : snapshot.registeredItems) {
+			if (resolver == nullptr) {
+				if (const auto* form = RE::TESForm::LookupByID(formId)) {
+					const auto formType = form->GetFormType();
+					const auto discipline = TryResolveDisciplineFromFormType(formType);
+					const auto pointsCenti = ResolveBuildPointsForFormType(formType);
+					if (discipline.has_value() && pointsCenti > 0u) {
+						ApplyDerivedContribution(snapshot, discipline.value(), pointsCenti);
+						continue;
+					}
+				}
+			}
+
 			const auto discipline = TryResolveLegacyDiscipline(formId, group, resolver);
 			if (!discipline.has_value()) {
 				++unresolvedHistoricalRegistrations;
 				continue;
 			}
-			ApplyDerivedScore(snapshot, discipline.value());
+			ApplyDerivedContribution(snapshot, discipline.value(), ResolveFallbackBuildPointsCenti(discipline.value()));
 		}
 
 		snapshot.buildMigrationVersion = kBuildMigrationVersion;
@@ -307,30 +419,44 @@ namespace CodexOfPowerNG::BuildProgression
 		return true;
 	}
 
-	std::optional<Registration::BuildScoreContribution> MakeRegistrationContribution(std::uint32_t group) noexcept
+	std::optional<Registration::BuildScoreContribution> MakeRegistrationContribution(
+		std::uint32_t group,
+		RE::FormType  formType) noexcept
 	{
 		if (group > 5u) {
+			return std::nullopt;
+		}
+		const auto pointsCenti = ResolveBuildPointsForFormType(formType);
+		if (pointsCenti == 0u) {
 			return std::nullopt;
 		}
 
 		return Registration::BuildScoreContribution{
 			.discipline = ConvertLegacyGroupToDiscipline(group),
-			.scoreDelta = 1,
+			.recordDelta = 1,
+			.pointsDeltaCenti = static_cast<std::int32_t>(pointsCenti),
 		};
 	}
 
 	bool ApplyRegistrationContribution(const Registration::BuildScoreContribution& contribution) noexcept
 	{
-		if (contribution.scoreDelta <= 0) {
+		if (contribution.recordDelta <= 0 || contribution.pointsDeltaCenti <= 0) {
 			return false;
 		}
 
-		const auto current = CurrentScore(contribution.discipline);
-		const auto delta = static_cast<std::uint32_t>(contribution.scoreDelta);
-		const auto next = current > (std::numeric_limits<std::uint32_t>::max() - delta)
+		const auto currentScore = CurrentScore(contribution.discipline);
+		const auto scoreDelta = static_cast<std::uint32_t>(contribution.recordDelta);
+		const auto nextScore = currentScore > (std::numeric_limits<std::uint32_t>::max() - scoreDelta)
 			? std::numeric_limits<std::uint32_t>::max()
-			: (current + delta);
-		SetScore(contribution.discipline, next);
+			: (currentScore + scoreDelta);
+		SetScore(contribution.discipline, nextScore);
+
+		const auto currentPoints = CurrentBuildPointsCenti(contribution.discipline);
+		const auto pointsDelta = static_cast<Builds::BuildPointCenti>(contribution.pointsDeltaCenti);
+		const auto nextPoints = currentPoints > (std::numeric_limits<Builds::BuildPointCenti>::max() - pointsDelta)
+			? std::numeric_limits<Builds::BuildPointCenti>::max()
+			: (currentPoints + pointsDelta);
+		SetBuildPointsCenti(contribution.discipline, nextPoints);
 		return true;
 	}
 
@@ -338,15 +464,20 @@ namespace CodexOfPowerNG::BuildProgression
 		const Registration::BuildScoreContribution& contribution) noexcept
 	{
 		RollbackContributionResult result{};
-		if (contribution.scoreDelta <= 0) {
+		if (contribution.recordDelta <= 0 || contribution.pointsDeltaCenti <= 0) {
 			return result;
 		}
 
-		const auto current = CurrentScore(contribution.discipline);
-		const auto delta = static_cast<std::uint32_t>(contribution.scoreDelta);
-		const auto next = current > delta ? (current - delta) : 0u;
-		result.scoreChanged = next != current;
-		SetScore(contribution.discipline, next);
+		const auto currentScore = CurrentScore(contribution.discipline);
+		const auto scoreDelta = static_cast<std::uint32_t>(contribution.recordDelta);
+		const auto nextScore = currentScore > scoreDelta ? (currentScore - scoreDelta) : 0u;
+		SetScore(contribution.discipline, nextScore);
+
+		const auto currentPoints = CurrentBuildPointsCenti(contribution.discipline);
+		const auto pointsDelta = static_cast<Builds::BuildPointCenti>(contribution.pointsDeltaCenti);
+		const auto nextPoints = currentPoints > pointsDelta ? (currentPoints - pointsDelta) : 0u;
+		SetBuildPointsCenti(contribution.discipline, nextPoints);
+		result.scoreChanged = nextScore != currentScore || nextPoints != currentPoints;
 
 		for (const auto slotId : Builds::GetInitialBuildSlotLayout()) {
 			const auto activeOption = BuildStateStore::GetActiveSlot(slotId);
@@ -355,7 +486,9 @@ namespace CodexOfPowerNG::BuildProgression
 			}
 
 			const auto* option = FindOption(activeOption.value());
-			if (!option || !IsSlotCompatible(*option, slotId) || CurrentScore(option->discipline) < option->unlockScore) {
+			if (!option ||
+			    !IsSlotCompatible(*option, slotId) ||
+			    CurrentBuildPointsCenti(option->discipline) < option->unlockPointsCenti) {
 				BuildStateStore::ClearActiveSlot(slotId);
 				++result.deactivatedSlots;
 			}

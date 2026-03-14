@@ -6,7 +6,7 @@
 
 namespace CodexOfPowerNG::BuildProgression
 {
-	inline constexpr std::uint32_t kBuildMigrationVersion = 1;
+	inline constexpr std::uint32_t kBuildMigrationVersion = 2;
 
 	using LegacyDisciplineResolver = std::optional<Builds::BuildDiscipline> (*)(RE::FormID formId) noexcept;
 	using LegacyCleanupFn = bool (*)(const SerializationStateStore::Snapshot& snapshot) noexcept;
@@ -19,6 +19,7 @@ namespace CodexOfPowerNG::BuildProgression
 
 	[[nodiscard]] Builds::BuildDiscipline ConvertLegacyGroupToDiscipline(std::uint32_t legacyGroup) noexcept;
 	[[nodiscard]] std::optional<Builds::BuildDiscipline> TryResolveDisciplineFromFormType(RE::FormType formType) noexcept;
+	[[nodiscard]] Builds::BuildPointCenti ResolveBuildPointsForFormType(RE::FormType formType) noexcept;
 	[[nodiscard]] std::optional<Builds::BuildDiscipline> TryResolveLegacyDiscipline(
 		RE::FormID               regKey,
 		std::uint32_t            legacyGroup,
@@ -33,7 +34,8 @@ namespace CodexOfPowerNG::BuildProgression
 		LegacyCleanupFn                    cleanup) noexcept;
 
 	[[nodiscard]] std::optional<Registration::BuildScoreContribution> MakeRegistrationContribution(
-		std::uint32_t group) noexcept;
+		std::uint32_t group,
+		RE::FormType  formType) noexcept;
 	[[nodiscard]] bool ApplyRegistrationContribution(
 		const Registration::BuildScoreContribution& contribution) noexcept;
 	[[nodiscard]] RollbackContributionResult RollbackRegistrationContributionDetailed(

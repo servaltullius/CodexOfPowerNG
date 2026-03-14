@@ -33,9 +33,9 @@
   function createDefaultBuildState() {
     return {
       disciplines: {
-        attack: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
-        defense: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
-        utility: { score: 0, currentTier: 0, nextTierScore: 10, scoreToNextTier: 10 },
+        attack: { score: 0, recordCount: 0, buildPoints: 0, currentTier: 0, nextTierPoints: 8, pointsToNextTier: 8, nextTierScore: 8, scoreToNextTier: 8 },
+        defense: { score: 0, recordCount: 0, buildPoints: 0, currentTier: 0, nextTierPoints: 8, pointsToNextTier: 8, nextTierScore: 8, scoreToNextTier: 8 },
+        utility: { score: 0, recordCount: 0, buildPoints: 0, currentTier: 0, nextTierPoints: 8, pointsToNextTier: 8, nextTierScore: 8, scoreToNextTier: 8 },
       },
       themeMap: {
         attack: [],

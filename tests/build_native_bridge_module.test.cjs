@@ -41,10 +41,14 @@ test("interop bridge normalizes build payloads and grouped quick-list sections",
   const normalizedBuild = interopBridge.normalizeBuildPayload({
     disciplines: {
       attack: {
-        score: 12,
-        currentTier: 1,
-        nextTierScore: 20,
-        scoreToNextTier: 8,
+        score: 35,
+        recordCount: 35,
+        buildPoints: 28,
+        currentTier: 3,
+        nextTierPoints: 32,
+        pointsToNextTier: 4,
+        nextTierScore: 32,
+        scoreToNextTier: 4,
       },
     },
     groupedCatalog: {
@@ -59,22 +63,27 @@ test("interop bridge normalizes build payloads and grouped quick-list sections",
         id: "build.attack.ferocity",
         discipline: "attack",
         themeId: "devastation",
-        magnitude: 6,
-        baseMagnitude: 5,
-        magnitudePerTier: 1,
-        currentMagnitude: 6,
-        nextMagnitude: 7,
-        currentTier: 1,
-        nextTierScore: 20,
-        scoreToNextTier: 8,
+        magnitude: 4.5,
+        baseMagnitude: 3,
+        magnitudePerTier: 0.5,
+        currentMagnitude: 4.5,
+        nextMagnitude: 5,
+        currentTier: 3,
+        unlockPoints: 4,
+        nextTierPoints: 32,
+        pointsToNextTier: 4,
+        nextTierScore: 32,
+        scoreToNextTier: 4,
       },
     ],
     activeSlots: [{ slotId: "attack_1", optionId: "build.attack.ferocity" }],
   });
-  assert.equal(normalizedBuild.disciplines.attack.score, 12);
-  assert.equal(normalizedBuild.disciplines.attack.currentTier, 1);
-  assert.equal(normalizedBuild.disciplines.attack.nextTierScore, 20);
-  assert.equal(normalizedBuild.disciplines.attack.scoreToNextTier, 8);
+  assert.equal(normalizedBuild.disciplines.attack.score, 35);
+  assert.equal(normalizedBuild.disciplines.attack.recordCount, 35);
+  assert.equal(normalizedBuild.disciplines.attack.buildPoints, 28);
+  assert.equal(normalizedBuild.disciplines.attack.currentTier, 3);
+  assert.equal(normalizedBuild.disciplines.attack.nextTierPoints, 32);
+  assert.equal(normalizedBuild.disciplines.attack.pointsToNextTier, 4);
   assert.equal(normalizedBuild.activeSlots.length, 6);
   assert.equal(normalizedBuild.themeMap.attack.length, 3);
   assert.equal(normalizedBuild.groupedCatalog.attack.themes.length, 1);
@@ -82,9 +91,9 @@ test("interop bridge normalizes build payloads and grouped quick-list sections",
   assert.equal(normalizedBuild.selectedOptionDetail.id, "build.attack.ferocity");
   assert.equal(normalizedBuild.options[0].themeId, "devastation");
   assert.equal(normalizedBuild.options[0].hierarchy, "standard");
-  assert.equal(normalizedBuild.options[0].currentMagnitude, 6);
-  assert.equal(normalizedBuild.options[0].nextMagnitude, 7);
-  assert.equal(normalizedBuild.options[0].currentTier, 1);
+  assert.equal(normalizedBuild.options[0].currentMagnitude, 4.5);
+  assert.equal(normalizedBuild.options[0].nextMagnitude, 5);
+  assert.equal(normalizedBuild.options[0].currentTier, 3);
 
   const normalizedQuickList = interopBridge.normalizeInventoryPayload({
     sections: [
@@ -121,10 +130,14 @@ test("native state bridge forwards build payloads to build renderer", () => {
   bridge.onBuild({
     disciplines: {
       attack: {
-        score: 12,
-        currentTier: 1,
-        nextTierScore: 20,
-        scoreToNextTier: 8,
+        score: 35,
+        recordCount: 35,
+        buildPoints: 28,
+        currentTier: 3,
+        nextTierPoints: 32,
+        pointsToNextTier: 4,
+        nextTierScore: 32,
+        scoreToNextTier: 4,
       },
     },
     groupedCatalog: {
@@ -139,25 +152,27 @@ test("native state bridge forwards build payloads to build renderer", () => {
         id: "build.attack.ferocity",
         discipline: "attack",
         themeId: "devastation",
-        magnitude: 6,
-        currentMagnitude: 6,
-        nextMagnitude: 7,
-        currentTier: 1,
+        magnitude: 4.5,
+        currentMagnitude: 4.5,
+        nextMagnitude: 5,
+        currentTier: 3,
       },
     ],
     activeSlots: [{ slotId: "attack_1", optionId: "build.attack.ferocity" }],
   });
 
-  assert.equal(recorded.build.disciplines.attack.score, 12);
-  assert.equal(recorded.build.disciplines.attack.currentTier, 1);
-  assert.equal(recorded.build.disciplines.attack.nextTierScore, 20);
-  assert.equal(recorded.build.disciplines.attack.scoreToNextTier, 8);
+  assert.equal(recorded.build.disciplines.attack.score, 35);
+  assert.equal(recorded.build.disciplines.attack.recordCount, 35);
+  assert.equal(recorded.build.disciplines.attack.buildPoints, 28);
+  assert.equal(recorded.build.disciplines.attack.currentTier, 3);
+  assert.equal(recorded.build.disciplines.attack.nextTierPoints, 32);
+  assert.equal(recorded.build.disciplines.attack.pointsToNextTier, 4);
   assert.equal(recorded.build.activeSlots.length, 6);
   assert.equal(recorded.build.themeMap.attack.length, 3);
   assert.equal(recorded.build.groupedCatalog.attack.themes.length, 1);
   assert.equal(recorded.build.selectedThemeRows.length, 1);
   assert.equal(recorded.build.selectedOptionDetail.id, "build.attack.ferocity");
-  assert.equal(recorded.build.options[0].currentMagnitude, 6);
+  assert.equal(recorded.build.options[0].currentMagnitude, 4.5);
   assert.deepEqual(recorded.renders, ["build"]);
 });
 
@@ -177,10 +192,14 @@ test("native bridge bootstrap installs build callback fallback", () => {
     JSON.stringify({
       disciplines: {
         attack: {
-          score: 12,
-          currentTier: 1,
-          nextTierScore: 20,
-          scoreToNextTier: 8,
+          score: 35,
+          recordCount: 35,
+          buildPoints: 28,
+          currentTier: 3,
+          nextTierPoints: 32,
+          pointsToNextTier: 4,
+          nextTierScore: 32,
+          scoreToNextTier: 4,
         },
       },
       options: [
@@ -188,18 +207,19 @@ test("native bridge bootstrap installs build callback fallback", () => {
           id: "build.attack.ferocity",
           discipline: "attack",
           themeId: "devastation",
-          currentMagnitude: 6,
-          nextMagnitude: 7,
-          currentTier: 1,
+          currentMagnitude: 4.5,
+          nextMagnitude: 5,
+          currentTier: 3,
         },
       ],
       activeSlots: [{ slotId: "attack_1", optionId: "build.attack.ferocity" }],
     }),
   );
-  assert.equal(recorded.build.disciplines.attack.score, 12);
-  assert.equal(recorded.build.disciplines.attack.currentTier, 1);
+  assert.equal(recorded.build.disciplines.attack.score, 35);
+  assert.equal(recorded.build.disciplines.attack.buildPoints, 28);
+  assert.equal(recorded.build.disciplines.attack.currentTier, 3);
   assert.equal(recorded.build.activeSlots.length, 6);
-  assert.equal(recorded.build.options[0].currentMagnitude, 6);
+  assert.equal(recorded.build.options[0].currentMagnitude, 4.5);
 
   detach();
   assert.equal(win.copng_setBuild, undefined);
@@ -212,4 +232,14 @@ test("native build request endpoints are registered in request plumbing", () => 
   assert.match(requestSrc, /copng_activateBuildOption/);
   assert.match(requestSrc, /copng_deactivateBuildOption/);
   assert.match(requestSrc, /copng_swapBuildOption/);
+});
+
+test("native build payload source uses build-point tier helpers", () => {
+  const payloadSrc = read("src/PrismaUIPayloadsBuild.cpp");
+  assert.match(payloadSrc, /buildPoints/);
+  assert.match(payloadSrc, /unlockPointsCenti/);
+  assert.match(payloadSrc, /GetBuildPointsTier/);
+  assert.match(payloadSrc, /GetNextBuildPointsThresholdCenti/);
+  assert.match(payloadSrc, /GetBuildPointsToNextTierCenti/);
+  assert.doesNotMatch(payloadSrc, /GetEffectiveBuildScalingTier/);
 });

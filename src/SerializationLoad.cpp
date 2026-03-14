@@ -97,6 +97,24 @@ namespace CodexOfPowerNG::Serialization::Internal
 			}
 		}
 
+		[[nodiscard]] std::int32_t LegacyUndoPointsDeltaForDiscipline(
+			Builds::BuildDiscipline discipline,
+			std::int32_t            recordDelta) noexcept
+		{
+			const auto perRecord = [&]() noexcept -> std::int32_t {
+				switch (discipline) {
+				case Builds::BuildDiscipline::Attack:
+					return 60;
+				case Builds::BuildDiscipline::Defense:
+					return 35;
+				case Builds::BuildDiscipline::Utility:
+					return 10;
+				}
+				return 0;
+			}();
+			return perRecord * recordDelta;
+		}
+
 		void Skip(SKSE::SerializationInterface* a_intfc, std::uint32_t length) noexcept
 		{
 			std::array<std::byte, 256> buffer{};
@@ -253,12 +271,21 @@ namespace CodexOfPowerNG::Serialization::Internal
 				break;
 			}
 			case kRecordBuildScores: {
-				if (version != 1u) {
+				if (version != 1u && version != 2u) {
 					SKSE::log::warn("Unsupported BSCR version {}", version);
 					Skip(a_intfc, length);
 					break;
 				}
-				if (length < sizeof(loadedState.attackScore) + sizeof(loadedState.defenseScore) + sizeof(loadedState.utilityScore) ||
+				const auto minimumLength = static_cast<std::uint32_t>(
+					sizeof(loadedState.attackScore) +
+					sizeof(loadedState.defenseScore) +
+					sizeof(loadedState.utilityScore) +
+					(version >= 2u
+						 ? sizeof(loadedState.attackBuildPointsCenti) +
+						       sizeof(loadedState.defenseBuildPointsCenti) +
+						       sizeof(loadedState.utilityBuildPointsCenti)
+						 : 0u));
+				if (length < minimumLength ||
 				    a_intfc->ReadRecordData(loadedState.attackScore) != sizeof(loadedState.attackScore) ||
 				    a_intfc->ReadRecordData(loadedState.defenseScore) != sizeof(loadedState.defenseScore) ||
 				    a_intfc->ReadRecordData(loadedState.utilityScore) != sizeof(loadedState.utilityScore)) {
@@ -266,10 +293,22 @@ namespace CodexOfPowerNG::Serialization::Internal
 					return;
 				}
 
-				const auto bytesRead = static_cast<std::uint32_t>(
+				auto bytesRead = static_cast<std::uint32_t>(
 					sizeof(loadedState.attackScore) +
 					sizeof(loadedState.defenseScore) +
 					sizeof(loadedState.utilityScore));
+				if (version >= 2u) {
+					if (a_intfc->ReadRecordData(loadedState.attackBuildPointsCenti) != sizeof(loadedState.attackBuildPointsCenti) ||
+					    a_intfc->ReadRecordData(loadedState.defenseBuildPointsCenti) != sizeof(loadedState.defenseBuildPointsCenti) ||
+					    a_intfc->ReadRecordData(loadedState.utilityBuildPointsCenti) != sizeof(loadedState.utilityBuildPointsCenti)) {
+						SKSE::log::error("Failed to read build point totals");
+						return;
+					}
+					bytesRead += static_cast<std::uint32_t>(
+						sizeof(loadedState.attackBuildPointsCenti) +
+						sizeof(loadedState.defenseBuildPointsCenti) +
+						sizeof(loadedState.utilityBuildPointsCenti));
+				}
 				if (length > bytesRead) {
 					Skip(a_intfc, length - bytesRead);
 				}
@@ -471,9 +510,10 @@ namespace CodexOfPowerNG::Serialization::Internal
 				const auto undoBuildContributionSize = static_cast<std::uint32_t>(
 					sizeof(std::uint32_t) +
 					sizeof(std::uint32_t) +
+					sizeof(std::int32_t) +
 					sizeof(std::int32_t));
 				const auto undoHeaderSize = undoHeaderBaseSize +
-					(version >= 3u ? undoBuildContributionSize : 0u) +
+					(version >= 3u ? undoBuildContributionSize - (version == 3u ? static_cast<std::uint32_t>(sizeof(std::int32_t)) : 0u) : 0u) +
 					static_cast<std::uint32_t>(sizeof(std::uint32_t));
 				const auto rewardDeltaSize = static_cast<std::uint32_t>(sizeof(std::uint32_t) + sizeof(float));
 
@@ -483,7 +523,8 @@ namespace CodexOfPowerNG::Serialization::Internal
 					std::uint32_t            rewardCount{};
 					std::uint32_t            hasBuildContribution{};
 					std::uint32_t            buildDisciplineRaw{};
-					std::int32_t             buildScoreDelta{};
+					std::int32_t             buildRecordDelta{};
+					std::int32_t             buildPointsDeltaCenti{};
 					RE::FormID               oldFormId{};
 					RE::FormID               oldRegKey{};
 					if (a_intfc->ReadRecordData(entry.actionId) != sizeof(entry.actionId) ||
@@ -498,15 +539,30 @@ namespace CodexOfPowerNG::Serialization::Internal
 					if (version >= 3u) {
 						if (a_intfc->ReadRecordData(hasBuildContribution) != sizeof(hasBuildContribution) ||
 						    a_intfc->ReadRecordData(buildDisciplineRaw) != sizeof(buildDisciplineRaw) ||
-						    a_intfc->ReadRecordData(buildScoreDelta) != sizeof(buildScoreDelta)) {
+						    a_intfc->ReadRecordData(buildRecordDelta) != sizeof(buildRecordDelta)) {
 							SKSE::log::error("Failed to read undo build contribution payload");
 							return;
 						}
-						remaining -= undoBuildContributionSize;
+						remaining -= static_cast<std::uint32_t>(
+							sizeof(hasBuildContribution) +
+							sizeof(buildDisciplineRaw) +
+							sizeof(buildRecordDelta));
+						if (version >= 4u) {
+							if (a_intfc->ReadRecordData(buildPointsDeltaCenti) != sizeof(buildPointsDeltaCenti)) {
+								SKSE::log::error("Failed to read undo build point delta");
+								return;
+							}
+							remaining -= static_cast<std::uint32_t>(sizeof(buildPointsDeltaCenti));
+						}
 						if (hasBuildContribution != 0u) {
+							const auto discipline = static_cast<Builds::BuildDiscipline>(buildDisciplineRaw);
+							if (version == 3u) {
+								buildPointsDeltaCenti = LegacyUndoPointsDeltaForDiscipline(discipline, buildRecordDelta);
+							}
 							entry.buildContribution = Registration::BuildScoreContribution{
-								.discipline = static_cast<Builds::BuildDiscipline>(buildDisciplineRaw),
-								.scoreDelta = buildScoreDelta,
+								.discipline = discipline,
+								.recordDelta = buildRecordDelta,
+								.pointsDeltaCenti = buildPointsDeltaCenti,
 							};
 						}
 					}

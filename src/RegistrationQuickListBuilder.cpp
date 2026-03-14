@@ -1,5 +1,6 @@
 #include "RegistrationQuickListBuilder.h"
 
+#include "CodexOfPowerNG/BuildProgression.h"
 #include "CodexOfPowerNG/Inventory.h"
 #include "CodexOfPowerNG/L10n.h"
 #include "CodexOfPowerNG/RegistrationRules.h"
@@ -119,6 +120,7 @@ namespace CodexOfPowerNG::Registration::Internal
 			item.excluded = false;
 			item.registered = false;
 			item.blocked = false;
+			item.buildPointsCenti = BuildProgression::ResolveBuildPointsForFormType(regKey->GetFormType());
 			item.disabledReason = DetermineDisabledReason(isQuestProtected, tccGate, removal);
 			if (!item.disabledReason.empty()) {
 				item.safeCount = 0;

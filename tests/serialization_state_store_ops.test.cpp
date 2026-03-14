@@ -21,6 +21,9 @@ namespace
 		std::uint32_t                                    attackScore{ 0 };
 		std::uint32_t                                    defenseScore{ 0 };
 		std::uint32_t                                    utilityScore{ 0 };
+		CodexOfPowerNG::Builds::BuildPointCenti          attackBuildPointsCenti{ 0 };
+		CodexOfPowerNG::Builds::BuildPointCenti          defenseBuildPointsCenti{ 0 };
+		CodexOfPowerNG::Builds::BuildPointCenti          utilityBuildPointsCenti{ 0 };
 		std::array<std::string, CodexOfPowerNG::Builds::kBuildSlotCount> activeBuildSlots{};
 		std::uint32_t                                    buildMigrationVersion{ 0 };
 		CodexOfPowerNG::Builds::BuildMigrationState      buildMigrationState{ CodexOfPowerNG::Builds::BuildMigrationState::kNotStarted };
@@ -39,6 +42,9 @@ namespace
 		std::uint32_t                                    attackScore{ 0 };
 		std::uint32_t                                    defenseScore{ 0 };
 		std::uint32_t                                    utilityScore{ 0 };
+		CodexOfPowerNG::Builds::BuildPointCenti          attackBuildPointsCenti{ 0 };
+		CodexOfPowerNG::Builds::BuildPointCenti          defenseBuildPointsCenti{ 0 };
+		CodexOfPowerNG::Builds::BuildPointCenti          utilityBuildPointsCenti{ 0 };
 		std::array<std::string, CodexOfPowerNG::Builds::kBuildSlotCount> activeBuildSlots{};
 		std::uint32_t                                    buildMigrationVersion{ 0 };
 		CodexOfPowerNG::Builds::BuildMigrationState      buildMigrationState{ CodexOfPowerNG::Builds::BuildMigrationState::kNotStarted };
@@ -61,6 +67,9 @@ int main()
 	state.attackScore = 3;
 	state.defenseScore = 4;
 	state.utilityScore = 5;
+	state.attackBuildPointsCenti = 800;
+	state.defenseBuildPointsCenti = 1200;
+	state.utilityBuildPointsCenti = 2400;
 	state.activeBuildSlots[0] = "build.attack.ferocity";
 	state.buildMigrationVersion = 2;
 	state.buildMigrationState = CodexOfPowerNG::Builds::BuildMigrationState::kPendingCleanup;
@@ -77,6 +86,9 @@ int main()
 	assert(snapshot.attackScore == state.attackScore);
 	assert(snapshot.defenseScore == state.defenseScore);
 	assert(snapshot.utilityScore == state.utilityScore);
+	assert(snapshot.attackBuildPointsCenti == state.attackBuildPointsCenti);
+	assert(snapshot.defenseBuildPointsCenti == state.defenseBuildPointsCenti);
+	assert(snapshot.utilityBuildPointsCenti == state.utilityBuildPointsCenti);
 	assert(snapshot.activeBuildSlots == state.activeBuildSlots);
 	assert(snapshot.buildMigrationVersion == state.buildMigrationVersion);
 	assert(snapshot.buildMigrationState == state.buildMigrationState);
@@ -92,6 +104,9 @@ int main()
 	replacement.rewardTotals.insert_or_assign(7, 2.0f);
 	replacement.buildAppliedEffectTotals.insert_or_assign(11, 1.25f);
 	replacement.attackScore = 11;
+	replacement.attackBuildPointsCenti = 1600;
+	replacement.defenseBuildPointsCenti = 800;
+	replacement.utilityBuildPointsCenti = 400;
 	replacement.activeBuildSlots[1] = "build.attack.precision";
 	replacement.buildMigrationVersion = 5;
 	replacement.buildMigrationState = CodexOfPowerNG::Builds::BuildMigrationState::kComplete;
@@ -103,6 +118,9 @@ int main()
 	assert(state.rewardTotals.contains(7));
 	assert(state.buildAppliedEffectTotals.contains(11));
 	assert(state.attackScore == 11);
+	assert(state.attackBuildPointsCenti == 1600);
+	assert(state.defenseBuildPointsCenti == 800);
+	assert(state.utilityBuildPointsCenti == 400);
 	assert(state.activeBuildSlots[1] == "build.attack.precision");
 	assert(state.buildMigrationVersion == 5);
 	assert(state.buildMigrationState == CodexOfPowerNG::Builds::BuildMigrationState::kComplete);
@@ -121,6 +139,9 @@ int main()
 	assert(state.attackScore == 0);
 	assert(state.defenseScore == 0);
 	assert(state.utilityScore == 0);
+	assert(state.attackBuildPointsCenti == 0);
+	assert(state.defenseBuildPointsCenti == 0);
+	assert(state.utilityBuildPointsCenti == 0);
 	assert(state.activeBuildSlots[0].empty());
 	assert(state.buildMigrationVersion == 0);
 	assert(state.buildMigrationState == CodexOfPowerNG::Builds::BuildMigrationState::kNotStarted);

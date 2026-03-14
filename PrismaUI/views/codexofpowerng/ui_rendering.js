@@ -40,6 +40,14 @@
     return "0x" + hex;
   }
 
+  function formatBuildPoints(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return "0";
+    if (Math.abs(n - Math.round(n)) < 0.000001) return String(Math.round(n));
+    if (Math.abs(n * 10 - Math.round(n * 10)) < 0.000001) return n.toFixed(1);
+    return n.toFixed(2);
+  }
+
   function escapeHtml(value) {
     return String(value == null ? "" : value)
       .replace(/&/g, "&amp;")
@@ -475,14 +483,18 @@
           });
         }
         if (refs.quickBatchGainEl) {
-          const gain = (viewModel.summary && viewModel.summary.disciplineGain) || {};
+          const gain = (viewModel.summary && viewModel.summary.disciplinePointGain) || {};
+          const counts = (viewModel.summary && viewModel.summary.disciplineGain) || {};
           refs.quickBatchGainEl.textContent = tFmt(
             "quick.disciplineGain",
-            "Attack +{attack} / Defense +{defense} / Utility +{utility}",
+            "Attack +{attackPoints} pt ({attackRows}) / Defense +{defensePoints} pt ({defenseRows}) / Utility +{utilityPoints} pt ({utilityRows})",
             {
-              attack: Number(gain.attack || 0) >>> 0,
-              defense: Number(gain.defense || 0) >>> 0,
-              utility: Number(gain.utility || 0) >>> 0,
+              attackPoints: formatBuildPoints(gain.attack),
+              attackRows: Number(counts.attack || 0) >>> 0,
+              defensePoints: formatBuildPoints(gain.defense),
+              defenseRows: Number(counts.defense || 0) >>> 0,
+              utilityPoints: formatBuildPoints(gain.utility),
+              utilityRows: Number(counts.utility || 0) >>> 0,
             },
           );
         }

@@ -72,17 +72,17 @@ namespace CodexOfPowerNG::Builds
 			       option.slotCompatibility == BuildSlotCompatibility::SameOrWildcard;
 		}
 
-		[[nodiscard]] std::uint32_t ScoreForDiscipline(
+		[[nodiscard]] BuildPointCenti BuildPointsForDiscipline(
 			const BuildRuntimeSnapshot& snapshot,
 			BuildDiscipline             discipline) noexcept
 		{
 			switch (discipline) {
 			case BuildDiscipline::Attack:
-				return snapshot.attackScore;
+				return snapshot.attackBuildPointsCenti;
 			case BuildDiscipline::Defense:
-				return snapshot.defenseScore;
+				return snapshot.defenseBuildPointsCenti;
 			case BuildDiscipline::Utility:
-				return snapshot.utilityScore;
+				return snapshot.utilityBuildPointsCenti;
 			}
 			return 0u;
 		}
@@ -122,6 +122,9 @@ namespace CodexOfPowerNG::Builds
 				}
 				if (effectKey == "critical_chance") {
 					return { { RE::ActorValue::kCriticalChance, *amount } };
+				}
+				if (effectKey == "melee_damage") {
+					return { { RE::ActorValue::kMeleeDamage, *amount } };
 				}
 				if (effectKey == "unarmed_damage") {
 					return { { RE::ActorValue::kUnarmedDamage, *amount } };
@@ -260,6 +263,9 @@ namespace CodexOfPowerNG::Builds
 			snapshot.attackScore = state.attackScore;
 			snapshot.defenseScore = state.defenseScore;
 			snapshot.utilityScore = state.utilityScore;
+			snapshot.attackBuildPointsCenti = state.attackBuildPointsCenti;
+			snapshot.defenseBuildPointsCenti = state.defenseBuildPointsCenti;
+			snapshot.utilityBuildPointsCenti = state.utilityBuildPointsCenti;
 			snapshot.activeBuildSlots = state.activeBuildSlots;
 			return snapshot;
 		}
@@ -345,7 +351,7 @@ namespace CodexOfPowerNG::Builds
 			if (!option) {
 				continue;
 			}
-			if (ScoreForDiscipline(snapshot, option->discipline) < option->unlockScore) {
+			if (BuildPointsForDiscipline(snapshot, option->discipline) < option->unlockPointsCenti) {
 				continue;
 			}
 			if (!IsSlotCompatible(*option, slotId)) {
@@ -359,7 +365,7 @@ namespace CodexOfPowerNG::Builds
 				totals,
 				option->effectType,
 				option->effectKey,
-				GetScaledBuildMagnitude(*option, ScoreForDiscipline(snapshot, option->discipline)));
+				GetScaledBuildMagnitude(*option, BuildPointsForDiscipline(snapshot, option->discipline)));
 		}
 
 		std::vector<std::pair<RE::ActorValue, float>> out;

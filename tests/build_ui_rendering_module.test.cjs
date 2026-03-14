@@ -82,13 +82,13 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
           unlocked: true,
           titleKey: "build.attack.vitals.title",
           descriptionKey: "build.attack.vitals.description",
-          effectKey: "attack_damage_mult",
+          effectKey: "melee_damage",
           slotCompatibility: "same_or_wildcard",
-          magnitude: 6,
-          baseMagnitude: 3,
-          magnitudePerTier: 1,
-          currentMagnitude: 6,
-          nextMagnitude: 7,
+          magnitude: 3.5,
+          baseMagnitude: 2,
+          magnitudePerTier: 0.5,
+          currentMagnitude: 3.5,
+          nextMagnitude: 4,
           currentTier: 3,
           nextTierScore: 40,
           scoreToNextTier: 8,
@@ -103,13 +103,13 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
         unlocked: true,
         titleKey: "build.attack.vitals.title",
         descriptionKey: "build.attack.vitals.description",
-        effectKey: "attack_damage_mult",
+        effectKey: "melee_damage",
         slotCompatibility: "same_or_wildcard",
-        magnitude: 6,
-        baseMagnitude: 3,
-        magnitudePerTier: 1,
-        currentMagnitude: 6,
-        nextMagnitude: 7,
+        magnitude: 3.5,
+        baseMagnitude: 2,
+        magnitudePerTier: 0.5,
+        currentMagnitude: 3.5,
+        nextMagnitude: 4,
         currentTier: 3,
         nextTierScore: 40,
         scoreToNextTier: 8,
@@ -124,13 +124,13 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
           unlocked: true,
           titleKey: "build.attack.vitals.title",
           descriptionKey: "build.attack.vitals.description",
-          effectKey: "attack_damage_mult",
+          effectKey: "melee_damage",
           slotCompatibility: "same_or_wildcard",
-          magnitude: 6,
-          baseMagnitude: 3,
-          magnitudePerTier: 1,
-          currentMagnitude: 6,
-          nextMagnitude: 7,
+          magnitude: 3.5,
+          baseMagnitude: 2,
+          magnitudePerTier: 0.5,
+          currentMagnitude: 3.5,
+          nextMagnitude: 4,
           currentTier: 3,
           nextTierScore: 40,
           scoreToNextTier: 8,
@@ -144,13 +144,13 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
           unlocked: true,
           titleKey: "build.defense.endurance.title",
           descriptionKey: "build.defense.endurance.description",
-          effectKey: "health",
+          effectKey: "stamina",
           slotCompatibility: "same_or_wildcard",
-          magnitude: 30,
-          baseMagnitude: 15,
-          magnitudePerTier: 5,
-          currentMagnitude: 30,
-          nextMagnitude: 35,
+          magnitude: 19,
+          baseMagnitude: 10,
+          magnitudePerTier: 3,
+          currentMagnitude: 19,
+          nextMagnitude: 22,
           currentTier: 3,
           nextTierScore: 40,
           scoreToNextTier: 10,
@@ -209,7 +209,7 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
   assert.match(renderedHtml, /buildSummaryCard disc-utility/);
   assert.match(renderedHtml, /현재 단계|티어/);
   assert.match(renderedHtml, /다음 강화|다음 단계/);
-  assert.match(renderedHtml, /8점/);
+  assert.match(renderedHtml, /8 pt/);
   assert.match(renderedHtml, /buildCatalogHeader/);
   assert.match(renderedHtml, /buildThemeTab isActive/);
   assert.match(renderedHtml, /buildThemeTab isActive[\s\S]*정밀/);
@@ -220,19 +220,19 @@ test("build panel renders catalog-first layout with discipline/theme navigation 
   assert.match(renderedHtml, /buildSelectedOptionPanel [^>]*data-wheel-surface="build-detail"/);
   assert.match(renderedHtml, /buildSlotMatrixCard/);
   assert.doesNotMatch(renderedHtml, /buildCatalogActions/);
-  assert.match(renderedHtml, /활성 슬롯 효과는 계통 점수 10마다 한 단계씩 강화됩니다\./);
+  assert.match(renderedHtml, /기록 수는 수집 동기용으로 그대로 남기고, 가중치가 적용된 빌드 포인트로 옵션 해금과 슬롯 효과의 선형 성장을 처리합니다\./);
   assert.doesNotMatch(renderedHtml, /rewardCharacterImg/);
   assert.match(renderedHtml, /호환 슬롯|슬롯/);
   assert.match(renderedHtml, /잠김|해금됨|활성 중/);
-  assert.match(renderedHtml, /점수 \d+ 필요/);
+  assert.match(renderedHtml, /점수 \d+ pt 필요/);
   assert.match(renderedHtml, /buildFocusActions[\s\S]*buildFocusMeta/);
   assert.match(renderedHtml, /기존 보상이 새 빌드 진행도로 이관되었습니다|과거 등록/);
   assert.match(renderedHtml, /활성화/);
   assert.match(renderedHtml, /비활성화|교체/);
   assert.match(renderedHtml, /공격|방어|유틸/);
   assert.match(renderedHtml, /파괴|정밀|격노/);
-  assert.match(renderedHtml, /급소/);
-  assert.match(renderedHtml, /슬롯 활성 시 공격 피해가 3% 증가합니다\./);
+  assert.match(renderedHtml, /근접전/);
+  assert.match(renderedHtml, /슬롯 활성 시 근접 공격력이 2 증가합니다\./);
   assert.match(renderedHtml, /현재 효과/);
   assert.match(renderedHtml, /다음 단계 효과|다음 효과/);
   assert.doesNotMatch(renderedHtml, /인내/);
@@ -332,8 +332,8 @@ test("build panel renders supported-first option descriptions from grouped catal
     "build.attack.pinpoint",
   );
   assert.match(attackHtml, /Pinpoint/);
-  assert.match(attackHtml, /\+2% critical chance while this option is slotted\./);
-  assert.match(attackHtml, /\+3% attack damage while this option is slotted\./);
+  assert.match(attackHtml, /\+1\.5% critical chance while this option is slotted\./);
+  assert.match(attackHtml, /\+2 melee damage while this option is slotted\./);
 
   const devastationHtml = renderSelection(
     "attack",
@@ -366,6 +366,39 @@ test("build panel renders supported-first option descriptions from grouped catal
   );
   assert.match(devastationHtml, /Destruction Adept|파괴숙련/);
   assert.match(devastationHtml, /Destruction spells cost less while this option is slotted\.|슬롯 활성 시 파괴 주문 비용이 감소합니다\./);
+
+  const ferocityHtml = renderSelection(
+    "attack",
+    "devastation",
+    [
+      {
+        id: "build.attack.ferocity",
+        discipline: "attack",
+        themeId: "devastation",
+        hierarchy: "signpost",
+        unlockScore: 4,
+        unlocked: true,
+        titleKey: "build.attack.ferocity.title",
+        descriptionKey: "build.attack.ferocity.description",
+        slotCompatibility: "same_discipline_only",
+      },
+      {
+        id: "build.attack.brawler",
+        discipline: "attack",
+        themeId: "devastation",
+        hierarchy: "special",
+        unlockScore: 20,
+        unlocked: true,
+        titleKey: "build.attack.brawler.title",
+        descriptionKey: "build.attack.brawler.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+    ],
+    "build.attack.ferocity",
+  );
+  const ferocityCompatibleMatch = ferocityHtml.match(/Compatible Slots<\/span>\s*<strong>([^<]+)<\/strong>/);
+  assert.ok(ferocityCompatibleMatch);
+  assert.equal(ferocityCompatibleMatch[1], "Attack / Attack");
 
   const furyHtml = renderSelection(
     "attack",
@@ -553,7 +586,7 @@ test("build panel renders supported-first option descriptions from grouped catal
   assert.match(resistanceHtml, /Purification Ward/);
   assert.match(resistanceHtml, /Poison and disease resistance increase while this option is slotted\./);
   assert.match(resistanceHtml, /Absorption/);
-  assert.match(resistanceHtml, /Need 35 Score/);
+  assert.match(resistanceHtml, /Need 35 pt/);
 
   const livelihoodHtml = renderSelection(
     "utility",
@@ -607,11 +640,44 @@ test("build panel renders supported-first option descriptions from grouped catal
     "build.utility.cache",
   );
   assert.match(livelihoodHtml, /Cache|비축/);
-  assert.match(livelihoodHtml, /Need 10 Score/);
+  assert.match(livelihoodHtml, /Need 10 pt/);
   assert.match(livelihoodHtml, /Smithing/);
   assert.match(livelihoodHtml, /Smithing results improve while this option is slotted\./);
-  assert.match(livelihoodHtml, /Need 25 Score/);
-  assert.match(livelihoodHtml, /Need 30 Score/);
+  assert.match(livelihoodHtml, /Need 25 pt/);
+  assert.match(livelihoodHtml, /Need 30 pt/);
+
+  const livelihoodSpecialistHtml = renderSelection(
+    "utility",
+    "livelihood",
+    [
+      {
+        id: "build.utility.smithing",
+        discipline: "utility",
+        themeId: "livelihood",
+        hierarchy: "standard",
+        unlockScore: 16,
+        unlocked: true,
+        titleKey: "build.utility.smithing.title",
+        descriptionKey: "build.utility.smithing.description",
+        slotCompatibility: "same_or_wildcard",
+      },
+      {
+        id: "build.utility.cache",
+        discipline: "utility",
+        themeId: "livelihood",
+        hierarchy: "signpost",
+        unlockScore: 8,
+        unlocked: true,
+        titleKey: "build.utility.cache.title",
+        descriptionKey: "build.utility.cache.description",
+        slotCompatibility: "same_discipline_only",
+      },
+    ],
+    "build.utility.smithing",
+  );
+  const livelihoodSpecialistCompatibleMatch = livelihoodSpecialistHtml.match(/Compatible Slots<\/span>\s*<strong>([^<]+)<\/strong>/);
+  assert.ok(livelihoodSpecialistCompatibleMatch);
+  assert.equal(livelihoodSpecialistCompatibleMatch[1], "Utility / Utility / Wildcard");
 
   const livelihoodResourceHtml = renderSelection(
     "utility",
@@ -675,7 +741,7 @@ test("build panel renders supported-first option descriptions from grouped catal
     "build.utility.wayfinder",
   );
   assert.match(explorationHtml, /Wayfinder/);
-  assert.match(explorationHtml, /\+1\.5% movement speed while this option is slotted\./);
+  assert.match(explorationHtml, /Stamina regenerates faster while this option is slotted\./);
 
   const explorationSpecialHtml = renderSelection(
     "utility",
@@ -778,10 +844,10 @@ test("build panel prefers grouped theme rows and selected detail payloads over r
           unlocked: true,
           titleKey: "build.attack.vitals.title",
           descriptionKey: "build.attack.vitals.description",
-          effectKey: "attack_damage_mult",
+          effectKey: "melee_damage",
           slotCompatibility: "same_or_wildcard",
-          currentMagnitude: 6,
-          nextMagnitude: 7,
+          currentMagnitude: 3.5,
+          nextMagnitude: 4,
           currentTier: 3,
           nextTierScore: 40,
           scoreToNextTier: 8,
@@ -796,10 +862,10 @@ test("build panel prefers grouped theme rows and selected detail payloads over r
         unlocked: true,
         titleKey: "build.attack.vitals.title",
         descriptionKey: "build.attack.vitals.description",
-        effectKey: "attack_damage_mult",
+        effectKey: "melee_damage",
         slotCompatibility: "same_or_wildcard",
-        currentMagnitude: 6,
-        nextMagnitude: 7,
+        currentMagnitude: 3.5,
+        nextMagnitude: 4,
         currentTier: 3,
         nextTierScore: 40,
         scoreToNextTier: 8,
@@ -814,7 +880,7 @@ test("build panel prefers grouped theme rows and selected detail payloads over r
           unlocked: true,
           titleKey: "build.attack.vitals.title",
           descriptionKey: "build.attack.vitals.description",
-          effectKey: "attack_damage_mult",
+          effectKey: "melee_damage",
           slotCompatibility: "same_or_wildcard",
         },
         {
@@ -850,9 +916,259 @@ test("build panel prefers grouped theme rows and selected detail payloads over r
     },
   );
 
-  assert.match(renderedHtml, /Vitals/);
+  assert.match(renderedHtml, /Close Quarters/);
   assert.match(renderedHtml, /buildThemeTab isActive[\s\S]*Precision/);
   assert.doesNotMatch(renderedHtml, /Ferocity/);
+});
+
+test("build panel formats modifier and absorb effects with player-facing labels", () => {
+  const translator = i18n.createTranslator({ getLanguage: () => "ko" });
+  const renderedModifierHtml = mod.renderBuildPanelHtml(
+    {
+      disciplines: {
+        attack: { score: 30, currentTier: 3, nextTierScore: 40, scoreToNextTier: 10 },
+        defense: { score: 119, currentTier: 11, nextTierScore: 120, scoreToNextTier: 1 },
+        utility: { score: 30, currentTier: 3, nextTierScore: 40, scoreToNextTier: 10 },
+      },
+      selectedDiscipline: "utility",
+      selectedTheme: "livelihood",
+      selectedOptionId: "build.utility.smithing",
+      themeMap: {
+        attack: [{ id: "devastation", titleKey: "build.theme.attack.devastation", optionCount: 1 }],
+        defense: [{ id: "resistance", titleKey: "build.theme.defense.resistance", optionCount: 1 }],
+        utility: [{ id: "livelihood", titleKey: "build.theme.utility.livelihood", optionCount: 1 }],
+      },
+      groupedCatalog: {
+        utility: {
+          themes: [{ id: "livelihood", titleKey: "build.theme.utility.livelihood", optionCount: 1 }],
+        },
+      },
+      selectedThemeRows: [
+        {
+          id: "build.utility.smithing",
+          discipline: "utility",
+          themeId: "livelihood",
+          hierarchy: "standard",
+          unlockScore: 20,
+          unlocked: true,
+          titleKey: "build.utility.smithing.title",
+          descriptionKey: "build.utility.smithing.description",
+          effectKey: "smithing_modifier",
+          slotCompatibility: "same_or_wildcard",
+          currentMagnitude: 0.08,
+          nextMagnitude: 0.09,
+          currentTier: 3,
+          nextTierScore: 40,
+          scoreToNextTier: 10,
+        },
+      ],
+      selectedOptionDetail: {
+        id: "build.defense.absorption",
+        discipline: "defense",
+        themeId: "resistance",
+        hierarchy: "special",
+        unlockScore: 35,
+        unlocked: true,
+        titleKey: "build.defense.absorption.title",
+        descriptionKey: "build.defense.absorption.description",
+        effectKey: "absorb_chance",
+        slotCompatibility: "same_or_wildcard",
+        currentMagnitude: 6.5,
+        nextMagnitude: 7.0,
+        currentTier: 11,
+        nextTierScore: 120,
+        scoreToNextTier: 1,
+      },
+      options: [],
+      activeSlots: [
+        { slotId: "attack_1", slotKind: "attack", optionId: null, occupied: false },
+        { slotId: "attack_2", slotKind: "attack", optionId: null, occupied: false },
+        { slotId: "defense_1", slotKind: "defense", optionId: null, occupied: false },
+        { slotId: "utility_1", slotKind: "utility", optionId: "build.utility.smithing", occupied: true },
+        { slotId: "utility_2", slotKind: "utility", optionId: null, occupied: false },
+        { slotId: "wildcard_1", slotKind: "wildcard", optionId: null, occupied: false },
+      ],
+      migrationNotice: {
+        needsNotice: false,
+        legacyRewardsMigrated: false,
+        unresolvedHistoricalRegistrations: 0,
+      },
+    },
+    {
+      t: translator.t,
+      tFmt: translator.tFmt,
+      escapeHtml: (value) => String(value == null ? "" : value),
+    },
+  );
+
+  assert.match(renderedModifierHtml, /대장 효율 \+8%/);
+  assert.doesNotMatch(renderedModifierHtml, /smithing_modifier/);
+  assert.match(renderedModifierHtml, /다음 단계 효과.*대장 효율 \+9%/s);
+
+  const renderedAbsorbHtml = mod.renderBuildPanelHtml(
+    {
+      disciplines: {
+        attack: { score: 30, currentTier: 3, nextTierScore: 40, scoreToNextTier: 10 },
+        defense: { score: 119, currentTier: 11, nextTierScore: 120, scoreToNextTier: 1 },
+        utility: { score: 30, currentTier: 3, nextTierScore: 40, scoreToNextTier: 10 },
+      },
+      selectedDiscipline: "defense",
+      selectedTheme: "resistance",
+      selectedOptionId: "build.defense.absorption",
+      themeMap: {
+        attack: [{ id: "devastation", titleKey: "build.theme.attack.devastation", optionCount: 1 }],
+        defense: [{ id: "resistance", titleKey: "build.theme.defense.resistance", optionCount: 1 }],
+        utility: [{ id: "livelihood", titleKey: "build.theme.utility.livelihood", optionCount: 1 }],
+      },
+      groupedCatalog: {
+        defense: {
+          themes: [{ id: "resistance", titleKey: "build.theme.defense.resistance", optionCount: 1 }],
+        },
+      },
+      selectedThemeRows: [
+        {
+          id: "build.defense.absorption",
+          discipline: "defense",
+          themeId: "resistance",
+          hierarchy: "special",
+          unlockScore: 35,
+          unlocked: true,
+          titleKey: "build.defense.absorption.title",
+          descriptionKey: "build.defense.absorption.description",
+          effectKey: "absorb_chance",
+          slotCompatibility: "same_or_wildcard",
+          currentMagnitude: 6.5,
+          nextMagnitude: 7.0,
+          currentTier: 11,
+          nextTierScore: 120,
+          scoreToNextTier: 1,
+        },
+      ],
+      selectedOptionDetail: {
+        id: "build.defense.absorption",
+        discipline: "defense",
+        themeId: "resistance",
+        hierarchy: "special",
+        unlockScore: 35,
+        unlocked: true,
+        titleKey: "build.defense.absorption.title",
+        descriptionKey: "build.defense.absorption.description",
+        effectKey: "absorb_chance",
+        slotCompatibility: "same_or_wildcard",
+        currentMagnitude: 6.5,
+        nextMagnitude: 7.0,
+        currentTier: 11,
+        nextTierScore: 120,
+        scoreToNextTier: 1,
+      },
+      options: [],
+      activeSlots: [
+        { slotId: "attack_1", slotKind: "attack", optionId: null, occupied: false },
+        { slotId: "attack_2", slotKind: "attack", optionId: null, occupied: false },
+        { slotId: "defense_1", slotKind: "defense", optionId: "build.defense.absorption", occupied: true },
+        { slotId: "utility_1", slotKind: "utility", optionId: null, occupied: false },
+        { slotId: "utility_2", slotKind: "utility", optionId: null, occupied: false },
+        { slotId: "wildcard_1", slotKind: "wildcard", optionId: null, occupied: false },
+      ],
+      migrationNotice: {
+        needsNotice: false,
+        legacyRewardsMigrated: false,
+        unresolvedHistoricalRegistrations: 0,
+      },
+    },
+    {
+      t: translator.t,
+      tFmt: translator.tFmt,
+      escapeHtml: (value) => String(value == null ? "" : value),
+    },
+  );
+
+  assert.match(renderedAbsorbHtml, /주문 흡수 확률 \+6\.5%/);
+  assert.doesNotMatch(renderedAbsorbHtml, /absorb_chance/);
+});
+
+test("build panel formats regen and cooldown effect rows as percentages", () => {
+  const translator = i18n.createTranslator({ getLanguage: () => "ko" });
+
+  const renderedHtml = mod.renderBuildPanelHtml(
+    {
+      disciplines: {
+        attack: { score: 30, currentTier: 3, nextTierScore: 40, scoreToNextTier: 10 },
+        defense: { score: 119, currentTier: 11, nextTierScore: 120, scoreToNextTier: 1 },
+        utility: { score: 30, currentTier: 3, nextTierScore: 40, scoreToNextTier: 10 },
+      },
+      selectedDiscipline: "utility",
+      selectedTheme: "exploration",
+      selectedOptionId: "build.utility.echo",
+      themeMap: {
+        utility: [{ id: "exploration", titleKey: "build.theme.utility.exploration", optionCount: 1 }],
+      },
+      groupedCatalog: {
+        utility: {
+          themes: [{ id: "exploration", titleKey: "build.theme.utility.exploration", optionCount: 1 }],
+        },
+      },
+      selectedThemeRows: [
+        {
+          id: "build.utility.wayfinder",
+          discipline: "utility",
+          themeId: "exploration",
+          hierarchy: "standard",
+          unlockScore: 30,
+          unlocked: true,
+          titleKey: "build.utility.wayfinder.title",
+          descriptionKey: "build.utility.wayfinder.description",
+          effectKey: "stamina_rate",
+          slotCompatibility: "same_or_wildcard",
+          currentMagnitude: 0.08,
+          nextMagnitude: 0.09,
+          currentTier: 3,
+          nextTierScore: 40,
+          scoreToNextTier: 10,
+        },
+      ],
+      selectedOptionDetail: {
+        id: "build.utility.echo",
+        discipline: "utility",
+        themeId: "exploration",
+        hierarchy: "special",
+        unlockScore: 35,
+        unlocked: true,
+        titleKey: "build.utility.echo.title",
+        descriptionKey: "build.utility.echo.description",
+        effectKey: "shout_recovery_mult",
+        slotCompatibility: "same_or_wildcard",
+        currentMagnitude: -0.019,
+        nextMagnitude: -0.022,
+        currentTier: 3,
+        nextTierScore: 40,
+        scoreToNextTier: 10,
+      },
+      options: [],
+      activeSlots: [
+        { slotId: "attack_1", slotKind: "attack", optionId: null, occupied: false },
+        { slotId: "attack_2", slotKind: "attack", optionId: null, occupied: false },
+        { slotId: "defense_1", slotKind: "defense", optionId: null, occupied: false },
+        { slotId: "utility_1", slotKind: "utility", optionId: "build.utility.wayfinder", occupied: true },
+        { slotId: "utility_2", slotKind: "utility", optionId: "build.utility.echo", occupied: true },
+        { slotId: "wildcard_1", slotKind: "wildcard", optionId: null, occupied: false },
+      ],
+      migrationNotice: {
+        needsNotice: false,
+        legacyRewardsMigrated: false,
+        unresolvedHistoricalRegistrations: 0,
+      },
+    },
+    {
+      t: translator.t,
+      tFmt: translator.tFmt,
+      escapeHtml: (value) => String(value == null ? "" : value),
+    },
+  );
+
+  assert.match(renderedHtml, /스태미나 재생 \+8%/);
+  assert.match(renderedHtml, /함성 재사용 감소 \+1\.9%/);
+  assert.doesNotMatch(renderedHtml, /-0\.019/);
 });
 
 test("build view source includes a fixed catalog-first layout contract", () => {

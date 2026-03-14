@@ -68,6 +68,8 @@ test("interop bridge normalizes build payloads and grouped quick-list sections",
         magnitudePerTier: 0.5,
         currentMagnitude: 4.5,
         nextMagnitude: 5,
+        effectParts: [{ effectKey: "attack_damage_mult", magnitude: 4.5 }],
+        nextEffectParts: [{ effectKey: "attack_damage_mult", magnitude: 5 }],
         currentTier: 3,
         unlockPoints: 4,
         nextTierPoints: 32,
@@ -93,6 +95,8 @@ test("interop bridge normalizes build payloads and grouped quick-list sections",
   assert.equal(normalizedBuild.options[0].hierarchy, "standard");
   assert.equal(normalizedBuild.options[0].currentMagnitude, 4.5);
   assert.equal(normalizedBuild.options[0].nextMagnitude, 5);
+  assert.deepEqual(normalizedBuild.options[0].effectParts, [{ effectKey: "attack_damage_mult", magnitude: 4.5 }]);
+  assert.deepEqual(normalizedBuild.options[0].nextEffectParts, [{ effectKey: "attack_damage_mult", magnitude: 5 }]);
   assert.equal(normalizedBuild.options[0].currentTier, 3);
 
   const normalizedQuickList = interopBridge.normalizeInventoryPayload({
@@ -155,6 +159,8 @@ test("native state bridge forwards build payloads to build renderer", () => {
         magnitude: 4.5,
         currentMagnitude: 4.5,
         nextMagnitude: 5,
+        effectParts: [{ effectKey: "attack_damage_mult", magnitude: 4.5 }],
+        nextEffectParts: [{ effectKey: "attack_damage_mult", magnitude: 5 }],
         currentTier: 3,
       },
     ],
@@ -173,6 +179,7 @@ test("native state bridge forwards build payloads to build renderer", () => {
   assert.equal(recorded.build.selectedThemeRows.length, 1);
   assert.equal(recorded.build.selectedOptionDetail.id, "build.attack.ferocity");
   assert.equal(recorded.build.options[0].currentMagnitude, 4.5);
+  assert.deepEqual(recorded.build.options[0].effectParts, [{ effectKey: "attack_damage_mult", magnitude: 4.5 }]);
   assert.deepEqual(recorded.renders, ["build"]);
 });
 
@@ -209,6 +216,8 @@ test("native bridge bootstrap installs build callback fallback", () => {
           themeId: "devastation",
           currentMagnitude: 4.5,
           nextMagnitude: 5,
+          effectParts: [{ effectKey: "attack_damage_mult", magnitude: 4.5 }],
+          nextEffectParts: [{ effectKey: "attack_damage_mult", magnitude: 5 }],
           currentTier: 3,
         },
       ],
@@ -220,6 +229,7 @@ test("native bridge bootstrap installs build callback fallback", () => {
   assert.equal(recorded.build.disciplines.attack.currentTier, 3);
   assert.equal(recorded.build.activeSlots.length, 6);
   assert.equal(recorded.build.options[0].currentMagnitude, 4.5);
+  assert.deepEqual(recorded.build.options[0].effectParts, [{ effectKey: "attack_damage_mult", magnitude: 4.5 }]);
 
   detach();
   assert.equal(win.copng_setBuild, undefined);
@@ -241,5 +251,6 @@ test("native build payload source uses build-point tier helpers", () => {
   assert.match(payloadSrc, /GetBuildPointsTier/);
   assert.match(payloadSrc, /GetNextBuildPointsThresholdCenti/);
   assert.match(payloadSrc, /GetBuildPointsToNextTierCenti/);
+  assert.match(payloadSrc, /effectParts/);
   assert.doesNotMatch(payloadSrc, /GetEffectiveBuildScalingTier/);
 });

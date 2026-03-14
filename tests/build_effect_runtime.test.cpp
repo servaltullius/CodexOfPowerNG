@@ -73,9 +73,9 @@ namespace
 		furySnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Attack2)] = "build.attack.secondwind";
 		const auto furyTotals = ComputeDerivedBuildActorValueTotals(furySnapshot);
 		if (!LookupTotal(furyTotals, RE::ActorValue::kStamina).has_value() ||
-		    !NearlyEqual(*LookupTotal(furyTotals, RE::ActorValue::kStamina), 5.0f) ||
+		    !NearlyEqual(*LookupTotal(furyTotals, RE::ActorValue::kStamina), 14.0f) ||
 		    !LookupTotal(furyTotals, RE::ActorValue::kStaminaRate).has_value() ||
-		    !NearlyEqual(*LookupTotal(furyTotals, RE::ActorValue::kStaminaRate), 0.25f)) {
+		    !NearlyEqual(*LookupTotal(furyTotals, RE::ActorValue::kStaminaRate), 0.45f)) {
 			return false;
 		}
 
@@ -211,7 +211,7 @@ namespace
 
 		const auto livelihoodTotals = ComputeDerivedBuildActorValueTotals(livelihoodSnapshot);
 		if (!LookupTotal(livelihoodTotals, RE::ActorValue::kCarryWeight).has_value() ||
-		    !NearlyEqual(*LookupTotal(livelihoodTotals, RE::ActorValue::kCarryWeight), 23.0f) ||
+		    !NearlyEqual(*LookupTotal(livelihoodTotals, RE::ActorValue::kCarryWeight), 37.0f) ||
 		    !LookupTotal(livelihoodTotals, RE::ActorValue::kSpeechcraftModifier).has_value() ||
 		    !NearlyEqual(*LookupTotal(livelihoodTotals, RE::ActorValue::kSpeechcraftModifier), 0.55f) ||
 		    !LookupTotal(livelihoodTotals, RE::ActorValue::kStamina).has_value() ||
@@ -290,9 +290,9 @@ namespace
 		livelihoodResourceSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility2)] = "build.utility.meditation";
 		const auto livelihoodResourceTotals = ComputeDerivedBuildActorValueTotals(livelihoodResourceSnapshot);
 		if (!LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagicka).has_value() ||
-		    !NearlyEqual(*LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagicka), 2.9f) ||
+		    !NearlyEqual(*LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagicka), 34.0f) ||
 		    !LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagickaRate).has_value() ||
-		    !NearlyEqual(*LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagickaRate), 0.06f)) {
+		    !NearlyEqual(*LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagickaRate), 0.3f)) {
 			std::cerr << "utility snapshot failed: livelihood resource\n";
 			return false;
 		}

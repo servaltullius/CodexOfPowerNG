@@ -361,11 +361,16 @@ namespace CodexOfPowerNG::Builds
 				continue;
 			}
 
-			AccumulateEffect(
-				totals,
-				option->effectType,
-				option->effectKey,
-				GetScaledBuildMagnitude(*option, BuildPointsForDiscipline(snapshot, option->discipline)));
+			const auto effectBundle =
+				GetResolvedBuildEffectBundle(*option, BuildPointsForDiscipline(snapshot, option->discipline));
+			for (std::size_t index = 0; index < effectBundle.count; ++index) {
+				const auto& effectPart = effectBundle.parts[index];
+				AccumulateEffect(
+					totals,
+					effectPart.effectType,
+					effectPart.effectKey,
+					effectPart.magnitude);
+			}
 		}
 
 		std::vector<std::pair<RE::ActorValue, float>> out;

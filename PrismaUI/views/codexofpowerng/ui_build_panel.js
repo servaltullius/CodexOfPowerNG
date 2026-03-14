@@ -197,6 +197,23 @@
     return tFmt("build.effectMagnitude." + effectKey, effectKey + " {value}", { value: numericValue });
   }
 
+  function normalizeEffectParts(option, key) {
+    const source = option && Array.isArray(option[key]) ? option[key] : [];
+    return source
+      .map((part) => ({
+        effectKey: String((part && part.effectKey) || ""),
+        magnitude: Number(part && part.magnitude),
+      }))
+      .filter((part) => part.effectKey && Number.isFinite(part.magnitude));
+  }
+
+  function summarizeEffectParts(parts, tFmt, t) {
+    if (!Array.isArray(parts) || parts.length === 0) {
+      return t("build.none", "No options");
+    }
+    return parts.map((part) => summarizeScaledEffect(part.effectKey, part.magnitude, tFmt, t)).join(" / ");
+  }
+
   function summarizeDiscipline(discipline, disciplines, options, activeSlots) {
     const info = disciplines[discipline] || { score: 0, recordCount: 0, buildPoints: 0, currentTier: 0, nextTierPoints: 8, pointsToNextTier: 8, nextTierScore: 8, scoreToNextTier: 8 };
     const optionRows = options.filter((option) => String((option && option.discipline) || "").toLowerCase() === discipline);
@@ -359,12 +376,16 @@
     const currentTier = Number((option && option.currentTier) || 0) >>> 0;
     const nextTierPoints = normalizeNumber(option && (option.nextTierPoints != null ? option.nextTierPoints : option.nextTierScore), 0);
     const pointsToNextTier = normalizeNumber(option && (option.pointsToNextTier != null ? option.pointsToNextTier : option.scoreToNextTier), 0);
+    const currentEffectParts = normalizeEffectParts(option, "effectParts");
+    const nextEffectParts = normalizeEffectParts(option, "nextEffectParts");
     const hasCurrentMagnitude =
       option && Object.prototype.hasOwnProperty.call(option, "currentMagnitude")
         ? option.currentMagnitude != null
         : option && Object.prototype.hasOwnProperty.call(option, "magnitude");
     const hasNextMagnitude = option && Object.prototype.hasOwnProperty.call(option, "nextMagnitude");
-    const currentEffectText = hasCurrentMagnitude
+    const currentEffectText = currentEffectParts.length
+      ? summarizeEffectParts(currentEffectParts, tFmt, t)
+      : hasCurrentMagnitude
       ? summarizeScaledEffect(
           String((option && option.effectKey) || ""),
           magnitudeValue(option, "currentMagnitude") || magnitudeValue(option, "magnitude"),
@@ -372,7 +393,9 @@
           t,
         )
       : description;
-    const nextEffectText = hasNextMagnitude
+    const nextEffectText = nextEffectParts.length
+      ? summarizeEffectParts(nextEffectParts, tFmt, t)
+      : hasNextMagnitude
       ? summarizeScaledEffect(String((option && option.effectKey) || ""), magnitudeValue(option, "nextMagnitude"), tFmt, t)
       : t("build.nextTierFallback", "Effect improves at the next tier.");
     let actionHtml = `<span class="small buildHint">${String(unlockText)}</span>`;

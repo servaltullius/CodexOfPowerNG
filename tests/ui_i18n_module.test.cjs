@@ -93,7 +93,7 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.attack\.brawler\.title":\s*"Brawler"/);
   assert.match(moduleSource, /"build\.attack\.brawler\.description":\s*"\+0\.2 unarmed damage while this option is slotted\."/);
   assert.match(moduleSource, /"build\.attack\.reserve\.title":\s*"Reserve"/);
-  assert.match(moduleSource, /"build\.attack\.reserve\.description":\s*"\+2 max stamina while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.attack\.reserve\.description":\s*"Gain \+8 max stamina and \+8% stamina regen while this option is slotted\."/);
   assert.match(moduleSource, /"build\.attack\.secondwind\.title":\s*"Second Wind"/);
   assert.match(moduleSource, /"build\.attack\.secondwind\.description":\s*"Stamina regenerates faster while this option is slotted\."/);
   assert.match(moduleSource, /"build\.attack\.destruction\.title":\s*"Destruction Adept"/);
@@ -125,11 +125,11 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.utility\.enchanting\.title":\s*"Enchanting"/);
   assert.match(moduleSource, /"build\.utility\.enchanting\.description":\s*"Item enchanting becomes more effective while this option is slotted\."/);
   assert.match(moduleSource, /"build\.utility\.magicka\.title":\s*"Magicka Well"/);
-  assert.match(moduleSource, /"build\.utility\.magicka\.description":\s*"\+2 max magicka while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.utility\.magicka\.description":\s*"Gain \+12 max magicka and \+4% magicka regen while this option is slotted\."/);
   assert.match(moduleSource, /"build\.utility\.meditation\.title":\s*"Meditation"/);
-  assert.match(moduleSource, /"build\.utility\.meditation\.description":\s*"Magicka regenerates faster while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.utility\.meditation\.description":\s*"Gain \+8% magicka regen and \+4 max magicka while this option is slotted\."/);
   assert.match(moduleSource, /"build\.utility\.hauler\.title":\s*"Long Haul"/);
-  assert.match(moduleSource, /"build\.utility\.hauler\.description":\s*"\+8 max stamina while this option is slotted\."/);
+  assert.match(moduleSource, /"build\.utility\.hauler\.description":\s*"Gain \+8 max stamina and \+8 carry weight while this option is slotted\."/);
   assert.match(moduleSource, /"build\.utility\.mobility\.title":\s*"Mobility"/);
   assert.match(moduleSource, /"build\.utility\.mobility\.description":\s*"\+3% movement speed while this option is slotted\."/);
   assert.match(moduleSource, /"build\.utility\.wayfinder\.title":\s*"Wayfinder"/);
@@ -154,7 +154,7 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.attack\.brawler\.title":\s*"투사"/);
   assert.match(moduleSource, /"build\.attack\.brawler\.description":\s*"슬롯 활성 시 맨주먹 공격력이 0\.2 증가합니다\."/);
   assert.match(moduleSource, /"build\.attack\.reserve\.title":\s*"기력"/);
-  assert.match(moduleSource, /"build\.attack\.reserve\.description":\s*"슬롯 활성 시 최대 스태미나가 2 증가합니다\."/);
+  assert.match(moduleSource, /"build\.attack\.reserve\.description":\s*"슬롯 활성 시 최대 스태미나가 8, 스태미나 재생이 8% 증가합니다\."/);
   assert.match(moduleSource, /"build\.attack\.secondwind\.title":\s*"투지"/);
   assert.match(moduleSource, /"build\.attack\.precision\.title":\s*"속공"/);
   assert.match(moduleSource, /"build\.attack\.secondwind\.description":\s*"슬롯 활성 시 스태미나가 더 빠르게 회복됩니다\."/);
@@ -189,11 +189,11 @@ test("ui_i18n module keeps LOTD and formatting messages in dedicated dictionarie
   assert.match(moduleSource, /"build\.utility\.enchanting\.title":\s*"부여"/);
   assert.match(moduleSource, /"build\.utility\.enchanting\.description":\s*"슬롯 활성 시 아이템 부여의 효율이 향상됩니다\."/);
   assert.match(moduleSource, /"build\.utility\.magicka\.title":\s*"마력"/);
-  assert.match(moduleSource, /"build\.utility\.magicka\.description":\s*"슬롯 활성 시 최대 매지카가 2 증가합니다\."/);
+  assert.match(moduleSource, /"build\.utility\.magicka\.description":\s*"슬롯 활성 시 최대 매지카가 12, 매지카 재생이 4% 증가합니다\."/);
   assert.match(moduleSource, /"build\.utility\.meditation\.title":\s*"명상"/);
-  assert.match(moduleSource, /"build\.utility\.meditation\.description":\s*"슬롯 활성 시 매지카가 더 빠르게 회복됩니다\."/);
+  assert.match(moduleSource, /"build\.utility\.meditation\.description":\s*"슬롯 활성 시 매지카 재생이 8%, 최대 매지카가 4 증가합니다\."/);
   assert.match(moduleSource, /"build\.utility\.hauler\.title":\s*"강행군"/);
-  assert.match(moduleSource, /"build\.utility\.hauler\.description":\s*"슬롯 활성 시 최대 스태미나가 8 증가합니다\."/);
+  assert.match(moduleSource, /"build\.utility\.hauler\.description":\s*"슬롯 활성 시 최대 스태미나와 소지 한도가 각각 8 증가합니다\."/);
   assert.match(moduleSource, /"build\.utility\.mobility\.title":\s*"기동"/);
   assert.match(moduleSource, /"build\.utility\.mobility\.description":\s*"슬롯 활성 시 이동 속도가 3% 증가합니다\."/);
   assert.match(moduleSource, /"build\.utility\.wayfinder\.title":\s*"길잡이"/);

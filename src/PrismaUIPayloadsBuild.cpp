@@ -185,6 +185,20 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 			return json(std::get<std::int32_t>(magnitude));
 		}
 
+		[[nodiscard]] json EffectPartsToJson(const Builds::BuildResolvedEffectBundle& bundle) noexcept
+		{
+			json parts = json::array();
+			for (std::size_t index = 0; index < bundle.count; ++index) {
+				const auto& part = bundle.parts[index];
+				parts.push_back({
+					{ "effectType", EffectTypeToJs(part.effectType) },
+					{ "effectKey", part.effectKey },
+					{ "magnitude", MagnitudeToJson(part.magnitude) },
+				});
+			}
+			return parts;
+		}
+
 		[[nodiscard]] bool SlotMatchesDiscipline(
 			Builds::BuildDiscipline discipline,
 			Builds::BuildSlotId slotId) noexcept
@@ -286,6 +300,8 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 			const auto pointsToNextTierCenti = Builds::GetBuildPointsToNextTierCenti(activeBuildPointsCenti);
 			const auto currentMagnitude = Builds::GetScaledBuildMagnitude(option, activeBuildPointsCenti);
 			const auto nextMagnitude = Builds::GetNextTierBuildMagnitude(option, activeBuildPointsCenti);
+			const auto currentEffectParts = Builds::GetResolvedBuildEffectBundle(option, activeBuildPointsCenti);
+			const auto nextEffectParts = Builds::GetNextTierResolvedBuildEffectBundle(option, activeBuildPointsCenti);
 			return {
 				{ "id", option.id },
 				{ "optionId", option.id },
@@ -311,6 +327,8 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 				{ "magnitudePerTier", MagnitudeToJson(option.magnitudePerTier) },
 				{ "currentMagnitude", MagnitudeToJson(currentMagnitude) },
 				{ "nextMagnitude", MagnitudeToJson(nextMagnitude) },
+				{ "effectParts", EffectPartsToJson(currentEffectParts) },
+				{ "nextEffectParts", EffectPartsToJson(nextEffectParts) },
 				{ "currentTier", currentTier },
 				{ "nextTierPoints", BuildPointsToJson(nextTierPointsCenti) },
 				{ "pointsToNextTier", BuildPointsToJson(pointsToNextTierCenti) },
@@ -439,6 +457,8 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 			const auto activeScore = DisciplineScore(option.discipline);
 			const auto activeBuildPointsCenti = DisciplineBuildPointsCenti(option.discipline);
 			const auto activeSlotId = FindActiveSlotForOption(option.id);
+			const auto currentEffectParts = Builds::GetResolvedBuildEffectBundle(option, activeBuildPointsCenti);
+			const auto nextEffectParts = Builds::GetNextTierResolvedBuildEffectBundle(option, activeBuildPointsCenti);
 			options.push_back({
 				{ "id", option.id },
 				{ "discipline", DisciplineToJs(option.discipline) },
@@ -462,6 +482,8 @@ namespace CodexOfPowerNG::PrismaUIPayloads
 				{ "magnitudePerTier", MagnitudeToJson(option.magnitudePerTier) },
 				{ "currentMagnitude", MagnitudeToJson(Builds::GetScaledBuildMagnitude(option, activeBuildPointsCenti)) },
 				{ "nextMagnitude", MagnitudeToJson(Builds::GetNextTierBuildMagnitude(option, activeBuildPointsCenti)) },
+				{ "effectParts", EffectPartsToJson(currentEffectParts) },
+				{ "nextEffectParts", EffectPartsToJson(nextEffectParts) },
 				{ "currentTier", Builds::GetBuildPointsTier(activeBuildPointsCenti) },
 				{ "nextTierPoints", BuildPointsToJson(Builds::GetNextBuildPointsThresholdCenti(activeBuildPointsCenti)) },
 				{ "pointsToNextTier", BuildPointsToJson(Builds::GetBuildPointsToNextTierCenti(activeBuildPointsCenti)) },

@@ -413,7 +413,18 @@ test("build panel renders supported-first option descriptions from grouped catal
         unlocked: true,
         titleKey: "build.attack.reserve.title",
         descriptionKey: "build.attack.reserve.description",
-        slotCompatibility: "same_or_wildcard",
+        effectKey: "reserve_bundle",
+        currentMagnitude: 12,
+        nextMagnitude: 14,
+        effectParts: [
+          { effectKey: "stamina", magnitude: 12 },
+          { effectKey: "stamina_rate", magnitude: 0.16 },
+        ],
+        nextEffectParts: [
+          { effectKey: "stamina", magnitude: 14 },
+          { effectKey: "stamina_rate", magnitude: 0.2 },
+        ],
+        slotCompatibility: "same_discipline_only",
       },
       {
         id: "build.attack.secondwind",
@@ -430,7 +441,9 @@ test("build panel renders supported-first option descriptions from grouped catal
     "build.attack.reserve",
   );
   assert.match(furyHtml, /Reserve/);
-  assert.match(furyHtml, /\+2 max stamina while this option is slotted\./);
+  assert.match(furyHtml, /Gain \+8 max stamina and \+8% stamina regen while this option is slotted\./);
+  assert.match(furyHtml, /Max stamina \+12 \/ Stamina regen \+16%/);
+  assert.match(furyHtml, /Max stamina \+14 \/ Stamina regen \+20%/);
 
   const defenseHtml = renderSelection(
     "defense",
@@ -623,7 +636,18 @@ test("build panel renders supported-first option descriptions from grouped catal
         unlocked: true,
         titleKey: "build.utility.hauler.title",
         descriptionKey: "build.utility.hauler.description",
-        slotCompatibility: "same_or_wildcard",
+        effectKey: "hauler_bundle",
+        currentMagnitude: 12,
+        nextMagnitude: 14,
+        effectParts: [
+          { effectKey: "stamina", magnitude: 12 },
+          { effectKey: "carry_weight", magnitude: 12 },
+        ],
+        nextEffectParts: [
+          { effectKey: "stamina", magnitude: 14 },
+          { effectKey: "carry_weight", magnitude: 14 },
+        ],
+        slotCompatibility: "same_discipline_only",
       },
       {
         id: "build.utility.barter",
@@ -643,6 +667,7 @@ test("build panel renders supported-first option descriptions from grouped catal
   assert.match(livelihoodHtml, /Need 10 pt/);
   assert.match(livelihoodHtml, /Smithing/);
   assert.match(livelihoodHtml, /Smithing results improve while this option is slotted\./);
+  assert.match(livelihoodHtml, /Max stamina \+12 \/ Carry weight \+12/);
   assert.match(livelihoodHtml, /Need 25 pt/);
   assert.match(livelihoodHtml, /Need 30 pt/);
 
@@ -692,7 +717,18 @@ test("build panel renders supported-first option descriptions from grouped catal
         unlocked: true,
         titleKey: "build.utility.magicka.title",
         descriptionKey: "build.utility.magicka.description",
-        slotCompatibility: "same_or_wildcard",
+        effectKey: "magicka_well_bundle",
+        currentMagnitude: 20,
+        nextMagnitude: 24,
+        effectParts: [
+          { effectKey: "magicka", magnitude: 20 },
+          { effectKey: "magicka_rate", magnitude: 0.08 },
+        ],
+        nextEffectParts: [
+          { effectKey: "magicka", magnitude: 24 },
+          { effectKey: "magicka_rate", magnitude: 0.1 },
+        ],
+        slotCompatibility: "same_discipline_only",
       },
       {
         id: "build.utility.meditation",
@@ -703,13 +739,26 @@ test("build panel renders supported-first option descriptions from grouped catal
         unlocked: true,
         titleKey: "build.utility.meditation.title",
         descriptionKey: "build.utility.meditation.description",
-        slotCompatibility: "same_or_wildcard",
+        effectKey: "meditation_bundle",
+        currentMagnitude: 0.16,
+        nextMagnitude: 0.2,
+        effectParts: [
+          { effectKey: "magicka_rate", magnitude: 0.16 },
+          { effectKey: "magicka", magnitude: 8 },
+        ],
+        nextEffectParts: [
+          { effectKey: "magicka_rate", magnitude: 0.2 },
+          { effectKey: "magicka", magnitude: 10 },
+        ],
+        slotCompatibility: "same_discipline_only",
       },
     ],
     "build.utility.magicka",
   );
   assert.match(livelihoodResourceHtml, /Magicka Well/);
-  assert.match(livelihoodResourceHtml, /\+2 max magicka while this option is slotted\./);
+  assert.match(livelihoodResourceHtml, /Gain \+12 max magicka and \+4% magicka regen while this option is slotted\./);
+  assert.match(livelihoodResourceHtml, /Max magicka \+20 \/ Magicka regen \+8%/);
+  assert.match(livelihoodResourceHtml, /Max magicka \+24 \/ Magicka regen \+10%/);
 
   const explorationHtml = renderSelection(
     "utility",

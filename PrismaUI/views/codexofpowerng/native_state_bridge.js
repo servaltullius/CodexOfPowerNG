@@ -48,6 +48,28 @@
     return Number.isFinite(numeric) ? numeric : fallback;
   }
 
+  function normalizeEffectParts(parts) {
+    return Array.isArray(parts)
+      ? parts
+          .map((part) => {
+            const normalized = {
+              effectKey: typeof (part && part.effectKey) === "string" ? part.effectKey : "",
+              magnitude:
+                part && part.magnitude && typeof part.magnitude === "object"
+                  ? Object.assign({}, part.magnitude)
+                  : part
+                    ? part.magnitude
+                    : 0,
+            };
+            if (typeof (part && part.effectType) === "string" && part.effectType) {
+              normalized.effectType = part.effectType;
+            }
+            return normalized;
+          })
+          .filter((part) => part.effectKey)
+      : [];
+  }
+
   function normalizeBuildOption(option) {
     const source = option && typeof option === "object" ? option : null;
     if (!source) return null;
@@ -91,6 +113,8 @@
         source.nextMagnitude && typeof source.nextMagnitude === "object"
           ? Object.assign({}, source.nextMagnitude)
           : source.nextMagnitude,
+      effectParts: normalizeEffectParts(source.effectParts),
+      nextEffectParts: normalizeEffectParts(source.nextEffectParts),
       currentTier: Number(source.currentTier || 0) >>> 0,
       nextTierPoints: normalizeNumber(source.nextTierPoints != null ? source.nextTierPoints : source.nextTierScore, 0),
       pointsToNextTier: normalizeNumber(source.pointsToNextTier != null ? source.pointsToNextTier : source.scoreToNextTier, 0),

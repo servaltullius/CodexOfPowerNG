@@ -125,9 +125,9 @@ namespace CodexOfPowerNG::Builds
 				5u,
 				BuildSlotCompatibility::SameDisciplineOnly,
 				BuildEffectType::ActorValue,
-				"stamina",
+				"reserve_bundle",
+				8.0f,
 				2.0f,
-				1.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.attack.reserve.title",
@@ -449,9 +449,9 @@ namespace CodexOfPowerNG::Builds
 				30u,
 				BuildSlotCompatibility::SameDisciplineOnly,
 				BuildEffectType::ActorValue,
-				"magicka_rate",
-				0.03f,
-				0.01f,
+				"meditation_bundle",
+				0.08f,
+				0.04f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.meditation.title",
@@ -485,9 +485,9 @@ namespace CodexOfPowerNG::Builds
 				30u,
 				BuildSlotCompatibility::SameDisciplineOnly,
 				BuildEffectType::ActorValue,
-				"magicka",
-				2.0f,
-				0.3f,
+				"magicka_well_bundle",
+				12.0f,
+				4.0f,
 				"",
 				BuildStackRule::OnceOnly,
 				"build.utility.magicka.title",
@@ -503,7 +503,7 @@ namespace CodexOfPowerNG::Builds
 				30u,
 				BuildSlotCompatibility::SameDisciplineOnly,
 				BuildEffectType::ActorValue,
-				"stamina",
+				"hauler_bundle",
 				8.0f,
 				2.0f,
 				"",
@@ -689,6 +689,31 @@ namespace CodexOfPowerNG::Builds
 		return pointsCenti / kBuildPointsPerTierCenti;
 	}
 
+	namespace
+	{
+		[[nodiscard]] float ScaleFloatMagnitude(
+			float           baseMagnitude,
+			float           perTierMagnitude,
+			BuildPointCenti pointsCenti) noexcept
+		{
+			return baseMagnitude + (perTierMagnitude * static_cast<float>(GetBuildPointsTier(pointsCenti)));
+		}
+
+		[[nodiscard]] BuildResolvedEffectBundle MakeSingleEffectBundle(
+			const BuildOptionDef& option,
+			const BuildMagnitude& magnitude) noexcept
+		{
+			BuildResolvedEffectBundle bundle{};
+			bundle.parts[0] = BuildResolvedEffectPart{
+				option.effectType,
+				option.effectKey,
+				magnitude,
+			};
+			bundle.count = 1u;
+			return bundle;
+		}
+	}
+
 	BuildPointCenti GetNextBuildPointsThresholdCenti(BuildPointCenti pointsCenti) noexcept
 	{
 		return (GetBuildPointsTier(pointsCenti) + 1u) * kBuildPointsPerTierCenti;
@@ -722,5 +747,81 @@ namespace CodexOfPowerNG::Builds
 		BuildPointCenti       pointsCenti) noexcept
 	{
 		return GetScaledBuildMagnitude(option, GetNextBuildPointsThresholdCenti(pointsCenti));
+	}
+
+	BuildResolvedEffectBundle GetResolvedBuildEffectBundle(
+		const BuildOptionDef& option,
+		BuildPointCenti       pointsCenti) noexcept
+	{
+		const auto primaryMagnitude = GetScaledBuildMagnitude(option, pointsCenti);
+		if (option.effectKey == "reserve_bundle") {
+			BuildResolvedEffectBundle bundle{};
+			bundle.parts[0] = BuildResolvedEffectPart{
+				BuildEffectType::ActorValue,
+				"stamina",
+				primaryMagnitude,
+			};
+			bundle.parts[1] = BuildResolvedEffectPart{
+				BuildEffectType::ActorValue,
+				"stamina_rate",
+				ScaleFloatMagnitude(0.08f, 0.04f, pointsCenti),
+			};
+			bundle.count = 2u;
+			return bundle;
+		}
+		if (option.effectKey == "magicka_well_bundle") {
+			BuildResolvedEffectBundle bundle{};
+			bundle.parts[0] = BuildResolvedEffectPart{
+				BuildEffectType::ActorValue,
+				"magicka",
+				primaryMagnitude,
+			};
+			bundle.parts[1] = BuildResolvedEffectPart{
+				BuildEffectType::ActorValue,
+				"magicka_rate",
+				ScaleFloatMagnitude(0.04f, 0.02f, pointsCenti),
+			};
+			bundle.count = 2u;
+			return bundle;
+		}
+		if (option.effectKey == "meditation_bundle") {
+			BuildResolvedEffectBundle bundle{};
+			bundle.parts[0] = BuildResolvedEffectPart{
+				BuildEffectType::ActorValue,
+				"magicka_rate",
+				primaryMagnitude,
+			};
+			bundle.parts[1] = BuildResolvedEffectPart{
+				BuildEffectType::ActorValue,
+				"magicka",
+				ScaleFloatMagnitude(4.0f, 2.0f, pointsCenti),
+			};
+			bundle.count = 2u;
+			return bundle;
+		}
+		if (option.effectKey == "hauler_bundle") {
+			BuildResolvedEffectBundle bundle{};
+			bundle.parts[0] = BuildResolvedEffectPart{
+				BuildEffectType::ActorValue,
+				"stamina",
+				primaryMagnitude,
+			};
+			bundle.parts[1] = BuildResolvedEffectPart{
+				BuildEffectType::CarryWeight,
+				"carry_weight",
+				ScaleFloatMagnitude(8.0f, 2.0f, pointsCenti),
+			};
+			bundle.count = 2u;
+			return bundle;
+		}
+
+		return MakeSingleEffectBundle(option, primaryMagnitude);
+	}
+
+	BuildResolvedEffectBundle GetNextTierResolvedBuildEffectBundle(
+		const BuildOptionDef& option,
+		BuildPointCenti       pointsCenti) noexcept
+	{
+		return GetResolvedBuildEffectBundle(option, GetNextBuildPointsThresholdCenti(pointsCenti));
 	}
 }

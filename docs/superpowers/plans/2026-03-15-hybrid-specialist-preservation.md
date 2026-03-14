@@ -13,7 +13,7 @@
 ## File Map
 
 - Modify: [src/BuildOptionCatalog.cpp](/home/kdw73/Codex%20of%20Power%20NG/src/BuildOptionCatalog.cpp)
-  - Reduce hybrid support riders and `hauler` primary/support values inside `GetResolvedBuildEffectBundle()`.
+  - Reduce hybrid primary values in the catalog rows and hybrid support riders inside `GetResolvedBuildEffectBundle()`.
 - Modify: [PrismaUI/views/codexofpowerng/ui_i18n.js](/home/kdw73/Codex%20of%20Power%20NG/PrismaUI/views/codexofpowerng/ui_i18n.js)
   - Update hybrid option descriptions so they describe the reduced specialist-preserving values.
 - Test: [tests/build_option_catalog_contract.test.cpp](/home/kdw73/Codex%20of%20Power%20NG/tests/build_option_catalog_contract.test.cpp)
@@ -43,7 +43,17 @@ Cover:
 - `build.utility.meditation`: primary `0.08`, per-tier `0.04`
 - `build.utility.hauler`: primary `6`, per-tier `2`
 
-- [ ] **Step 2: Update runtime expectations for reduced support riders**
+- [ ] **Step 2: Add pairwise sanity assertions for specialist lane ownership**
+
+Use dedicated snapshot comparisons and assert:
+- `Reserve < Secondwind` in stamina regen at tier `0`, `2`, `3`
+- `Reserve` still clears the stamina floor at tier `0`, `2`, `3`
+- `Magicka Well < Meditation` in magicka regen at tier `0`, `2`, `3`
+- `Magicka Well > Meditation` in magicka pool at tier `0`, `2`, `3`
+- `Long Haul < Cache` in carry weight at tier `0`, `2`, `3`
+- `Long Haul` still clears the expedition floor at tier `0`, `2`, `3`
+
+- [ ] **Step 3: Keep the existing aggregate runtime snapshots but update them to the reduced values**
 
 Use the existing targeted snapshots and assert:
 - `Reserve` totals now resolve to weaker regen than before
@@ -51,14 +61,14 @@ Use the existing targeted snapshots and assert:
 - `Meditation` totals now resolve to a smaller magicka floor than before
 - `Long Haul` totals now resolve to weaker carry support than before
 
-- [ ] **Step 3: Update UI rendering expectations for the new hybrid totals**
+- [ ] **Step 4: Update UI rendering expectations for the new hybrid totals**
 
 Cover:
 - current effect text
 - next-tier effect text
 - English wording in row/detail rendering
 
-- [ ] **Step 4: Update localization expectations**
+- [ ] **Step 5: Update localization expectations**
 
 Cover:
 - English and Korean descriptions for:
@@ -67,7 +77,7 @@ Cover:
   - `build.utility.meditation`
   - `build.utility.hauler`
 
-- [ ] **Step 5: Run focused tests to verify they fail**
+- [ ] **Step 6: Run focused tests to verify they fail**
 
 Run:
 ```bash
@@ -119,7 +129,7 @@ Keep:
 
 - [ ] **Step 4: Reduce `Long Haul` primary and carry support**
 
-In the catalog and bundle resolver set:
+In the catalog row and bundle resolver set:
 - primary base `6.0f`
 - primary per tier `2.0f`
 - support base `4.0f`
@@ -158,6 +168,11 @@ Describe:
 - `Magicka Well` as pool-first with a smaller regen rider
 - `Meditation` as regen-first with a smaller pool rider
 - `Long Haul` as expedition utility with weaker carry support than `Cache`
+
+Also forbid copy that implies:
+- better sustain than `Secondwind`
+- better regen than `Meditation`
+- better hauling than `Cache`
 
 - [ ] **Step 2: Update Build panel rendering expectations**
 
@@ -198,7 +213,16 @@ node --test tests/*.test.cjs
 
 Expected: PASS
 
-- [ ] **Step 2: Run the full WSL CTest suite**
+- [ ] **Step 2: Rebuild the full WSL debug test tree**
+
+Run:
+```bash
+cmake --build build/wsl-debug
+```
+
+Expected: all debug test binaries are rebuilt with the latest source.
+
+- [ ] **Step 3: Run the full WSL CTest suite**
 
 Run:
 ```bash
@@ -207,7 +231,7 @@ ctest --test-dir build/wsl-debug --output-on-failure
 
 Expected: PASS
 
-- [ ] **Step 3: Run the host-safe regression gate**
+- [ ] **Step 4: Run the host-safe regression gate**
 
 Run:
 ```bash
@@ -216,7 +240,7 @@ scripts/test.sh
 
 Expected: PASS
 
-- [ ] **Step 4: Rebuild and install the release artifact**
+- [ ] **Step 5: Rebuild and install the release artifact**
 
 Run:
 ```bash
@@ -226,7 +250,7 @@ cmake --install build/wsl-release
 
 Expected: release build succeeds and `dist/CodexOfPowerNG` is refreshed.
 
-- [ ] **Step 5: Optional deployment sync**
+- [ ] **Step 6: Optional deployment sync**
 
 If the user asks for it, sync:
 ```bash

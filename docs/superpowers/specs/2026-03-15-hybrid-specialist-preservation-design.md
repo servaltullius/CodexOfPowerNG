@@ -82,6 +82,42 @@ For every hybrid/specialist pair:
 
 This is a role-separation rule, not just a number-tuning rule.
 
+## Reference Snapshots
+
+All competition checks in this pass use the same three checkpoints.
+
+### 1. Unlock Snapshot
+
+Definition:
+
+- evaluate the option at tier `0`
+
+Purpose:
+
+- prove the option is not dead on arrival
+
+### 2. Representative Mid Snapshot
+
+Definition:
+
+- evaluate the option at tier `2`
+
+Purpose:
+
+- this is the current real-world comparison zone where the hybrid overreach was observed
+
+### 3. Next-Tier Preview Snapshot
+
+Definition:
+
+- evaluate the tier `2` option's next-tier preview, which means tier `3`
+
+Purpose:
+
+- keep the Build panel current/next preview aligned with the same competition contract
+
+These checkpoints are mandatory for runtime sanity review and Build panel verification.
+
 ## Chosen Approach
 
 Use the existing hybrid structure, but reduce support riders so that specialists stay clearly ahead on their main axis.
@@ -144,6 +180,16 @@ Must remain:
 
 - the best pure stamina regeneration choice in the fury theme
 
+Quantitative contract:
+
+- at tier `0`, `Reserve` stamina regen must stay below `Secondwind`
+- at tier `2`, `Reserve` stamina regen must stay below `Secondwind`
+- at tier `3` preview, `Reserve` stamina regen must stay below `Secondwind`
+- `Reserve` must still provide at least:
+  - tier `0`: `+8 stamina`
+  - tier `2`: `+12 stamina`
+  - tier `3`: `+14 stamina`
+
 ### Utility / Livelihood
 
 #### `Magicka Well`
@@ -170,6 +216,15 @@ Must remain:
 
 - the best pure magicka regeneration choice in livelihood
 
+Quantitative contract:
+
+- at tier `0`, `Magicka Well` magicka regen must stay below `Meditation`
+- at tier `2`, `Magicka Well` magicka regen must stay below `Meditation`
+- at tier `3` preview, `Magicka Well` magicka regen must stay below `Meditation`
+- at tier `0`, `Magicka Well` magicka pool must exceed `Meditation`
+- at tier `2`, `Magicka Well` magicka pool must exceed `Meditation`
+- at tier `3` preview, `Magicka Well` magicka pool must exceed `Meditation`
+
 #### `Long Haul`
 
 Role:
@@ -193,6 +248,16 @@ Role:
 Must remain:
 
 - the best pure carry-weight option in livelihood
+
+Quantitative contract:
+
+- at tier `0`, `Long Haul` carry weight must stay below `Cache`
+- at tier `2`, `Long Haul` carry weight must stay below `Cache`
+- at tier `3` preview, `Long Haul` carry weight must stay below `Cache`
+- `Long Haul` must still provide at least:
+  - tier `0`: `+6 stamina`, `+4 carry weight`
+  - tier `2`: `+10 stamina`, `+6 carry weight`
+  - tier `3`: `+12 stamina`, `+7 carry weight`
 
 ## Approved Numerical Direction
 
@@ -257,6 +322,63 @@ Design result:
 - `Long Haul` becomes a travel/generalist option
 - `Cache` remains the clear hauling specialist
 
+## Implementation Boundary
+
+The corrective pass stays inside the current hybrid bundle structure, but the ownership split must be explicit.
+
+### Primary Values
+
+Owned by:
+
+- catalog definitions in [BuildOptionCatalog.cpp](/home/kdw73/Codex%20of%20Power%20NG/src/BuildOptionCatalog.cpp)
+
+Fields:
+
+- `magnitude`
+- `magnitudePerTier`
+
+This controls:
+
+- `Reserve` primary stamina
+- `Magicka Well` primary magicka
+- `Meditation` primary magicka regen
+- `Long Haul` primary stamina
+
+### Support Riders
+
+Owned by:
+
+- `GetResolvedBuildEffectBundle()` in [BuildOptionCatalog.cpp](/home/kdw73/Codex%20of%20Power%20NG/src/BuildOptionCatalog.cpp)
+
+This controls:
+
+- `Reserve` support stamina regen
+- `Magicka Well` support magicka regen
+- `Meditation` support magicka floor
+- `Long Haul` support carry weight
+
+### Player-Facing Copy
+
+Owned by:
+
+- [ui_i18n.js](/home/kdw73/Codex%20of%20Power%20NG/PrismaUI/views/codexofpowerng/ui_i18n.js)
+
+Required description keys:
+
+- `build.attack.reserve.description`
+- `build.utility.magicka.description`
+- `build.utility.meditation.description`
+- `build.utility.hauler.description`
+
+### Test Surfaces
+
+Required:
+
+- catalog contract
+- runtime totals
+- Build panel rendering
+- i18n description contract
+
 ## UI Rule
 
 The UI must continue to present both parts of a hybrid option, but the copy should not imply that the option is a specialist replacement.
@@ -266,6 +388,11 @@ Implications:
 - descriptions should emphasize the primary fantasy first
 - row/detail text can still list both parts
 - no wording should suggest “best” or “stronger version” of the specialist option
+
+Required verification rule:
+
+- the four description keys above must use primary-first wording
+- the copy must not imply better sustain than `Secondwind`, better regen than `Meditation`, or better hauling than `Cache`
 
 ## Implementation Scope
 
@@ -299,11 +426,22 @@ Required checks:
 3. UI rendering
 - verify current and next-tier text still show both parts cleanly
 
-4. Balance sanity review
-- confirm:
-  - `Reserve < Secondwind` in regen
-  - `Magicka Well < Meditation` in regen
-  - `Long Haul < Cache` in carry weight
+4. Copy contract
+- verify the four localized description keys match the specialist-preserving wording
+
+5. Pairwise sanity review
+- `Reserve < Secondwind` in stamina regen at tier `0`, `2`, `3`
+- `Reserve` still clears the minimum stamina floor at tier `0`, `2`, `3`
+- `Magicka Well < Meditation` in magicka regen at tier `0`, `2`, `3`
+- `Magicka Well > Meditation` in magicka pool at tier `0`, `2`, `3`
+- `Long Haul < Cache` in carry weight at tier `0`, `2`, `3`
+- `Long Haul` still clears the expedition floor at tier `0`, `2`, `3`
+
+6. Hybrid viability review
+- confirm the corrective pass did not recreate dead picks:
+  - `Reserve` still has a burst-threshold use-case
+  - `Magicka Well` still has a pool-depth use-case
+  - `Long Haul` still has visible expedition value
 
 ## Expected Outcome
 

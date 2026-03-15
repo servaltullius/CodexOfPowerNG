@@ -1354,12 +1354,15 @@ test("build view source includes a fixed catalog-first layout contract", () => {
   assert.match(html, /\.buildThemeTabs\s*\{[\s\S]*overflow-x:\s*auto/);
   assert.match(html, /\.buildCatalogScroller\s*\{[\s\S]*overflow:\s*auto/);
   assert.match(html, /\.buildCatalogScroller\s*\{[\s\S]*overscroll-behavior:\s*contain/);
-  assert.match(html, /\.buildDetailRail\s*\{/);
+  assert.match(html, /\.buildDetailRail\s*\{[\s\S]*grid-template-rows:\s*minmax\(0,\s*1\.7fr\)\s*minmax\(calc\(170px \* var\(--uiScale\)\),\s*0\.8fr\)/);
   assert.match(html, /\.buildSlotMatrix\s*\{/);
   assert.match(html, /\.buildSummaryCard\s*\{[\s\S]*rgba\(12,\s*14,\s*22,\s*0\.94\)/);
   assert.match(html, /\.buildSummaryValue\s*\{[\s\S]*font-size:\s*calc\(28px \* var\(--uiScale\)\)/);
   assert.match(html, /\.buildDisciplineButton\s*\{[\s\S]*min-height:\s*calc\(44px \* var\(--uiScale\)\)/);
-  assert.match(html, /\.buildSlotMatrixCard\s*\{[\s\S]*padding:\s*calc\(10px \* var\(--uiScale\)\)/);
+  assert.match(html, /\.buildSlotMatrix\s*\{[\s\S]*gap:\s*calc\(6px \* var\(--uiScale\)\)/);
+  assert.match(html, /\.buildSlotMatrixCard\s*\{[\s\S]*padding:\s*calc\(8px \* var\(--uiScale\)\)/);
+  assert.match(html, /\.buildSlotMatrixName\s*\{[\s\S]*font-size:\s*calc\(12px \* var\(--uiScale\)\)/);
+  assert.match(html, /\.buildSlotMatrixActions\s+\.buildActionButton\s*\{[\s\S]*min-height:\s*calc\(32px \* var\(--uiScale\)\)/);
   assert.match(html, /\.buildCatalogEffect\s*\{[\s\S]*white-space:\s*nowrap/);
   assert.match(html, /\.buildCatalogEffect\s*\{[\s\S]*text-overflow:\s*ellipsis/);
   assert.doesNotMatch(html, /\.buildCatalogRow\.isSignpost\s*\{/);
@@ -1373,4 +1376,7 @@ test("build view source includes a fixed catalog-first layout contract", () => {
   assert.match(html, /\.heroCharacterPanel\s+\.rewardCharacterWrap\s*\{/);
   assert.match(html, /\.heroCharacterPanel\s+\.rewardCharacterWrap\s*\{[\s\S]*transform:\s*translateX\(calc\(-20px \* var\(--uiScale\)\)\)/);
   assert.match(html, /\.buildCatalogLayout\s*\{[\s\S]*min-height:\s*0/);
+  assert.match(html, /@media \(max-width: 980px\)\s*\{[\s\S]*\.buildCatalogLayout\s*\{[\s\S]*grid-template-columns:\s*1fr/);
+  assert.match(html, /@media \(max-width: 980px\)\s*\{[\s\S]*\.buildDetailRail\s*\{[\s\S]*grid-template-rows:\s*auto auto/);
+  assert.match(html, /@media \(max-width: 980px\)\s*\{[\s\S]*\.buildSlotMatrix\s*\{[\s\S]*grid-template-columns:\s*1fr/);
 });

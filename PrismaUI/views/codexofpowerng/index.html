@@ -911,7 +911,7 @@
       }
       .buildDetailRail {
         display: grid;
-        grid-template-rows: minmax(0, 1fr) auto;
+        grid-template-rows: minmax(0, 1.7fr) minmax(calc(170px * var(--uiScale)), 0.8fr);
         gap: calc(10px * var(--uiScale));
       }
       .buildSelectedOptionPanel,
@@ -961,12 +961,12 @@
       .buildSlotMatrix {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: calc(8px * var(--uiScale));
+        gap: calc(6px * var(--uiScale));
       }
       .buildSlotMatrixCard {
         display: grid;
-        gap: calc(6px * var(--uiScale));
-        padding: calc(10px * var(--uiScale));
+        gap: calc(4px * var(--uiScale));
+        padding: calc(8px * var(--uiScale));
         border-radius: calc(12px * var(--uiScale));
         border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.12));
         background:
@@ -982,13 +982,18 @@
       }
       .buildSlotMatrixName {
         display: block;
-        font-size: calc(13px * var(--uiScale));
-        line-height: 1.35;
+        font-size: calc(12px * var(--uiScale));
+        line-height: 1.25;
       }
       .buildSlotMatrixActions {
         display: flex;
         flex-wrap: wrap;
-        gap: calc(8px * var(--uiScale));
+        gap: calc(6px * var(--uiScale));
+      }
+      .buildSlotMatrixActions .buildActionButton {
+        min-height: calc(32px * var(--uiScale));
+        padding: calc(6px * var(--uiScale)) calc(10px * var(--uiScale));
+        font-size: calc(11.5px * var(--uiScale));
       }
       .quickToolbar,
       .buildToolbar {
@@ -1376,6 +1381,15 @@
         .buildPanels,
         .buildShrineGrid,
         .buildSummaryBar {
+          grid-template-columns: 1fr;
+        }
+        .buildCatalogLayout {
+          grid-template-columns: 1fr;
+        }
+        .buildDetailRail {
+          grid-template-rows: auto auto;
+        }
+        .buildSlotMatrix {
           grid-template-columns: 1fr;
         }
         .buildSlotCluster {

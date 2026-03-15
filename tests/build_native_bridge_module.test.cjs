@@ -251,6 +251,8 @@ test("native build payload source uses build-point tier helpers", () => {
   assert.match(payloadSrc, /GetBuildPointsTier/);
   assert.match(payloadSrc, /GetNextBuildPointsThresholdCenti/);
   assert.match(payloadSrc, /GetBuildPointsToNextTierCenti/);
+  assert.match(payloadSrc, /GetResolvedBuildEffectBundle/);
+  assert.match(payloadSrc, /GetNextTierResolvedBuildEffectBundle/);
   assert.match(payloadSrc, /effectParts/);
   assert.doesNotMatch(payloadSrc, /GetEffectiveBuildScalingTier/);
 });

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <iostream>
 #include <string_view>
 #include <unordered_set>
@@ -10,6 +11,11 @@
 namespace
 {
 	using namespace CodexOfPowerNG::Builds;
+
+	[[nodiscard]] bool NearlyEqual(float lhs, float rhs, float epsilon = 0.0001f) noexcept
+	{
+		return std::abs(lhs - rhs) <= epsilon;
+	}
 
 	bool HasUniqueOptionIds()
 	{
@@ -283,7 +289,7 @@ namespace
 			ExpectedScaling{ "build.defense.endurance", 10.0f, 3.0f },
 			ExpectedScaling{ "build.utility.meditation", 0.08f, 0.04f },
 			ExpectedScaling{ "build.utility.magicka", 12.0f, 4.0f },
-			ExpectedScaling{ "build.utility.hauler", 8.0f, 2.0f },
+			ExpectedScaling{ "build.utility.hauler", 6.0f, 2.0f },
 			ExpectedScaling{ "build.utility.mobility", 2.0f, 0.15f },
 			ExpectedScaling{ "build.utility.wayfinder", 0.05f, 0.01f },
 			ExpectedScaling{ "build.utility.sneak", 0.03f, 0.005f },
@@ -356,6 +362,166 @@ namespace
 
 		return true;
 	}
+
+	const BuildOptionDef* FindOptionById(std::string_view id)
+	{
+		const auto catalog = GetBuildOptionCatalog();
+		const auto it = std::find_if(
+			catalog.begin(),
+			catalog.end(),
+			[id](const BuildOptionDef& option) { return option.id == id; });
+		return it == catalog.end() ? nullptr : &(*it);
+	}
+
+	bool HybridBundlesUseExpectedSupportScaling()
+	{
+		struct ExpectedHybridSnapshot
+		{
+			std::string_view id;
+			BuildPointCenti pointsCenti;
+			std::array<std::pair<std::string_view, float>, 2> currentParts;
+			std::array<std::pair<std::string_view, float>, 2> nextParts;
+		};
+
+		constexpr std::array expectedSnapshots{
+			ExpectedHybridSnapshot{
+				"build.attack.reserve",
+				0u,
+				std::array{
+					std::pair<std::string_view, float>{ "stamina", 8.0f },
+					std::pair<std::string_view, float>{ "stamina_rate", 0.04f },
+				},
+				std::array{
+					std::pair<std::string_view, float>{ "stamina", 10.0f },
+					std::pair<std::string_view, float>{ "stamina_rate", 0.06f },
+				},
+			},
+			ExpectedHybridSnapshot{
+				"build.attack.reserve",
+				1600u,
+				std::array{
+					std::pair<std::string_view, float>{ "stamina", 12.0f },
+					std::pair<std::string_view, float>{ "stamina_rate", 0.08f },
+				},
+				std::array{
+					std::pair<std::string_view, float>{ "stamina", 14.0f },
+					std::pair<std::string_view, float>{ "stamina_rate", 0.10f },
+				},
+			},
+			ExpectedHybridSnapshot{
+				"build.utility.magicka",
+				0u,
+				std::array{
+					std::pair<std::string_view, float>{ "magicka", 12.0f },
+					std::pair<std::string_view, float>{ "magicka_rate", 0.02f },
+				},
+				std::array{
+					std::pair<std::string_view, float>{ "magicka", 16.0f },
+					std::pair<std::string_view, float>{ "magicka_rate", 0.03f },
+				},
+			},
+			ExpectedHybridSnapshot{
+				"build.utility.magicka",
+				1600u,
+				std::array{
+					std::pair<std::string_view, float>{ "magicka", 20.0f },
+					std::pair<std::string_view, float>{ "magicka_rate", 0.04f },
+				},
+				std::array{
+					std::pair<std::string_view, float>{ "magicka", 24.0f },
+					std::pair<std::string_view, float>{ "magicka_rate", 0.05f },
+				},
+			},
+			ExpectedHybridSnapshot{
+				"build.utility.meditation",
+				0u,
+				std::array{
+					std::pair<std::string_view, float>{ "magicka_rate", 0.08f },
+					std::pair<std::string_view, float>{ "magicka", 2.0f },
+				},
+				std::array{
+					std::pair<std::string_view, float>{ "magicka_rate", 0.12f },
+					std::pair<std::string_view, float>{ "magicka", 3.0f },
+				},
+			},
+			ExpectedHybridSnapshot{
+				"build.utility.meditation",
+				1600u,
+				std::array{
+					std::pair<std::string_view, float>{ "magicka_rate", 0.16f },
+					std::pair<std::string_view, float>{ "magicka", 4.0f },
+				},
+				std::array{
+					std::pair<std::string_view, float>{ "magicka_rate", 0.20f },
+					std::pair<std::string_view, float>{ "magicka", 5.0f },
+				},
+			},
+			ExpectedHybridSnapshot{
+				"build.utility.hauler",
+				0u,
+				std::array{
+					std::pair<std::string_view, float>{ "stamina", 6.0f },
+					std::pair<std::string_view, float>{ "carry_weight", 4.0f },
+				},
+				std::array{
+					std::pair<std::string_view, float>{ "stamina", 8.0f },
+					std::pair<std::string_view, float>{ "carry_weight", 5.0f },
+				},
+			},
+			ExpectedHybridSnapshot{
+				"build.utility.hauler",
+				1600u,
+				std::array{
+					std::pair<std::string_view, float>{ "stamina", 10.0f },
+					std::pair<std::string_view, float>{ "carry_weight", 6.0f },
+				},
+				std::array{
+					std::pair<std::string_view, float>{ "stamina", 12.0f },
+					std::pair<std::string_view, float>{ "carry_weight", 7.0f },
+				},
+			},
+		};
+
+		for (const auto& expected : expectedSnapshots) {
+			const auto* option = FindOptionById(expected.id);
+			if (option == nullptr) {
+				std::cerr << "missing hybrid option for bundle contract: " << expected.id << '\n';
+				return false;
+			}
+
+			const auto currentBundle = GetResolvedBuildEffectBundle(*option, expected.pointsCenti);
+			const auto nextBundle = GetNextTierResolvedBuildEffectBundle(*option, expected.pointsCenti);
+			if (currentBundle.count != expected.currentParts.size() ||
+			    nextBundle.count != expected.nextParts.size()) {
+				std::cerr << "bundle part count mismatch for " << expected.id << '\n';
+				return false;
+			}
+
+			for (std::size_t index = 0; index < expected.currentParts.size(); ++index) {
+				const auto& [expectedEffectKey, expectedMagnitude] = expected.currentParts[index];
+				const auto& part = currentBundle.parts[index];
+				if (part.effectKey != expectedEffectKey ||
+				    !std::holds_alternative<float>(part.magnitude) ||
+				    !NearlyEqual(std::get<float>(part.magnitude), expectedMagnitude)) {
+					std::cerr << "current bundle mismatch for " << expected.id << " at part " << index << '\n';
+					return false;
+				}
+			}
+
+			for (std::size_t index = 0; index < expected.nextParts.size(); ++index) {
+				const auto& [expectedEffectKey, expectedMagnitude] = expected.nextParts[index];
+				const auto& part = nextBundle.parts[index];
+				if (part.effectKey != expectedEffectKey ||
+				    !std::holds_alternative<float>(part.magnitude) ||
+				    !NearlyEqual(std::get<float>(part.magnitude), expectedMagnitude)) {
+					std::cerr << "next bundle mismatch for " << expected.id << " at part " << index << '\n';
+					return false;
+				}
+			}
+		}
+
+		return true;
+	}
 }
 
 int main()
@@ -399,6 +565,9 @@ int main()
 		return 1;
 	}
 	if (!expect(HasExpectedCatalogContents(), "catalog contents must match the fixed MVP contract")) {
+		return 1;
+	}
+	if (!expect(HybridBundlesUseExpectedSupportScaling(), "hybrid bundles must use the specialist-preserving support scaling")) {
 		return 1;
 	}
 

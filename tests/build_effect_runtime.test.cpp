@@ -9,6 +9,7 @@ namespace
 {
 	using CodexOfPowerNG::Builds::BuildRuntimeSnapshot;
 	using CodexOfPowerNG::Builds::BuildSlotId;
+	using CodexOfPowerNG::Builds::BuildPointCenti;
 	using CodexOfPowerNG::Builds::ComputeDerivedBuildActorValueTotals;
 
 	[[nodiscard]] bool NearlyEqual(float lhs, float rhs, float epsilon = 0.0001f) noexcept
@@ -26,6 +27,31 @@ namespace
 			}
 		}
 		return std::nullopt;
+	}
+
+	BuildRuntimeSnapshot MakeSingleOptionSnapshot(
+		BuildSlotId       slotId,
+		std::string_view  optionId,
+		BuildPointCenti   pointsCenti) noexcept
+	{
+		BuildRuntimeSnapshot snapshot{};
+		switch (slotId) {
+		case BuildSlotId::Attack1:
+		case BuildSlotId::Attack2:
+			snapshot.attackBuildPointsCenti = pointsCenti;
+			break;
+		case BuildSlotId::Defense1:
+			snapshot.defenseBuildPointsCenti = pointsCenti;
+			break;
+		case BuildSlotId::Utility1:
+		case BuildSlotId::Utility2:
+			snapshot.utilityBuildPointsCenti = pointsCenti;
+			break;
+		case BuildSlotId::Wildcard1:
+			break;
+		}
+		snapshot.activeBuildSlots[static_cast<std::size_t>(slotId)] = optionId;
+		return snapshot;
 	}
 
 	bool CuratedAttackEffectsResolveToConcreteActorValues()
@@ -75,7 +101,7 @@ namespace
 		if (!LookupTotal(furyTotals, RE::ActorValue::kStamina).has_value() ||
 		    !NearlyEqual(*LookupTotal(furyTotals, RE::ActorValue::kStamina), 14.0f) ||
 		    !LookupTotal(furyTotals, RE::ActorValue::kStaminaRate).has_value() ||
-		    !NearlyEqual(*LookupTotal(furyTotals, RE::ActorValue::kStaminaRate), 0.45f)) {
+		    !NearlyEqual(*LookupTotal(furyTotals, RE::ActorValue::kStaminaRate), 0.35f)) {
 			return false;
 		}
 
@@ -211,11 +237,11 @@ namespace
 
 		const auto livelihoodTotals = ComputeDerivedBuildActorValueTotals(livelihoodSnapshot);
 		if (!LookupTotal(livelihoodTotals, RE::ActorValue::kCarryWeight).has_value() ||
-		    !NearlyEqual(*LookupTotal(livelihoodTotals, RE::ActorValue::kCarryWeight), 37.0f) ||
+		    !NearlyEqual(*LookupTotal(livelihoodTotals, RE::ActorValue::kCarryWeight), 30.0f) ||
 		    !LookupTotal(livelihoodTotals, RE::ActorValue::kSpeechcraftModifier).has_value() ||
 		    !NearlyEqual(*LookupTotal(livelihoodTotals, RE::ActorValue::kSpeechcraftModifier), 0.55f) ||
 		    !LookupTotal(livelihoodTotals, RE::ActorValue::kStamina).has_value() ||
-		    !NearlyEqual(*LookupTotal(livelihoodTotals, RE::ActorValue::kStamina), 14.0f)) {
+		    !NearlyEqual(*LookupTotal(livelihoodTotals, RE::ActorValue::kStamina), 12.0f)) {
 			std::cerr << "utility snapshot failed: livelihood\n";
 			return false;
 		}
@@ -290,9 +316,9 @@ namespace
 		livelihoodResourceSnapshot.activeBuildSlots[static_cast<std::size_t>(BuildSlotId::Utility2)] = "build.utility.meditation";
 		const auto livelihoodResourceTotals = ComputeDerivedBuildActorValueTotals(livelihoodResourceSnapshot);
 		if (!LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagicka).has_value() ||
-		    !NearlyEqual(*LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagicka), 34.0f) ||
+		    !NearlyEqual(*LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagicka), 29.0f) ||
 		    !LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagickaRate).has_value() ||
-		    !NearlyEqual(*LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagickaRate), 0.3f)) {
+		    !NearlyEqual(*LookupTotal(livelihoodResourceTotals, RE::ActorValue::kMagickaRate), 0.25f)) {
 			std::cerr << "utility snapshot failed: livelihood resource\n";
 			return false;
 		}
@@ -352,6 +378,150 @@ namespace
 		       NearlyEqual(*LookupTotal(utilityTotals, RE::ActorValue::kCarryWeight), 23.0f) &&
 		       LookupTotal(utilityTotals, RE::ActorValue::kSpeedMult).has_value() &&
 		       NearlyEqual(*LookupTotal(utilityTotals, RE::ActorValue::kSpeedMult), 0.0245f);
+	}
+
+	bool HybridOptionsStayBelowSpecialistsInTheirPrimaryLane()
+	{
+		struct AttackCheckpoint
+		{
+			BuildPointCenti pointsCenti;
+			float           reserveStamina;
+			float           reserveStaminaRate;
+			float           secondwindStaminaRate;
+		};
+
+		struct UtilityResourceCheckpoint
+		{
+			BuildPointCenti pointsCenti;
+			float           magickaWellMagicka;
+			float           magickaWellRate;
+			float           meditationMagickaRate;
+			float           meditationMagicka;
+		};
+
+		struct UtilityCarryCheckpoint
+		{
+			BuildPointCenti pointsCenti;
+			float           haulerStamina;
+			float           haulerCarry;
+			float           cacheCarry;
+		};
+
+		constexpr std::array attackCheckpoints{
+			AttackCheckpoint{ 800u, 10.0f, 0.06f, 0.15f },
+			AttackCheckpoint{ 1600u, 12.0f, 0.08f, 0.20f },
+			AttackCheckpoint{ 2400u, 14.0f, 0.10f, 0.25f },
+		};
+		constexpr std::array utilityResourceCheckpoints{
+			UtilityResourceCheckpoint{ 2400u, 24.0f, 0.05f, 0.20f, 5.0f },
+			UtilityResourceCheckpoint{ 3200u, 28.0f, 0.06f, 0.24f, 6.0f },
+			UtilityResourceCheckpoint{ 4000u, 32.0f, 0.07f, 0.28f, 7.0f },
+		};
+		constexpr std::array utilityCarryCheckpoints{
+			UtilityCarryCheckpoint{ 2400u, 12.0f, 7.0f, 23.0f },
+			UtilityCarryCheckpoint{ 3200u, 14.0f, 8.0f, 24.0f },
+			UtilityCarryCheckpoint{ 4000u, 16.0f, 9.0f, 25.0f },
+		};
+
+		for (const auto& checkpoint : attackCheckpoints) {
+			const auto reserveTotals = ComputeDerivedBuildActorValueTotals(
+				MakeSingleOptionSnapshot(BuildSlotId::Attack1, "build.attack.reserve", checkpoint.pointsCenti));
+			const auto secondwindTotals = ComputeDerivedBuildActorValueTotals(
+				MakeSingleOptionSnapshot(BuildSlotId::Attack1, "build.attack.secondwind", checkpoint.pointsCenti));
+
+			const auto reserveStamina = LookupTotal(reserveTotals, RE::ActorValue::kStamina);
+			const auto reserveRate = LookupTotal(reserveTotals, RE::ActorValue::kStaminaRate);
+			const auto secondwindRate = LookupTotal(secondwindTotals, RE::ActorValue::kStaminaRate);
+
+			if (!reserveStamina.has_value() ||
+			    !reserveRate.has_value() ||
+			    !secondwindRate.has_value()) {
+				return false;
+			}
+
+			if (!NearlyEqual(*reserveStamina, checkpoint.reserveStamina) ||
+			    !NearlyEqual(*reserveRate, checkpoint.reserveStaminaRate) ||
+			    !NearlyEqual(*secondwindRate, checkpoint.secondwindStaminaRate)) {
+				std::cerr << "attack checkpoint mismatch at " << checkpoint.pointsCenti
+				          << " reserve stamina=" << *reserveStamina
+				          << " reserve rate=" << *reserveRate
+				          << " secondwind rate=" << *secondwindRate << '\n';
+				return false;
+			}
+
+			if (!(*reserveRate < *secondwindRate)) {
+				std::cerr << "attack specialist ordering mismatch at " << checkpoint.pointsCenti << '\n';
+				return false;
+			}
+		}
+
+		for (const auto& checkpoint : utilityResourceCheckpoints) {
+			const auto magickaTotals = ComputeDerivedBuildActorValueTotals(
+				MakeSingleOptionSnapshot(BuildSlotId::Utility1, "build.utility.magicka", checkpoint.pointsCenti));
+			const auto meditationTotals = ComputeDerivedBuildActorValueTotals(
+				MakeSingleOptionSnapshot(BuildSlotId::Utility1, "build.utility.meditation", checkpoint.pointsCenti));
+
+			const auto magicka = LookupTotal(magickaTotals, RE::ActorValue::kMagicka);
+			const auto magickaRate = LookupTotal(magickaTotals, RE::ActorValue::kMagickaRate);
+			const auto meditationRate = LookupTotal(meditationTotals, RE::ActorValue::kMagickaRate);
+			const auto meditationMagicka = LookupTotal(meditationTotals, RE::ActorValue::kMagicka);
+			if (!magicka.has_value() ||
+			    !magickaRate.has_value() ||
+			    !meditationRate.has_value() ||
+			    !meditationMagicka.has_value()) {
+				return false;
+			}
+
+			if (!NearlyEqual(*magicka, checkpoint.magickaWellMagicka) ||
+			    !NearlyEqual(*magickaRate, checkpoint.magickaWellRate) ||
+			    !NearlyEqual(*meditationRate, checkpoint.meditationMagickaRate) ||
+			    !NearlyEqual(*meditationMagicka, checkpoint.meditationMagicka)) {
+				std::cerr << "magicka checkpoint mismatch at " << checkpoint.pointsCenti
+				          << " magicka=" << *magicka
+				          << " magicka rate=" << *magickaRate
+				          << " meditation rate=" << *meditationRate
+				          << " meditation magicka=" << *meditationMagicka << '\n';
+				return false;
+			}
+
+			if (!(*magickaRate < *meditationRate)) {
+				std::cerr << "magicka specialist ordering mismatch at " << checkpoint.pointsCenti << '\n';
+				return false;
+			}
+		}
+
+		for (const auto& checkpoint : utilityCarryCheckpoints) {
+			const auto haulerTotals = ComputeDerivedBuildActorValueTotals(
+				MakeSingleOptionSnapshot(BuildSlotId::Utility1, "build.utility.hauler", checkpoint.pointsCenti));
+			const auto cacheTotals = ComputeDerivedBuildActorValueTotals(
+				MakeSingleOptionSnapshot(BuildSlotId::Utility1, "build.utility.cache", checkpoint.pointsCenti));
+
+			const auto haulerStamina = LookupTotal(haulerTotals, RE::ActorValue::kStamina);
+			const auto haulerCarry = LookupTotal(haulerTotals, RE::ActorValue::kCarryWeight);
+			const auto cacheCarry = LookupTotal(cacheTotals, RE::ActorValue::kCarryWeight);
+			if (!haulerStamina.has_value() ||
+			    !haulerCarry.has_value() ||
+			    !cacheCarry.has_value()) {
+				return false;
+			}
+
+			if (!NearlyEqual(*haulerStamina, checkpoint.haulerStamina) ||
+			    !NearlyEqual(*haulerCarry, checkpoint.haulerCarry) ||
+			    !NearlyEqual(*cacheCarry, checkpoint.cacheCarry)) {
+				std::cerr << "carry checkpoint mismatch at " << checkpoint.pointsCenti
+				          << " hauler stamina=" << *haulerStamina
+				          << " hauler carry=" << *haulerCarry
+				          << " cache carry=" << *cacheCarry << '\n';
+				return false;
+			}
+
+			if (!(*haulerCarry < *cacheCarry)) {
+				std::cerr << "carry specialist ordering mismatch at " << checkpoint.pointsCenti << '\n';
+				return false;
+			}
+		}
+
+		return true;
 	}
 
 	bool OnceOnlyEffectsDoNotDoubleStackAcrossSlots()
@@ -428,6 +598,9 @@ int main()
 		return 1;
 	}
 	if (!expect(HighRecordCountsOnlyScaleThroughBuildPoints(), "high record counts must scale only through build points")) {
+		return 1;
+	}
+	if (!expect(HybridOptionsStayBelowSpecialistsInTheirPrimaryLane(), "hybrid options must stay below specialists in their support lane")) {
 		return 1;
 	}
 	if (!expect(OnceOnlyEffectsDoNotDoubleStackAcrossSlots(), "once-only effects must not double stack across slots")) {

@@ -418,11 +418,11 @@ test("build panel renders supported-first option descriptions from grouped catal
         nextMagnitude: 14,
         effectParts: [
           { effectKey: "stamina", magnitude: 12 },
-          { effectKey: "stamina_rate", magnitude: 0.16 },
+          { effectKey: "stamina_rate", magnitude: 0.08 },
         ],
         nextEffectParts: [
           { effectKey: "stamina", magnitude: 14 },
-          { effectKey: "stamina_rate", magnitude: 0.2 },
+          { effectKey: "stamina_rate", magnitude: 0.1 },
         ],
         slotCompatibility: "same_discipline_only",
       },
@@ -441,9 +441,41 @@ test("build panel renders supported-first option descriptions from grouped catal
     "build.attack.reserve",
   );
   assert.match(furyHtml, /Reserve/);
-  assert.match(furyHtml, /Gain \+8 max stamina and \+8% stamina regen while this option is slotted\./);
-  assert.match(furyHtml, /Max stamina \+12 \/ Stamina regen \+16%/);
-  assert.match(furyHtml, /Max stamina \+14 \/ Stamina regen \+20%/);
+  assert.match(furyHtml, /Gain \+8 max stamina and \+4% stamina regen while this option is slotted\./);
+  assert.match(furyHtml, /Max stamina \+12 \/ Stamina regen \+8%/);
+  assert.match(furyHtml, /Max stamina \+14 \/ Stamina regen \+10%/);
+
+  const furyUnlockHtml = renderSelection(
+    "attack",
+    "fury",
+    [
+      {
+        id: "build.attack.reserve",
+        discipline: "attack",
+        themeId: "fury",
+        hierarchy: "signpost",
+        unlockScore: 4,
+        unlocked: true,
+        titleKey: "build.attack.reserve.title",
+        descriptionKey: "build.attack.reserve.description",
+        effectKey: "reserve_bundle",
+        currentMagnitude: 8,
+        nextMagnitude: 10,
+        effectParts: [
+          { effectKey: "stamina", magnitude: 8 },
+          { effectKey: "stamina_rate", magnitude: 0.04 },
+        ],
+        nextEffectParts: [
+          { effectKey: "stamina", magnitude: 10 },
+          { effectKey: "stamina_rate", magnitude: 0.06 },
+        ],
+        slotCompatibility: "same_discipline_only",
+      },
+    ],
+    "build.attack.reserve",
+  );
+  assert.match(furyUnlockHtml, /Max stamina \+8 \/ Stamina regen \+4%/);
+  assert.match(furyUnlockHtml, /Max stamina \+10 \/ Stamina regen \+6%/);
 
   const defenseHtml = renderSelection(
     "defense",
@@ -637,15 +669,15 @@ test("build panel renders supported-first option descriptions from grouped catal
         titleKey: "build.utility.hauler.title",
         descriptionKey: "build.utility.hauler.description",
         effectKey: "hauler_bundle",
-        currentMagnitude: 12,
-        nextMagnitude: 14,
+        currentMagnitude: 10,
+        nextMagnitude: 12,
         effectParts: [
-          { effectKey: "stamina", magnitude: 12 },
-          { effectKey: "carry_weight", magnitude: 12 },
+          { effectKey: "stamina", magnitude: 10 },
+          { effectKey: "carry_weight", magnitude: 6 },
         ],
         nextEffectParts: [
-          { effectKey: "stamina", magnitude: 14 },
-          { effectKey: "carry_weight", magnitude: 14 },
+          { effectKey: "stamina", magnitude: 12 },
+          { effectKey: "carry_weight", magnitude: 7 },
         ],
         slotCompatibility: "same_discipline_only",
       },
@@ -667,9 +699,41 @@ test("build panel renders supported-first option descriptions from grouped catal
   assert.match(livelihoodHtml, /Need 10 pt/);
   assert.match(livelihoodHtml, /Smithing/);
   assert.match(livelihoodHtml, /Smithing results improve while this option is slotted\./);
-  assert.match(livelihoodHtml, /Max stamina \+12 \/ Carry weight \+12/);
+  assert.match(livelihoodHtml, /Max stamina \+10 \/ Carry weight \+6/);
   assert.match(livelihoodHtml, /Need 25 pt/);
   assert.match(livelihoodHtml, /Need 30 pt/);
+
+  const livelihoodUnlockHtml = renderSelection(
+    "utility",
+    "livelihood",
+    [
+      {
+        id: "build.utility.hauler",
+        discipline: "utility",
+        themeId: "livelihood",
+        hierarchy: "standard",
+        unlockScore: 30,
+        unlocked: true,
+        titleKey: "build.utility.hauler.title",
+        descriptionKey: "build.utility.hauler.description",
+        effectKey: "hauler_bundle",
+        currentMagnitude: 6,
+        nextMagnitude: 8,
+        effectParts: [
+          { effectKey: "stamina", magnitude: 6 },
+          { effectKey: "carry_weight", magnitude: 4 },
+        ],
+        nextEffectParts: [
+          { effectKey: "stamina", magnitude: 8 },
+          { effectKey: "carry_weight", magnitude: 5 },
+        ],
+        slotCompatibility: "same_discipline_only",
+      },
+    ],
+    "build.utility.hauler",
+  );
+  assert.match(livelihoodUnlockHtml, /Max stamina \+6 \/ Carry weight \+4/);
+  assert.match(livelihoodUnlockHtml, /Max stamina \+8 \/ Carry weight \+5/);
 
   const livelihoodSpecialistHtml = renderSelection(
     "utility",
@@ -722,11 +786,11 @@ test("build panel renders supported-first option descriptions from grouped catal
         nextMagnitude: 24,
         effectParts: [
           { effectKey: "magicka", magnitude: 20 },
-          { effectKey: "magicka_rate", magnitude: 0.08 },
+          { effectKey: "magicka_rate", magnitude: 0.04 },
         ],
         nextEffectParts: [
           { effectKey: "magicka", magnitude: 24 },
-          { effectKey: "magicka_rate", magnitude: 0.1 },
+          { effectKey: "magicka_rate", magnitude: 0.05 },
         ],
         slotCompatibility: "same_discipline_only",
       },
@@ -744,11 +808,11 @@ test("build panel renders supported-first option descriptions from grouped catal
         nextMagnitude: 0.2,
         effectParts: [
           { effectKey: "magicka_rate", magnitude: 0.16 },
-          { effectKey: "magicka", magnitude: 8 },
+          { effectKey: "magicka", magnitude: 4 },
         ],
         nextEffectParts: [
           { effectKey: "magicka_rate", magnitude: 0.2 },
-          { effectKey: "magicka", magnitude: 10 },
+          { effectKey: "magicka", magnitude: 5 },
         ],
         slotCompatibility: "same_discipline_only",
       },
@@ -756,9 +820,64 @@ test("build panel renders supported-first option descriptions from grouped catal
     "build.utility.magicka",
   );
   assert.match(livelihoodResourceHtml, /Magicka Well/);
-  assert.match(livelihoodResourceHtml, /Gain \+12 max magicka and \+4% magicka regen while this option is slotted\./);
-  assert.match(livelihoodResourceHtml, /Max magicka \+20 \/ Magicka regen \+8%/);
-  assert.match(livelihoodResourceHtml, /Max magicka \+24 \/ Magicka regen \+10%/);
+  assert.match(livelihoodResourceHtml, /Gain \+12 max magicka and \+2% magicka regen while this option is slotted\./);
+  assert.match(livelihoodResourceHtml, /Max magicka \+20 \/ Magicka regen \+4%/);
+  assert.match(livelihoodResourceHtml, /Max magicka \+24 \/ Magicka regen \+5%/);
+  assert.match(livelihoodResourceHtml, /Magicka regen \+16% \/ Max magicka \+4/);
+
+  const livelihoodResourceUnlockHtml = renderSelection(
+    "utility",
+    "livelihood",
+    [
+      {
+        id: "build.utility.magicka",
+        discipline: "utility",
+        themeId: "livelihood",
+        hierarchy: "special",
+        unlockScore: 30,
+        unlocked: true,
+        titleKey: "build.utility.magicka.title",
+        descriptionKey: "build.utility.magicka.description",
+        effectKey: "magicka_well_bundle",
+        currentMagnitude: 12,
+        nextMagnitude: 16,
+        effectParts: [
+          { effectKey: "magicka", magnitude: 12 },
+          { effectKey: "magicka_rate", magnitude: 0.02 },
+        ],
+        nextEffectParts: [
+          { effectKey: "magicka", magnitude: 16 },
+          { effectKey: "magicka_rate", magnitude: 0.03 },
+        ],
+        slotCompatibility: "same_discipline_only",
+      },
+      {
+        id: "build.utility.meditation",
+        discipline: "utility",
+        themeId: "livelihood",
+        hierarchy: "standard",
+        unlockScore: 30,
+        unlocked: true,
+        titleKey: "build.utility.meditation.title",
+        descriptionKey: "build.utility.meditation.description",
+        effectKey: "meditation_bundle",
+        currentMagnitude: 0.08,
+        nextMagnitude: 0.12,
+        effectParts: [
+          { effectKey: "magicka_rate", magnitude: 0.08 },
+          { effectKey: "magicka", magnitude: 2 },
+        ],
+        nextEffectParts: [
+          { effectKey: "magicka_rate", magnitude: 0.12 },
+          { effectKey: "magicka", magnitude: 3 },
+        ],
+        slotCompatibility: "same_discipline_only",
+      },
+    ],
+    "build.utility.magicka",
+  );
+  assert.match(livelihoodResourceUnlockHtml, /Max magicka \+12 \/ Magicka regen \+2%/);
+  assert.match(livelihoodResourceUnlockHtml, /Max magicka \+16 \/ Magicka regen \+3%/);
 
   const explorationHtml = renderSelection(
     "utility",

@@ -504,7 +504,7 @@ namespace CodexOfPowerNG::Builds
 				BuildSlotCompatibility::SameDisciplineOnly,
 				BuildEffectType::ActorValue,
 				"hauler_bundle",
-				8.0f,
+				6.0f,
 				2.0f,
 				"",
 				BuildStackRule::OnceOnly,
@@ -764,7 +764,7 @@ namespace CodexOfPowerNG::Builds
 			bundle.parts[1] = BuildResolvedEffectPart{
 				BuildEffectType::ActorValue,
 				"stamina_rate",
-				ScaleFloatMagnitude(0.08f, 0.04f, pointsCenti),
+				ScaleFloatMagnitude(0.04f, 0.02f, pointsCenti),
 			};
 			bundle.count = 2u;
 			return bundle;
@@ -779,7 +779,7 @@ namespace CodexOfPowerNG::Builds
 			bundle.parts[1] = BuildResolvedEffectPart{
 				BuildEffectType::ActorValue,
 				"magicka_rate",
-				ScaleFloatMagnitude(0.04f, 0.02f, pointsCenti),
+				ScaleFloatMagnitude(0.02f, 0.01f, pointsCenti),
 			};
 			bundle.count = 2u;
 			return bundle;
@@ -794,7 +794,7 @@ namespace CodexOfPowerNG::Builds
 			bundle.parts[1] = BuildResolvedEffectPart{
 				BuildEffectType::ActorValue,
 				"magicka",
-				ScaleFloatMagnitude(4.0f, 2.0f, pointsCenti),
+				ScaleFloatMagnitude(2.0f, 1.0f, pointsCenti),
 			};
 			bundle.count = 2u;
 			return bundle;
@@ -809,7 +809,7 @@ namespace CodexOfPowerNG::Builds
 			bundle.parts[1] = BuildResolvedEffectPart{
 				BuildEffectType::CarryWeight,
 				"carry_weight",
-				ScaleFloatMagnitude(8.0f, 2.0f, pointsCenti),
+				ScaleFloatMagnitude(4.0f, 1.0f, pointsCenti),
 			};
 			bundle.count = 2u;
 			return bundle;

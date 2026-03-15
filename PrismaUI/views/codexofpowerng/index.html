@@ -911,7 +911,7 @@
       }
       .buildDetailRail {
         display: grid;
-        grid-template-rows: minmax(0, 1.7fr) minmax(calc(170px * var(--uiScale)), 0.8fr);
+        grid-template-rows: minmax(0, 1fr) auto;
         gap: calc(10px * var(--uiScale));
       }
       .buildSelectedOptionPanel,
@@ -925,7 +925,18 @@
         overscroll-behavior: contain;
       }
       .buildSlotSummaryPanel {
-        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        gap: calc(6px * var(--uiScale));
+        overflow: visible;
+      }
+      .buildSlotMatrixScroller {
+        min-height: 0;
+        max-height: min(calc(176px * var(--uiScale)), calc(28vh));
+        overflow: auto;
+        overscroll-behavior: contain;
+        padding-right: calc(3px * var(--uiScale));
+        margin-right: calc(-3px * var(--uiScale));
       }
       .buildFocusStateRow {
         display: flex;
@@ -961,12 +972,12 @@
       .buildSlotMatrix {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: calc(6px * var(--uiScale));
+        gap: calc(5px * var(--uiScale));
       }
       .buildSlotMatrixCard {
         display: grid;
-        gap: calc(4px * var(--uiScale));
-        padding: calc(8px * var(--uiScale));
+        gap: calc(3px * var(--uiScale));
+        padding: calc(7px * var(--uiScale));
         border-radius: calc(12px * var(--uiScale));
         border: 1px solid var(--discipline-line, rgba(255, 255, 255, 0.12));
         background:
@@ -982,18 +993,18 @@
       }
       .buildSlotMatrixName {
         display: block;
-        font-size: calc(12px * var(--uiScale));
-        line-height: 1.25;
+        font-size: calc(11.5px * var(--uiScale));
+        line-height: 1.2;
       }
       .buildSlotMatrixActions {
         display: flex;
         flex-wrap: wrap;
-        gap: calc(6px * var(--uiScale));
+        gap: calc(5px * var(--uiScale));
       }
       .buildSlotMatrixActions .buildActionButton {
-        min-height: calc(32px * var(--uiScale));
-        padding: calc(6px * var(--uiScale)) calc(10px * var(--uiScale));
-        font-size: calc(11.5px * var(--uiScale));
+        min-height: calc(30px * var(--uiScale));
+        padding: calc(5px * var(--uiScale)) calc(9px * var(--uiScale));
+        font-size: calc(11px * var(--uiScale));
       }
       .quickToolbar,
       .buildToolbar {
@@ -1388,6 +1399,12 @@
         }
         .buildDetailRail {
           grid-template-rows: auto auto;
+        }
+        .buildSlotMatrixScroller {
+          max-height: none;
+          overflow: visible;
+          padding-right: 0;
+          margin-right: 0;
         }
         .buildSlotMatrix {
           grid-template-columns: 1fr;

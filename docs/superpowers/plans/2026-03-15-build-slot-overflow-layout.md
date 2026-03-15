@@ -1,5 +1,7 @@
 # Build Slot Overflow Layout Implementation Plan
 
+> Supersedes the active-slot portion of [2026-03-15-build-detail-rail-layout.md](/home/kdw73/Codex%20of%20Power%20NG/docs/superpowers/plans/2026-03-15-build-detail-rail-layout.md). The focused-option expansion remains, but the lower rail contract now moves from fixed-ratio clipping to an internal slot-grid scroller.
+
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Remove clipping from the Build tab active-slot panel while keeping the focused-option panel as the dominant decision surface.
@@ -32,6 +34,7 @@ Cover:
 - `buildDetailRail` no longer uses the old `minmax(..., 0.8fr)` lower row contract
 - `buildSlotSummaryPanel` becomes an internal grid/flex wrapper rather than a hard-clipped box
 - new slot scroller class exists in rendered HTML and source CSS
+- rendered markup exposes `data-wheel-surface="build-slots"` on the slot scroller
 - slot-card density values are reduced again
 
 - [ ] **Step 2: Run the test to verify it fails**
@@ -57,6 +60,7 @@ Expected: FAIL because the current source still exposes the clipped slot-panel c
 In `ui_build_panel.js`:
 - keep the existing panel eyebrow
 - wrap `buildSlotMatrix` in a dedicated `buildSlotMatrixScroller` container
+- add `data-wheel-surface="build-slots"` so wheel routing prefers the slot grid before catalog fallback
 
 - [ ] **Step 2: Update the detail-rail CSS**
 
@@ -90,6 +94,13 @@ node --test tests/*.test.cjs
 ```
 
 Expected: PASS
+
+- [ ] **Step 6: Perform a runtime clipping sanity check**
+
+Verify in a fixed Build viewport that:
+- all 6 slot cards and action buttons are fully visible without panel-edge clipping
+- only the slot grid scrolls when space is tight
+- the selected-option panel remains the dominant rail surface
 
 ## Chunk 3: Full Verification
 

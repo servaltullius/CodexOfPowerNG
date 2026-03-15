@@ -1,5 +1,7 @@
 # Build Detail Rail Layout Implementation Plan
 
+> Partially superseded on 2026-03-15 by [2026-03-15-build-slot-overflow-layout.md](/home/kdw73/Codex%20of%20Power%20NG/docs/superpowers/plans/2026-03-15-build-slot-overflow-layout.md) for the active-slot panel overflow fix.
+
 > **For agentic workers:** REQUIRED: Use superpowers:subagent-driven-development (if subagents available) or superpowers:executing-plans to implement this plan. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Expand the focused-option panel and compress the active-slot panel in the Build tab detail rail without changing overall information architecture.
@@ -44,4 +46,3 @@ Expected: PASS
 
 Run: `node --test tests/*.test.cjs`
 Expected: PASS
-

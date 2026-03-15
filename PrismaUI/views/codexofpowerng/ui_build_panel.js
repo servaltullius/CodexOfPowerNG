@@ -752,8 +752,10 @@
               ${detailHtml}
               <section class="card buildSlotSummaryPanel buildStaticPanel">
                 <div class="small buildPanelEyebrow">${escapeHtml(t("build.activeSlots", "Active Slots"))}</div>
-                <div class="buildSlotMatrix">
-                  ${slotMatrixHtml}
+                <div class="buildSlotMatrixScroller" data-wheel-surface="build-slots">
+                  <div class="buildSlotMatrix">
+                    ${slotMatrixHtml}
+                  </div>
                 </div>
               </section>
             </aside>

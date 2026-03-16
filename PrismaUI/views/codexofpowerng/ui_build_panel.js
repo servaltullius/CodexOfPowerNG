@@ -643,7 +643,7 @@
           ? `<button type="button" class="buildActionButton" data-action="build-deactivate" data-slot-id="${escapeHtml(
               slotId,
             )}">${escapeHtml(t("build.deactivate", "Deactivate"))}</button>`
-          : `<span class="small buildHint">${escapeHtml(t("build.slotWaiting", "Awaiting option"))}</span>`;
+          : `<span class="small buildHint">${escapeHtml(t("build.slotWaiting", "Empty"))}</span>`;
         return `
           <article class="buildSlotMatrixCard ${slotClass} ${option ? "isOccupied" : "isEmpty"}" data-slot-id="${escapeHtml(
             slotId,

@@ -9,6 +9,25 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [1.2.0-rc.2] - 2026-03-17 (Pre-release)
+
+### Added
+- Expanded the build-era catalog with more runtime-backed `Attack / Defense / Utility` options, including resistance bundles, utility modifier rows, and sustain-oriented entries.
+- Added score-based slotted-option scaling and a catalog-first Build browsing flow with discipline/theme navigation and focused option detail.
+
+### Changed
+- Rebalanced weighted build points, unlock pacing, and hybrid-vs-specialist slot competition after the first public `v1.2.0-rc.1` build-system release.
+- Compressed the active-slot summary into a denser, overflow-safe reference rail with one-line slot cards and shorter empty-slot hints.
+
+### Fixed
+- Honored native build selection payloads when deciding which discipline/theme/option the Build catalog should focus.
+- Fixed Build-tab right-rail slot summary clipping and overflow regressions while preserving the dedicated slot-grid scroll surface.
+
+### Notes
+- Detailed release note: `docs/releases/v1.2.0-rc.2.md`
+- This pre-release continues tuning the build-system release line introduced in `v1.2.0-rc.1`; balance and Build UI readability feedback remain especially valuable.
+- Save compatibility policy remains unchanged: Codex of Power / SVCollection is not compatible.
+
 ## [1.2.0-rc.1] - 2026-03-11 (Pre-release)
 
 ### Added
